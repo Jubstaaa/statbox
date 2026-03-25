@@ -10,7 +10,6 @@ import Button from '@/components/button/button'
 import Card from '@/components/card/card'
 import Chip from '@/components/chip/chip'
 import Input from '@/components/input/input'
-import Spinner from '@/components/spinner/spinner'
 import PlayerSummary from '@/components/widget/player-summary'
 import { TIER_COLORS } from '@/components/widget/widget.constants'
 import type { Region } from '@/lib/riot/riot.types'
@@ -207,24 +206,10 @@ export default function WidgetGeneratorForm() {
     }
 
     return (
-        <form
-            className="relative w-full max-w-sm space-y-5"
-            onSubmit={handleSubmit}>
-            {loading ? (
-                <div className="bg-bg-base/72 absolute inset-0 z-10 flex items-center justify-center rounded-4xl backdrop-blur-[2px]">
-                    <div className="border-border-secondary bg-bg-elevated flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
-                        <Spinner className="h-4 w-4 border-2" />
-                        <span className="text-text text-sm font-semibold">
-                            Checking account...
-                        </span>
-                    </div>
-                </div>
-            ) : null}
-
+        <form className="w-full max-w-sm space-y-5" onSubmit={handleSubmit}>
             <div className="grid gap-3 sm:grid-cols-[1fr_112px]">
                 <Input
                     description="Riot ID name without the hashtag."
-                    disabled={loading}
                     error={formErrors.name}
                     label="Game Name"
                     placeholder="Hide on bush"
@@ -233,7 +218,6 @@ export default function WidgetGeneratorForm() {
                 />
                 <Input
                     description="Region tag, for example TR1."
-                    disabled={loading}
                     error={formErrors.tag}
                     label="Tag"
                     placeholder="TR1"
@@ -251,7 +235,6 @@ export default function WidgetGeneratorForm() {
                         <Chip
                             key={value}
                             active={region === value}
-                            disabled={loading}
                             onClick={createRegionSelectHandler(value)}>
                             {value}
                         </Chip>

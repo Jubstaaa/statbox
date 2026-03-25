@@ -49,7 +49,9 @@ export default function Widget({
 
             const res = await fetch(url.toString())
             if (!res.ok) {
-                setError(true)
+                if (!fetchedData && !initialData) {
+                    setError(true)
+                }
                 return
             }
 
@@ -57,9 +59,11 @@ export default function Widget({
             setFetchedData(json)
             setError(false)
         } catch {
-            setError(true)
+            if (!fetchedData && !initialData) {
+                setError(true)
+            }
         }
-    }, [payload, puuid, queue, region, session])
+    }, [fetchedData, initialData, payload, puuid, queue, region, session])
 
     useEffect(() => {
         void initDdragon().then(() => setAssetsReady(true))
