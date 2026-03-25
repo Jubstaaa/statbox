@@ -16,6 +16,7 @@ const VALID_WIDGET_STYLES = new Set<WidgetStyle>([
     'classic',
     'minimal',
     'compact',
+    'topbar',
 ])
 const VALID_QUEUES = new Set<RankedQueue>(['solo', 'flex'])
 
