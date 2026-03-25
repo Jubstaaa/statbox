@@ -23,19 +23,19 @@ export default function ClassicWidget({
 }: ComputedData) {
     return (
         <div
-            className="border-border-hover w-[300px] overflow-hidden rounded-[18px] border bg-[linear-gradient(180deg,#102033_0%,#07111f_100%)] shadow-[0_18px_48px_rgba(0,0,0,0.45)]"
+            className="border-border-hover w-[300px] overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(10,18,30,0.68)_0%,rgba(7,17,31,0.42)_100%)] shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-md"
             style={{
-                boxShadow: `0 18px 48px rgba(0,0,0,0.45), 0 0 0 1px ${tierColor}20`,
+                boxShadow: `0 18px 48px rgba(0,0,0,0.32), 0 0 0 1px ${tierColor}22`,
             }}>
             <div
-                className="border-border border-b px-[14px] py-[14px]"
+                className="border-border border-b border-white/10 px-[14px] py-[14px]"
                 style={{
-                    background: `radial-gradient(circle at top left, ${tierColor}30, transparent 42%), linear-gradient(180deg, rgba(16,32,51,0.96) 0%, rgba(11,23,39,0.96) 100%)`,
+                    background: `radial-gradient(circle at top left, ${tierColor}28, transparent 42%), linear-gradient(180deg, rgba(16,32,51,0.66) 0%, rgba(11,23,39,0.4) 100%)`,
                 }}>
                 <PlayerSummary data={data} tierColor={tierColor} />
             </div>
 
-            <div className="border-border border-b px-[14px] py-3">
+            <div className="border-border border-b border-white/10 bg-[rgba(6,13,24,0.34)] px-[14px] py-3">
                 <SectionLabel>
                     {session ? 'Session snapshot' : 'Recent snapshot'}
                 </SectionLabel>
@@ -87,7 +87,7 @@ export default function ClassicWidget({
                 )}
             </div>
 
-            <div className="px-[14px] py-3">
+            <div className="bg-[rgba(6,13,24,0.24)] px-[14px] py-3">
                 <SectionLabel>Recent matches</SectionLabel>
                 <div className="flex flex-col gap-1.5">
                     {recent.length === 0 && (

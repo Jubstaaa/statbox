@@ -12,7 +12,7 @@ export default function MinimalWidget({
     winRate,
 }: ComputedData) {
     return (
-        <div className="border-border-hover grid h-[72px] w-[480px] grid-cols-[4px_48px_minmax(0,120px)_auto_minmax(108px,1fr)] items-center gap-3 overflow-hidden rounded-[18px] border bg-[linear-gradient(90deg,#07111f_0%,#102033_100%)] pr-[14px] shadow-[0_18px_40px_rgba(0,0,0,0.38)]">
+        <div className="border-border-hover grid h-[72px] w-[480px] grid-cols-[4px_48px_minmax(0,120px)_auto_minmax(108px,1fr)] items-center gap-3 overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(90deg,rgba(7,17,31,0.44)_0%,rgba(16,32,51,0.28)_100%)] pr-[14px] shadow-[0_18px_40px_rgba(0,0,0,0.24)] backdrop-blur-md">
             <div
                 className="self-stretch"
                 style={{
@@ -52,7 +52,7 @@ export default function MinimalWidget({
                 </div>
             </div>
 
-            <div className="border-border flex items-center gap-[10px] border-x px-[14px]">
+            <div className="border-border flex items-center gap-[10px] border-x border-white/10 px-[14px]">
                 <StripStat
                     color="#5ef2a2"
                     label="W"

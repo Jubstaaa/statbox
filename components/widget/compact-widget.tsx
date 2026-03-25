@@ -21,11 +21,11 @@ export default function CompactWidget({
     winRate,
 }: ComputedData) {
     return (
-        <div className="border-border-hover w-[260px] overflow-hidden rounded-[22px] border bg-[linear-gradient(165deg,#102033_0%,#07111f_100%)] shadow-[0_18px_48px_rgba(0,0,0,0.44)]">
+        <div className="border-border-hover w-[260px] overflow-hidden rounded-[22px] border border-white/10 bg-[linear-gradient(165deg,rgba(16,32,51,0.68)_0%,rgba(7,17,31,0.42)_100%)] shadow-[0_18px_48px_rgba(0,0,0,0.3)] backdrop-blur-md">
             <div
-                className="border-border border-b px-[14px] py-[14px]"
+                className="border-border border-b border-white/10 px-[14px] py-[14px]"
                 style={{
-                    background: `radial-gradient(circle at top, ${tierColor}26, transparent 58%), linear-gradient(180deg, rgba(16,32,51,0.96) 0%, rgba(11,23,39,0.96) 100%)`,
+                    background: `radial-gradient(circle at top, ${tierColor}24, transparent 58%), linear-gradient(180deg, rgba(16,32,51,0.62) 0%, rgba(11,23,39,0.4) 100%)`,
                 }}>
                 <div className="mb-[10px] flex items-center gap-2">
                     <ProfileIcon
@@ -72,7 +72,7 @@ export default function CompactWidget({
                 </div>
             </div>
 
-            <div className="border-border border-b px-[14px] py-3">
+            <div className="border-border border-b border-white/10 bg-[rgba(6,13,24,0.3)] px-[14px] py-3">
                 <SectionLabel>Combat line</SectionLabel>
                 {sessionGames > 0 ? (
                     <>
@@ -104,7 +104,7 @@ export default function CompactWidget({
                 )}
             </div>
 
-            <div className="px-[14px] py-3">
+            <div className="bg-[rgba(6,13,24,0.2)] px-[14px] py-3">
                 <SectionLabel>Recent</SectionLabel>
                 <div className="flex flex-wrap justify-center gap-1.5">
                     {recent.length === 0 && (
