@@ -6,7 +6,7 @@ import {
     decodeWidgetRoutePayload,
 } from '@/components/widget-generator/widget-generator.utils'
 import { fetchRiotData, fetchRiotDataByPuuid } from '@/lib/riot/riot'
-import type { RankedQueue, Region, RiotData } from '@/lib/riot/riot.types'
+import type { RankedQueue, Region } from '@/lib/riot/riot.types'
 
 const querySchema = z.object({
     queue: z.enum(['solo', 'flex']).optional(),
@@ -29,15 +29,6 @@ const querySchema = z.object({
     ]),
     session: z.string().optional(),
 })
-
-const CACHE_TTL = 60_000
-
-interface CacheEntry {
-    data: RiotData
-    expiresAt: number
-}
-
-const cache = new Map<string, CacheEntry>()
 
 export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl
@@ -67,18 +58,6 @@ export async function GET(request: NextRequest) {
     if (!region) {
         return Response.json({ error: 'Invalid parameters' }, { status: 400 })
     }
-    const key = decodedPayload?.puuid
-        ? `${decodedPayload.puuid}@${region}@${queue}`
-        : legacyDecodedPayload
-          ? `${legacyDecodedPayload.name}#${legacyDecodedPayload.tag}@${region}@${queue}`
-          : `${payload}@${region}@${queue}`
-
-    const cached = cache.get(key)
-    if (cached && cached.expiresAt > Date.now()) {
-        return Response.json(cached.data, {
-            headers: { 'X-Cache': 'HIT' },
-        })
-    }
 
     try {
         const data = decodedPayload
@@ -99,10 +78,7 @@ export async function GET(request: NextRequest) {
                     region as Region,
                     queue as RankedQueue
                 )
-        cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL })
-        return Response.json(data, {
-            headers: { 'X-Cache': 'MISS' },
-        })
+        return Response.json(data)
     } catch {
         return Response.json({ error: 'Summoner not found' }, { status: 404 })
     }
