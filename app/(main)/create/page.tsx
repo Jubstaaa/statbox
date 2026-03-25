@@ -25,7 +25,7 @@ import {
     clearStoredBuilderPuuid,
     clearStoredBuilderSettings,
     fetchSummonerByPuuid,
-    getCurrentTimeInputValue,
+    getCurrentDateTimeInputValue,
     getStoredBuilderPuuid,
     getStoredBuilderSettings,
     resolveSessionTimestamp,
@@ -39,7 +39,7 @@ import CreateLoader from './loader'
 
 export default function CreatePage() {
     const router = useRouter()
-    const [maxSessionTime] = useState(() => getCurrentTimeInputValue())
+    const [maxSessionTime] = useState(() => getCurrentDateTimeInputValue())
     const [puuid] = useState<string | null>(() => getStoredBuilderPuuid())
     const [style, setStyle] = useState<WidgetStyle>(
         () => getStoredBuilderSettings()?.style ?? 'classic'
@@ -54,7 +54,7 @@ export default function CreatePage() {
     const [sessionTime, setSessionTime] = useState<string>(
         () =>
             getStoredBuilderSettings()?.sessionTime ??
-            getCurrentTimeInputValue()
+            getCurrentDateTimeInputValue()
     )
     const storageReady = useSyncExternalStore(
         () => () => {},
@@ -113,7 +113,7 @@ export default function CreatePage() {
         setSessionMode('from-time')
         setSessionTime(currentValue =>
             buildSessionTimestampFromTime(currentValue) === null
-                ? getCurrentTimeInputValue()
+                ? getCurrentDateTimeInputValue()
                 : currentValue
         )
     }, [])
@@ -300,7 +300,7 @@ export default function CreatePage() {
                                 className="border-border-secondary bg-bg-base text-text h-11 w-full rounded-xl border px-3 text-sm outline-none"
                                 id="session-start-time"
                                 max={maxSessionTime}
-                                type="time"
+                                type="datetime-local"
                                 value={sessionTime}
                                 onChange={handleSessionTimeChange}
                             />

@@ -26,6 +26,10 @@ function isValidTimeValue(time: string) {
     return /^([01]\d|2[0-3]):([0-5]\d)$/.test(time)
 }
 
+function isValidDateTimeValue(value: string) {
+    return /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):([0-5]\d)$/.test(value)
+}
+
 interface WidgetRoutePayload {
     puuid: string
     queue: RankedQueue
@@ -155,7 +159,7 @@ export function getStoredBuilderSettings() {
             !(
                 parsed.sessionTime === null ||
                 (typeof parsed.sessionTime === 'string' &&
-                    isValidTimeValue(parsed.sessionTime))
+                    isValidDateTimeValue(parsed.sessionTime))
             ) ||
             typeof parsed.style !== 'string' ||
             !VALID_WIDGET_STYLES.has(parsed.style as WidgetStyle)
@@ -216,7 +220,7 @@ export function decodeWidgetRoutePayload(
                 parsed.sessionTime === undefined ||
                 parsed.sessionTime === null ||
                 (typeof parsed.sessionTime === 'string' &&
-                    isValidTimeValue(parsed.sessionTime))
+                    isValidDateTimeValue(parsed.sessionTime))
             ) ||
             !(
                 parsed.sessionStartedAt === undefined ||
@@ -345,10 +349,25 @@ export function getCurrentTimeInputValue() {
     return getTimeInputValueFromTimestamp(Date.now())
 }
 
-export function buildSessionTimestampFromTime(time: string) {
-    if (!isValidTimeValue(time)) return null
+export function getCurrentDateTimeInputValue() {
+    const date = new Date()
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
 
-    const [hoursRaw, minutesRaw] = time.split(':')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+export function buildSessionTimestampFromTime(value: string) {
+    if (isValidDateTimeValue(value)) {
+        return clampSessionTimestamp(new Date(value).getTime())
+    }
+
+    if (!isValidTimeValue(value)) return null
+
+    const [hoursRaw, minutesRaw] = value.split(':')
     const hours = Number(hoursRaw)
     const minutes = Number(minutesRaw)
 
@@ -371,7 +390,10 @@ export function resolveSessionTimestamp({
         return getStartOfTodayTimestamp()
     }
 
-    if (sessionTime && isValidTimeValue(sessionTime)) {
+    if (
+        sessionTime &&
+        (isValidDateTimeValue(sessionTime) || isValidTimeValue(sessionTime))
+    ) {
         return buildSessionTimestampFromTime(sessionTime)
     }
 
@@ -393,4 +415,17 @@ export function getTimeInputValueFromTimestamp(timestamp: number | null) {
     const minutes = String(date.getMinutes()).padStart(2, '0')
 
     return `${hours}:${minutes}`
+}
+
+export function getDateTimeInputValueFromTimestamp(timestamp: number | null) {
+    if (!timestamp) return getCurrentDateTimeInputValue()
+
+    const date = new Date(timestamp)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const hours = String(date.getHours()).padStart(2, '0')
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`
 }
