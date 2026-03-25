@@ -1,0 +1,143 @@
+import ChampionIcon from '@/components/champion-icon/champion-icon'
+import { cn } from '@/lib/cn'
+
+import FooterMark from './footer-mark'
+import MetricTile from './metric-tile'
+import PlayerSummary from './player-summary'
+import SectionLabel from './section-label'
+import type { ComputedData } from './widget.types'
+
+export default function ClassicWidget({
+    avgAssists,
+    avgDeaths,
+    avgKills,
+    data,
+    kdaRatio,
+    recent,
+    session,
+    sessionGames,
+    sessionLosses,
+    sessionWins,
+    tierColor,
+    winRate,
+}: ComputedData) {
+    return (
+        <div
+            className="border-border-hover w-[300px] overflow-hidden rounded-[18px] border bg-[linear-gradient(180deg,#102033_0%,#07111f_100%)] shadow-[0_18px_48px_rgba(0,0,0,0.45)]"
+            style={{
+                boxShadow: `0 18px 48px rgba(0,0,0,0.45), 0 0 0 1px ${tierColor}20`,
+            }}>
+            <div
+                className="border-border border-b px-[14px] py-[14px]"
+                style={{
+                    background: `radial-gradient(circle at top left, ${tierColor}30, transparent 42%), linear-gradient(180deg, rgba(16,32,51,0.96) 0%, rgba(11,23,39,0.96) 100%)`,
+                }}>
+                <PlayerSummary data={data} tierColor={tierColor} />
+            </div>
+
+            <div className="border-border border-b px-[14px] py-3">
+                <SectionLabel>
+                    {session ? 'Session snapshot' : 'Recent snapshot'}
+                </SectionLabel>
+                <div
+                    className={cn(
+                        'grid grid-cols-3 gap-2',
+                        sessionGames > 0 ? 'mb-[10px]' : 'mb-0'
+                    )}>
+                    <MetricTile
+                        label="Wins"
+                        tone="win"
+                        value={String(sessionWins)}
+                    />
+                    <MetricTile
+                        label="Losses"
+                        tone="loss"
+                        value={String(sessionLosses)}
+                    />
+                    <MetricTile
+                        label="WR"
+                        tone="blue"
+                        value={winRate !== null ? `${winRate}%` : '--'}
+                    />
+                </div>
+                {sessionGames > 0 && (
+                    <div className="flex items-center justify-between gap-[10px]">
+                        <span className="text-text-subtle text-[10px] font-bold tracking-[0.14em] uppercase">
+                            Avg K / D / A
+                        </span>
+                        <div className="text-xs font-bold">
+                            <span className="text-win">
+                                {avgKills.toFixed(1)}
+                            </span>
+                            <span className="text-text-subtle"> / </span>
+                            <span className="text-loss">
+                                {avgDeaths.toFixed(1)}
+                            </span>
+                            <span className="text-text-subtle"> / </span>
+                            <span className="text-[#7dd3fc]">
+                                {avgAssists.toFixed(1)}
+                            </span>
+                            {kdaRatio && (
+                                <span className="text-text-muted ml-1.5">
+                                    {kdaRatio} KDA
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="px-[14px] py-3">
+                <SectionLabel>Recent matches</SectionLabel>
+                <div className="flex flex-col gap-1.5">
+                    {recent.length === 0 && (
+                        <div className="text-text-subtle py-[10px] text-center text-[11px]">
+                            No ranked games found
+                        </div>
+                    )}
+                    {recent.map(match => (
+                        <div
+                            key={match.matchId}
+                            className="grid grid-cols-[24px_1fr_auto_auto] items-center gap-2 rounded-[10px] border px-2 py-[7px]"
+                            style={{
+                                background: match.win
+                                    ? 'rgba(94,242,162,0.08)'
+                                    : 'rgba(255,122,138,0.08)',
+                                borderColor: match.win
+                                    ? 'rgba(94,242,162,0.18)'
+                                    : 'rgba(255,122,138,0.18)',
+                            }}>
+                            <ChampionIcon
+                                champion={match.champion}
+                                className="h-6 w-6 rounded-[6px]"
+                            />
+                            <span className="text-text min-w-0 truncate text-[11px] font-bold">
+                                {match.champion}
+                            </span>
+                            <span className="text-text-muted text-[11px] whitespace-nowrap">
+                                <span className="text-win">{match.kills}</span>
+                                <span className="text-text-subtle"> / </span>
+                                <span className="text-loss">
+                                    {match.deaths}
+                                </span>
+                                <span className="text-text-subtle"> / </span>
+                                <span className="text-[#7dd3fc]">
+                                    {match.assists}
+                                </span>
+                            </span>
+                            <span
+                                className={cn(
+                                    'text-[10px] font-extrabold tracking-[0.12em]',
+                                    match.win ? 'text-win' : 'text-loss'
+                                )}>
+                                {match.win ? 'WIN' : 'LOSS'}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <FooterMark />
+        </div>
+    )
+}
