@@ -33,7 +33,7 @@ export default function WidgetGeneratorForm() {
     const [storageReady, setStorageReady] = useState(false)
     const [name, setName] = useState('')
     const [tag, setTag] = useState('')
-    const [region, setRegion] = useState<Region>('TR')
+    const [region, setRegion] = useState<Region>('EUW')
     const [formErrors, setFormErrors] = useState<{
         name?: string
         tag?: string
@@ -47,7 +47,7 @@ export default function WidgetGeneratorForm() {
             fetchSummonerByPuuid({
                 puuid: storedPuuid!,
                 queue: getStoredBuilderSettings()?.queue ?? 'solo',
-                region: getStoredBuilderSettings()?.region ?? 'TR',
+                region: getStoredBuilderSettings()?.region ?? 'EUW',
             }),
         queryKey: [
             'summoner',
@@ -206,10 +206,9 @@ export default function WidgetGeneratorForm() {
     }
 
     return (
-        <form className="w-full max-w-sm space-y-5" onSubmit={handleSubmit}>
+        <form className="w-full space-y-5" onSubmit={handleSubmit}>
             <div className="grid gap-3 sm:grid-cols-[1fr_112px]">
                 <Input
-                    description="Riot ID name without the hashtag."
                     error={formErrors.name}
                     label="Game Name"
                     placeholder="Hide on bush"
@@ -217,10 +216,9 @@ export default function WidgetGeneratorForm() {
                     onChange={handleNameChange}
                 />
                 <Input
-                    description="Region tag, for example TR1."
                     error={formErrors.tag}
                     label="Tag"
-                    placeholder="TR1"
+                    placeholder="EUW1"
                     value={tag}
                     onChange={handleTagChange}
                 />
@@ -235,6 +233,7 @@ export default function WidgetGeneratorForm() {
                         <Chip
                             key={value}
                             active={region === value}
+                            className="flex-1 basis-[calc(25%-0.375rem)]"
                             onClick={createRegionSelectHandler(value)}>
                             {value}
                         </Chip>

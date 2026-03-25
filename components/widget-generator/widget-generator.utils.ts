@@ -10,7 +10,23 @@ import type {
     WidgetStyle,
 } from '@/lib/riot/riot.types'
 
-const VALID_REGIONS = new Set<Region>(['TR', 'EUW', 'EUNE', 'NA', 'KR'])
+const VALID_REGIONS = new Set<Region>([
+    'BR',
+    'EUNE',
+    'EUW',
+    'JP',
+    'KR',
+    'LAN',
+    'LAS',
+    'ME',
+    'NA',
+    'OCE',
+    'RU',
+    'SG',
+    'TR',
+    'TW',
+    'VN',
+])
 
 const VALID_WIDGET_STYLES = new Set<WidgetStyle>([
     'classic',

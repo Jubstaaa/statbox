@@ -16,19 +16,39 @@ const lolApi = new LolApi({ key: RIOT_API_KEY, rateLimitRetry: true })
 const { RegionGroups: RG, Regions: R } = Constants
 
 const REGION_MAP: Record<Region, Regions> = {
+    BR: R.BRAZIL,
     EUNE: R.EU_EAST,
     EUW: R.EU_WEST,
+    JP: R.JAPAN,
     KR: R.KOREA,
+    LAN: R.LAT_NORTH,
+    LAS: R.LAT_SOUTH,
+    ME: R.MIDDLE_EAST,
     NA: R.AMERICA_NORTH,
+    OCE: R.OCEANIA,
+    RU: R.RUSSIA,
+    SG: R.SINGAPORE,
     TR: R.TURKEY,
+    TW: R.TAIWAN,
+    VN: R.VIETNAM,
 }
 
 const REGION_GROUP_MAP: Record<Region, RegionGroups> = {
+    BR: RG.AMERICAS,
     EUNE: RG.EUROPE,
     EUW: RG.EUROPE,
+    JP: RG.ASIA,
     KR: RG.ASIA,
+    LAN: RG.AMERICAS,
+    LAS: RG.AMERICAS,
+    ME: RG.EUROPE,
     NA: RG.AMERICAS,
+    OCE: RG.SEA,
+    RU: RG.EUROPE,
+    SG: RG.SEA,
     TR: RG.EUROPE,
+    TW: RG.SEA,
+    VN: RG.SEA,
 }
 
 const puuidRegionCache = new Map<string, Region>()

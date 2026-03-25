@@ -10,7 +10,23 @@ import type { RankedQueue, Region, RiotData } from '@/lib/riot/riot.types'
 
 const querySchema = z.object({
     queue: z.enum(['solo', 'flex']).optional(),
-    region: z.enum(['TR', 'EUW', 'EUNE', 'NA', 'KR']),
+    region: z.enum([
+        'BR',
+        'EUNE',
+        'EUW',
+        'JP',
+        'KR',
+        'LAN',
+        'LAS',
+        'ME',
+        'NA',
+        'OCE',
+        'RU',
+        'SG',
+        'TR',
+        'TW',
+        'VN',
+    ]),
     session: z.string().optional(),
 })
 

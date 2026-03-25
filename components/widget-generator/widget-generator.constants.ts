@@ -1,6 +1,22 @@
 import type { Region, WidgetStyle } from '@/lib/riot/riot.types'
 
-export const REGIONS: Region[] = ['TR', 'EUW', 'EUNE', 'NA', 'KR']
+export const REGIONS: Region[] = [
+    'BR',
+    'EUNE',
+    'EUW',
+    'JP',
+    'KR',
+    'LAN',
+    'LAS',
+    'ME',
+    'NA',
+    'OCE',
+    'RU',
+    'SG',
+    'TR',
+    'TW',
+    'VN',
+]
 
 export const STYLES: {
     id: WidgetStyle

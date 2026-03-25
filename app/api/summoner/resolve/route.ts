@@ -6,7 +6,23 @@ import type { Region } from '@/lib/riot/riot.types'
 
 const querySchema = z.object({
     name: z.string().trim().min(1),
-    region: z.enum(['TR', 'EUW', 'EUNE', 'NA', 'KR']),
+    region: z.enum([
+        'BR',
+        'EUNE',
+        'EUW',
+        'JP',
+        'KR',
+        'LAN',
+        'LAS',
+        'ME',
+        'NA',
+        'OCE',
+        'RU',
+        'SG',
+        'TR',
+        'TW',
+        'VN',
+    ]),
     tag: z.string().trim().min(1).max(10),
 })
 

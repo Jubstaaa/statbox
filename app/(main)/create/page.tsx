@@ -47,7 +47,7 @@ export default function CreatePage() {
     const [queue, setQueue] = useState<RankedQueue>(
         () => getStoredBuilderSettings()?.queue ?? 'solo'
     )
-    const [region] = useState(() => getStoredBuilderSettings()?.region ?? 'TR')
+    const [region] = useState(() => getStoredBuilderSettings()?.region ?? 'EUW')
     const [sessionMode, setSessionMode] = useState<'all-day' | 'from-time'>(
         () => getStoredBuilderSettings()?.sessionMode ?? 'all-day'
     )

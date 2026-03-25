@@ -65,7 +65,7 @@ export default function MainLayout({
                         Legends © Riot Games, Inc.
                     </p>
                     <p className="text-text-subtle text-xs">
-                        Made with love by{' '}
+                        Made with ❤️ by{' '}
                         <a
                             className="text-text-strong hover:text-accent"
                             href="https://ilkerbalcilar.com"
