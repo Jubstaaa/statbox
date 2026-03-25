@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
+import { useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'next/navigation'
 
 import Widget from '@/components/widget/widget'
@@ -18,11 +19,9 @@ export default function WidgetPage() {
     const params = useParams<{ payload: string }>()
     const searchParams = useSearchParams()
     const [assetsReady, setAssetsReady] = useState(false)
-    const [data, setData] = useState<RiotData | null>(null)
-    const [error, setError] = useState(false)
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-    const decoded = decodeWidgetRoutePayload(params.payload)
-    const legacyDecoded = decodeLegacyWidgetRoutePayload(params.payload)
+    const payload = decodeURIComponent(params.payload)
+    const decoded = decodeWidgetRoutePayload(payload)
+    const legacyDecoded = decodeLegacyWidgetRoutePayload(payload)
     const session = useMemo(() => {
         if (decoded) {
             return resolveSessionTimestamp({
@@ -36,8 +35,14 @@ export default function WidgetPage() {
         return sessionRaw ? parseInt(sessionRaw, 10) || null : null
     }, [decoded, searchParams])
 
-    const fetchData = useCallback(async () => {
-        try {
+    useEffect(() => {
+        void initDdragon().then(() => setAssetsReady(true))
+    }, [])
+
+    const summonerQuery = useQuery({
+        enabled: !!params.payload,
+        placeholderData: previousData => previousData,
+        queryFn: async () => {
             const url = new URL(
                 `/api/summoner/${params.payload}`,
                 window.location.origin
@@ -59,51 +64,30 @@ export default function WidgetPage() {
             const response = await fetch(url.toString())
 
             if (!response.ok) {
-                if (!data) {
-                    setError(true)
-                }
-
-                return
+                throw new Error('Failed to load widget data')
             }
 
-            const nextData = (await response.json()) as RiotData
-            setData(nextData)
-            setError(false)
-        } catch {
-            if (!data) {
-                setError(true)
-            }
-        }
-    }, [data, decoded, legacyDecoded, params.payload, session])
-
-    useEffect(() => {
-        void initDdragon().then(() => setAssetsReady(true))
-    }, [])
-
-    useEffect(() => {
-        if (!decoded && !legacyDecoded) return
-
-        const initialLoad = window.setTimeout(() => {
-            void fetchData()
-        }, 0)
-        intervalRef.current = setInterval(() => {
-            void fetchData()
-        }, POLL_INTERVAL)
-
-        return () => {
-            window.clearTimeout(initialLoad)
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current)
-            }
-        }
-    }, [decoded, fetchData, legacyDecoded])
+            return (await response.json()) as RiotData
+        },
+        queryKey: [
+            'widget',
+            payload,
+            decoded?.queue ?? 'solo',
+            decoded?.region ?? legacyDecoded?.region ?? '',
+            session,
+        ],
+        refetchInterval: POLL_INTERVAL,
+        refetchIntervalInBackground: true,
+    })
+    const isLoading = !assetsReady || !summonerQuery.isFetched
+    const isError = !isLoading && summonerQuery.isError && !summonerQuery.data
 
     return (
         <div className="bg-transparent">
             <Widget
-                data={data}
-                isError={!decoded && !legacyDecoded ? true : error && !data}
-                isLoading={(!data || !assetsReady) && !(error && !data)}
+                data={summonerQuery.data ?? null}
+                isError={isError}
+                isLoading={isLoading}
                 session={session}
                 style={decoded?.style ?? legacyDecoded?.style ?? 'classic'}
             />

@@ -25,9 +25,10 @@ const cache = new Map<string, CacheEntry>()
 
 export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl
-    const puuid = request.nextUrl.pathname.split('/').pop()?.trim() ?? ''
-    const decodedPayload = decodeWidgetRoutePayload(puuid)
-    const legacyDecodedPayload = decodeLegacyWidgetRoutePayload(puuid)
+    const rawPayload = request.nextUrl.pathname.split('/').pop()?.trim() ?? ''
+    const payload = decodeURIComponent(rawPayload)
+    const decodedPayload = decodeWidgetRoutePayload(payload)
+    const legacyDecodedPayload = decodeLegacyWidgetRoutePayload(payload)
     const parsed = querySchema.safeParse({
         queue: searchParams.get('queue') ?? undefined,
         region: searchParams.get('region') ?? '',
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     if (
         (!parsed.success && !decodedPayload && !legacyDecodedPayload) ||
-        !puuid
+        !payload
     ) {
         return Response.json({ error: 'Invalid parameters' }, { status: 400 })
     }
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
         ? `${decodedPayload.puuid}@${region}@${queue}`
         : legacyDecodedPayload
           ? `${legacyDecodedPayload.name}#${legacyDecodedPayload.tag}@${region}@${queue}`
-          : `${puuid}@${region}@${queue}`
+          : `${payload}@${region}@${queue}`
 
     const cached = cache.get(key)
     if (cached && cached.expiresAt > Date.now()) {
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
                     queue as RankedQueue
                 )
               : await fetchRiotDataByPuuid(
-                    puuid,
+                    payload,
                     region as Region,
                     queue as RankedQueue
                 )

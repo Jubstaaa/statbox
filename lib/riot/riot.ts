@@ -76,6 +76,7 @@ export async function fetchRiotDataByPuuid(
     }
     const twistedRegion = REGION_MAP[resolvedRegion]
     const regionGroup = REGION_GROUP_MAP[resolvedRegion]
+    const expectedQueueId = queue === 'solo' ? 420 : 440
 
     const [accountRes, summonerRes, matchIdsRes, leagueRes] = await Promise.all(
         [
@@ -87,8 +88,10 @@ export async function fetchRiotDataByPuuid(
             lolApi.MatchV5.list(puuid, regionGroup, {
                 count: 20,
                 queue: queue === 'solo' ? 420 : 440,
-            }),
-            lolApi.League.byPUUID(puuid, twistedRegion),
+            }).catch(() => ({ response: [] })),
+            lolApi.League.byPUUID(puuid, twistedRegion).catch(() => ({
+                response: [],
+            })),
         ]
     )
 
@@ -109,6 +112,7 @@ export async function fetchRiotDataByPuuid(
         .filter(Boolean)
         .map(match => {
             const info = match!.response.info
+            if (info.queueId !== expectedQueueId) return null
             const participant = info.participants.find(p => p.puuid === puuid)
             if (!participant) return null
             return {

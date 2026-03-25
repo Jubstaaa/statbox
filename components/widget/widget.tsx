@@ -15,8 +15,8 @@ export default function Widget({
     session,
     style,
 }: WidgetProps) {
-    if (isError) return <WidgetError style={style} />
     if (isLoading || !data) return <WidgetLoader style={style} />
+    if (isError) return <WidgetError style={style} />
 
     const filteredMatchHistory = session
         ? data.matchHistory.filter(
