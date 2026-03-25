@@ -117,25 +117,24 @@ const STEPS = [
 
 const WIDGET_LAYOUTS = [
     {
+        description: 'Broadcast ribbon for top placement.',
+        name: 'Topbar',
+        style: 'topbar' as const,
+    },
+    {
+        description: 'Slim horizontal strip for top or bottom overlays.',
+        name: 'Minimal',
+        style: 'minimal' as const,
+    },
+    {
         description: 'Full vertical card for side placement.',
         name: 'Classic',
         style: 'classic' as const,
     },
     {
-        description: 'Slim horizontal strip for top or bottom overlays.',
-        featured: true,
-        name: 'Minimal',
-        style: 'minimal' as const,
-    },
-    {
         description: 'Compact panel for corner placement.',
         name: 'Compact',
         style: 'compact' as const,
-    },
-    {
-        description: 'Broadcast ribbon for top placement.',
-        name: 'Topbar',
-        style: 'topbar' as const,
     },
 ]
 
@@ -226,16 +225,15 @@ export default function HomePage() {
                 <div className="mx-auto max-w-6xl px-6">
                     <SectionHeading
                         eyebrow="Example widgets"
-                        title="Three layouts. Same data.">
-                        Pick the format that fits your scene: full card, compact
-                        panel or slim horizontal strip.
+                        title="Four layouts. Same data.">
+                        Pick the format that fits your scene: side card, compact
+                        panel, slim strip or broadcast topbar.
                     </SectionHeading>
-                    <div className="grid items-start justify-center gap-5 lg:grid-cols-[300px_1fr_260px]">
+                    <div className="grid items-start gap-5 md:grid-cols-2">
                         {WIDGET_LAYOUTS.map(layout => (
                             <WidgetShowcaseCard
                                 key={layout.name}
                                 description={layout.description}
-                                featured={layout.featured}
                                 name={layout.name}>
                                 <Widget
                                     data={EXAMPLE_SUMMONER}
@@ -353,26 +351,14 @@ function InfoCard({
 function WidgetShowcaseCard({
     children,
     description,
-    featured,
     name,
 }: {
     children: React.ReactNode
     description: string
-    featured?: boolean
     name: string
 }) {
     return (
-        <SurfaceCard
-            className={
-                featured
-                    ? 'border-accent/70 shadow-[0_24px_70px_rgba(244,201,93,0.12)]'
-                    : ''
-            }>
-            {featured ? (
-                <div className="border-accent/20 bg-accent/10 text-accent border-b px-4 py-2 text-center text-[11px] font-semibold tracking-[0.2em] uppercase">
-                    Most used
-                </div>
-            ) : null}
+        <SurfaceCard className="h-full overflow-hidden">
             <div className="border-border/80 flex min-h-45 items-center justify-center border-b bg-[radial-gradient(circle_at_top,rgba(10,200,185,0.08),transparent_48%)] p-6">
                 {children}
             </div>
