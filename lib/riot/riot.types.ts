@@ -1,6 +1,6 @@
 export type Region = 'TR' | 'EUW' | 'EUNE' | 'NA' | 'KR'
 export type RankedQueue = 'solo' | 'flex'
-export type WidgetStyle = 'classic' | 'minimal' | 'compact'
+export type WidgetStyle = 'classic' | 'minimal' | 'compact' | 'topbar'
 
 export interface MatchEntry {
     assists: number

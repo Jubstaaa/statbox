@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { siGithub } from 'simple-icons'
 
 import Button from '@/components/button/button'
 import Logo from '@/components/logo/logo'
@@ -41,7 +42,14 @@ export default function MainLayout({
                             href="https://github.com/Jubstaaa/statbox"
                             rel="noopener noreferrer"
                             target="_blank">
-                            <Button size="sm">GitHub</Button>
+                            <Button aria-label="GitHub" size="sm">
+                                <svg
+                                    aria-hidden="true"
+                                    className="h-4 w-4 fill-current"
+                                    viewBox="0 0 24 24">
+                                    <path d={siGithub.path} />
+                                </svg>
+                            </Button>
                         </a>
                     </div>
                 </div>

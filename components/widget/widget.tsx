@@ -3,6 +3,7 @@
 import ClassicWidget from './classic-widget'
 import CompactWidget from './compact-widget'
 import MinimalWidget from './minimal-widget'
+import TopbarWidget from './topbar-widget'
 import { TIER_COLORS } from './widget.constants'
 import WidgetError from './widget.error'
 import WidgetLoader from './widget.loader'
@@ -67,7 +68,8 @@ export default function Widget({
         winRate,
     }
 
-    if (style === 'minimal') return <MinimalWidget {...computed} />
     if (style === 'compact') return <CompactWidget {...computed} />
+    if (style === 'minimal') return <MinimalWidget {...computed} />
+    if (style === 'topbar') return <TopbarWidget {...computed} />
     return <ClassicWidget {...computed} />
 }

@@ -22,4 +22,9 @@ export const STYLES: {
         id: 'compact',
         label: 'Compact',
     },
+    {
+        desc: 'Broadcast ribbon for top overlays',
+        id: 'topbar',
+        label: 'Topbar',
+    },
 ]

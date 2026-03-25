@@ -132,6 +132,11 @@ const WIDGET_LAYOUTS = [
         name: 'Compact',
         style: 'compact' as const,
     },
+    {
+        description: 'Broadcast ribbon for top placement.',
+        name: 'Topbar',
+        style: 'topbar' as const,
+    },
 ]
 
 export default function HomePage() {
@@ -162,8 +167,8 @@ export default function HomePage() {
                         <div className="grid gap-3 sm:grid-cols-3">
                             <MetricCard
                                 label="Widget styles"
-                                note="Classic, strip and compact"
-                                value="3"
+                                note="Classic, strip, compact and topbar"
+                                value="4"
                             />
                             <MetricCard
                                 label="Setup time"
