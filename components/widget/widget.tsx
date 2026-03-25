@@ -1,92 +1,22 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-
-import { initDdragon } from '@/lib/ddragon-client'
-import type { RiotData } from '@/lib/riot/riot.types'
-
 import ClassicWidget from './classic-widget'
 import CompactWidget from './compact-widget'
 import MinimalWidget from './minimal-widget'
-import { POLL_INTERVAL, TIER_COLORS } from './widget.constants'
+import { TIER_COLORS } from './widget.constants'
 import WidgetError from './widget.error'
 import WidgetLoader from './widget.loader'
 import type { ComputedData, WidgetProps } from './widget.types'
 
 export default function Widget({
-    initialData,
-    payload,
-    puuid,
-    queue = 'solo',
-    region,
+    data,
+    isError = false,
+    isLoading = false,
     session,
     style,
 }: WidgetProps) {
-    const [fetchedData, setFetchedData] = useState<RiotData | null>(null)
-    const [assetsReady, setAssetsReady] = useState(false)
-    const [error, setError] = useState(false)
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-    const fetchData = useCallback(async () => {
-        try {
-            const resourceId = payload ?? puuid
-
-            if (!resourceId) {
-                setError(true)
-                return
-            }
-
-            await initDdragon()
-            const url = new URL(
-                `/api/summoner/${resourceId}`,
-                window.location.origin
-            )
-            url.searchParams.set('queue', queue)
-            if (region) {
-                url.searchParams.set('region', region)
-            }
-            if (session) url.searchParams.set('session', String(session))
-
-            const res = await fetch(url.toString())
-            if (!res.ok) {
-                if (!fetchedData && !initialData) {
-                    setError(true)
-                }
-                return
-            }
-
-            const json = (await res.json()) as RiotData
-            setFetchedData(json)
-            setError(false)
-        } catch {
-            if (!fetchedData && !initialData) {
-                setError(true)
-            }
-        }
-    }, [fetchedData, initialData, payload, puuid, queue, region, session])
-
-    useEffect(() => {
-        void initDdragon().then(() => setAssetsReady(true))
-    }, [])
-
-    useEffect(() => {
-        if (initialData) return
-
-        const initialLoad = window.setTimeout(() => {
-            void fetchData()
-        }, 0)
-        intervalRef.current = setInterval(fetchData, POLL_INTERVAL)
-
-        return () => {
-            window.clearTimeout(initialLoad)
-            if (intervalRef.current) clearInterval(intervalRef.current)
-        }
-    }, [fetchData, initialData])
-
-    const data = initialData ?? fetchedData
-
-    if (error) return <WidgetError style={style} />
-    if (!data || !assetsReady) return <WidgetLoader style={style} />
+    if (isError) return <WidgetError style={style} />
+    if (isLoading || !data) return <WidgetLoader style={style} />
 
     const filteredMatchHistory = session
         ? data.matchHistory.filter(

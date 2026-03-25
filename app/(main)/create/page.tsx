@@ -182,9 +182,6 @@ export default function CreatePage() {
             <div className="grid gap-5 lg:grid-cols-2">
                 <WidgetPreviewPanel
                     initialData={data}
-                    puuid={puuid}
-                    queue={queue}
-                    region={region}
                     session={previewSession}
                     style={style}
                 />

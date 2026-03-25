@@ -233,9 +233,9 @@ export default function HomePage() {
                                 featured={layout.featured}
                                 name={layout.name}>
                                 <Widget
-                                    initialData={EXAMPLE_SUMMONER}
-                                    puuid={EXAMPLE_SUMMONER.puuid}
-                                    region="TR"
+                                    data={EXAMPLE_SUMMONER}
+                                    isError={false}
+                                    isLoading={false}
                                     session={null}
                                     style={layout.style}
                                 />

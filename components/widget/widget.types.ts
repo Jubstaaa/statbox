@@ -7,7 +7,14 @@ import type {
 } from '@/lib/riot/riot.types'
 
 export interface WidgetProps {
-    initialData?: RiotData
+    data: RiotData | null
+    isError?: boolean
+    isLoading?: boolean
+    session: number | null
+    style: WidgetStyle
+}
+
+export interface WidgetPageDataProps {
     payload?: string
     puuid?: string
     queue?: RankedQueue

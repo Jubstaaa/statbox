@@ -1,15 +1,7 @@
-import type {
-    RankedQueue,
-    Region,
-    RiotData,
-    WidgetStyle,
-} from '@/lib/riot/riot.types'
+import type { RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
 export interface WidgetPreviewPanelProps {
     initialData: RiotData
-    puuid: string
-    queue: RankedQueue
-    region: Region
     session: number | null
     style: WidgetStyle
 }

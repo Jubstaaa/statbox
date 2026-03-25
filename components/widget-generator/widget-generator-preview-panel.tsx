@@ -5,9 +5,6 @@ import type { WidgetPreviewPanelProps } from './widget-generator.types'
 
 export default function WidgetPreviewPanel({
     initialData,
-    puuid,
-    queue,
-    region,
     session,
     style,
 }: WidgetPreviewPanelProps) {
@@ -29,10 +26,9 @@ export default function WidgetPreviewPanel({
             <div className="border-border-secondary overflow-x-auto rounded-[1.375rem] border bg-[#05070b] p-4">
                 <div className="mx-auto w-fit">
                     <Widget
-                        initialData={initialData}
-                        puuid={puuid}
-                        queue={queue}
-                        region={region}
+                        data={initialData}
+                        isError={false}
+                        isLoading={false}
                         session={session}
                         style={style}
                     />
