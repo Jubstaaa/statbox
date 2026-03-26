@@ -14,17 +14,16 @@ import PlayerSummary from '@/components/widget/player-summary'
 import { TIER_COLORS } from '@/components/widget/widget.constants'
 import type { Region } from '@/lib/riot/riot.types'
 
+import { fetchSummonerByPuuid, resolveSummoner } from './widget-generator.api'
 import { REGIONS } from './widget-generator.constants'
 import {
     clearStoredBuilderPuuid,
-    fetchSummonerByPuuid,
     getStoredBuilderPuuid,
     getStoredBuilderSettings,
-    resolveSummoner,
     setStoredBuilderPuuid,
     setStoredBuilderSettings,
-    validateSummonerForm,
-} from './widget-generator.utils'
+} from './widget-generator.storage'
+import { validateSummonerForm } from './widget-generator.utils'
 
 export default function WidgetGeneratorForm() {
     const router = useRouter()

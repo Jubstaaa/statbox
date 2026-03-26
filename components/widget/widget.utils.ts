@@ -19,3 +19,7 @@ export function getWidgetHeight(style: WidgetStyle) {
             ? '250px'
             : '380px'
 }
+
+export function formatTierRank(tier: string, rank: string) {
+    return tier === 'UNRANKED' ? 'Unranked' : `${tier} ${rank}`
+}

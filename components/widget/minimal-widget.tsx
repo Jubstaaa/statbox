@@ -2,6 +2,7 @@ import ProfileIcon from '@/components/profile-icon/profile-icon'
 
 import StripStat from './strip-stat'
 import type { ComputedData } from './widget.types'
+import { formatTierRank } from './widget.utils'
 
 export default function MinimalWidget({
     data,
@@ -41,9 +42,7 @@ export default function MinimalWidget({
                 <div
                     className="mt-[3px] truncate text-[10px] font-bold"
                     style={{ color: tierColor }}>
-                    {data.tier === 'UNRANKED'
-                        ? 'Unranked'
-                        : `${data.tier} ${data.rank}`}
+                    {formatTierRank(data.tier, data.rank)}
                     {data.tier !== 'UNRANKED' && (
                         <span className="text-text-subtle ml-1">
                             {data.leaguePoints} LP

@@ -14,15 +14,6 @@ export interface WidgetProps {
     style: WidgetStyle
 }
 
-export interface WidgetPageDataProps {
-    payload?: string
-    puuid?: string
-    queue?: RankedQueue
-    region?: Region
-    session: number | null
-    style: WidgetStyle
-}
-
 export interface ComputedData {
     avgAssists: number
     avgDeaths: number
@@ -36,6 +27,13 @@ export interface ComputedData {
     sessionWins: number
     tierColor: string
     winRate: number | null
+}
+
+export interface KdaLineProps {
+    assists: string | number
+    deaths: string | number
+    kdaRatio?: string | null
+    kills: string | number
 }
 
 export interface ScoreBoxProps {

@@ -6,6 +6,7 @@ import MetricTile from './metric-tile'
 import ScoreBox from './score-box'
 import SectionLabel from './section-label'
 import type { ComputedData } from './widget.types'
+import { formatTierRank } from './widget.utils'
 
 export default function CompactWidget({
     avgAssists,
@@ -62,9 +63,7 @@ export default function CompactWidget({
                     <span
                         className="text-[10px] font-extrabold tracking-[0.14em] uppercase"
                         style={{ color: tierColor }}>
-                        {data.tier === 'UNRANKED'
-                            ? 'Unranked'
-                            : `${data.tier} ${data.rank}`}
+                        {formatTierRank(data.tier, data.rank)}
                     </span>
                     <span className="text-text text-xs font-extrabold">
                         {winRate !== null ? `${winRate}% WR` : '--'}

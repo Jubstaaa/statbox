@@ -1,172 +1,55 @@
 'use client'
 
-import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-    useSyncExternalStore,
-} from 'react'
-
-import { useQuery } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
-
 import Badge from '@/components/badge/badge'
 import Button from '@/components/button/button'
 import Card from '@/components/card/card'
 import PlayerSummary from '@/components/widget/player-summary'
-import { TIER_COLORS } from '@/components/widget/widget.constants'
 import WidgetPreviewPanel from '@/components/widget-generator/widget-generator-preview-panel'
 import UrlBlock from '@/components/widget-generator/widget-generator-url-block'
 import { STYLES } from '@/components/widget-generator/widget-generator.constants'
-import {
-    buildSessionTimestampFromTime,
-    buildWidgetUrls,
-    clearStoredBuilderPuuid,
-    clearStoredBuilderSettings,
-    fetchSummonerByPuuid,
-    getCurrentDateTimeInputValue,
-    getStoredBuilderPuuid,
-    getStoredBuilderSettings,
-    resolveSessionTimestamp,
-    setStoredBuilderSettings,
-} from '@/components/widget-generator/widget-generator.utils'
 import { cn } from '@/lib/cn'
-import type { RankedQueue, WidgetStyle } from '@/lib/riot/riot.types'
 
+import { useCreatePage } from './create.hooks'
 import CreateError from './error'
 import CreateLoader from './loader'
 
 export default function CreatePage() {
-    const router = useRouter()
-    const [maxSessionTime] = useState(() => getCurrentDateTimeInputValue())
-    const [puuid] = useState<string | null>(() => getStoredBuilderPuuid())
-    const [style, setStyle] = useState<WidgetStyle>(
-        () => getStoredBuilderSettings()?.style ?? 'classic'
-    )
-    const [queue, setQueue] = useState<RankedQueue>(
-        () => getStoredBuilderSettings()?.queue ?? 'solo'
-    )
-    const [region] = useState(() => getStoredBuilderSettings()?.region ?? 'EUW')
-    const [sessionMode, setSessionMode] = useState<'all-day' | 'from-time'>(
-        () => getStoredBuilderSettings()?.sessionMode ?? 'all-day'
-    )
-    const [sessionTime, setSessionTime] = useState<string>(
-        () =>
-            getStoredBuilderSettings()?.sessionTime ??
-            getCurrentDateTimeInputValue()
-    )
-    const storageReady = useSyncExternalStore(
-        () => () => {},
-        () => true,
-        () => false
-    )
+    const {
+        createStyleSelectHandler,
+        handleAllDaySession,
+        handleChangeAccount,
+        handleFlexQueue,
+        handleFromTimeSession,
+        handleSessionTimeChange,
+        handleSoloQueue,
+        isError,
+        isLoading,
+        maxSessionTime,
+        previewSession,
+        puuid,
+        queue,
+        sessionMode,
+        sessionTime,
+        storageReady,
+        style,
+        summonerData,
+        tierColor,
+        urls,
+    } = useCreatePage()
 
-    useEffect(() => {
-        if (!storageReady) return
-
-        setStoredBuilderSettings({
-            queue,
-            region,
-            sessionMode,
-            sessionTime,
-            style,
-        })
-    }, [queue, region, sessionMode, sessionTime, storageReady, style])
-
-    useEffect(() => {
-        if (storageReady && !puuid) {
-            router.replace('/')
-        }
-    }, [puuid, router, storageReady])
-
-    const summonerQuery = useQuery({
-        enabled: !!puuid,
-        placeholderData: previousData => previousData,
-        queryFn: () => fetchSummonerByPuuid({ puuid: puuid!, queue, region }),
-        queryKey: ['summoner', puuid, region, queue],
-    })
-    const { data, isError, isLoading } = summonerQuery
-
-    const urls = useMemo(() => {
-        if (!puuid) return null
-
-        return buildWidgetUrls({
-            puuid,
-            queue,
-            region,
-            sessionMode,
-            sessionTime,
-            style,
-        })
-    }, [puuid, queue, region, sessionMode, sessionTime, style])
-    const previewSession = useMemo(
-        () => resolveSessionTimestamp({ sessionMode, sessionTime }),
-        [sessionMode, sessionTime]
-    )
-
-    const handleAllDaySession = useCallback(() => {
-        setSessionMode('all-day')
-    }, [])
-
-    const handleFromTimeSession = useCallback(() => {
-        setSessionMode('from-time')
-        setSessionTime(currentValue =>
-            buildSessionTimestampFromTime(currentValue) === null
-                ? getCurrentDateTimeInputValue()
-                : currentValue
-        )
-    }, [])
-
-    const handleSessionTimeChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
-            const nextTimestamp = buildSessionTimestampFromTime(
-                event.target.value
-            )
-
-            if (nextTimestamp === null) return
-
-            setSessionTime(event.target.value)
-        },
-        []
-    )
-
-    const handleChangeAccount = useCallback(() => {
-        clearStoredBuilderPuuid()
-        clearStoredBuilderSettings()
-        router.push('/')
-    }, [router])
-
-    const createStyleSelectHandler = useCallback(
-        (value: WidgetStyle) => () => {
-            setStyle(value)
-        },
-        []
-    )
-
-    const handleSoloQueue = useCallback(() => {
-        setQueue('solo')
-    }, [])
-
-    const handleFlexQueue = useCallback(() => {
-        setQueue('flex')
-    }, [])
-
-    if (!storageReady || !puuid || (isLoading && !data)) {
+    if (!storageReady || !puuid || (isLoading && !summonerData)) {
         return <CreateLoader />
     }
 
-    if (isError || !data || !urls) {
+    if (isError || !summonerData || !urls) {
         return <CreateError />
     }
-
-    const tierColor = TIER_COLORS[data.tier] ?? TIER_COLORS.UNRANKED
 
     return (
         <div className="space-y-5">
             <Card className="border-border-secondary bg-bg-elevated flex flex-wrap items-center gap-3 p-4 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
                 <div className="min-w-0 flex-1">
-                    <PlayerSummary data={data} tierColor={tierColor} />
+                    <PlayerSummary data={summonerData} tierColor={tierColor} />
                 </div>
                 <Button size="sm" variant="ghost" onClick={handleChangeAccount}>
                     Change account
@@ -181,7 +64,7 @@ export default function CreatePage() {
 
             <div className="grid gap-5 lg:grid-cols-2">
                 <WidgetPreviewPanel
-                    initialData={data}
+                    initialData={summonerData}
                     session={previewSession}
                     style={style}
                 />
@@ -209,7 +92,7 @@ export default function CreatePage() {
                                         'flex items-center gap-3 rounded-2xl border px-3.5 py-3 transition',
                                         style === item.id
                                             ? 'border-accent bg-accent text-bg-base'
-                                            : 'border-border-secondary bg-bg-elevated text-text hover:border-border-hover'
+                                            : 'border-border-secondary bg-bg-elevated text-text hover:border-border-hover',
                                     )}>
                                     <div className="min-w-0 flex-1">
                                         <div className="text-xs font-semibold">
@@ -220,7 +103,7 @@ export default function CreatePage() {
                                                 'mt-0.5 text-xs',
                                                 style === item.id
                                                     ? 'text-bg-base/75'
-                                                    : 'text-text-subtle'
+                                                    : 'text-text-subtle',
                                             )}>
                                             {item.desc}
                                         </div>
@@ -230,6 +113,7 @@ export default function CreatePage() {
                         ))}
                     </div>
                 </Card>
+
                 <Card className="border-border-secondary bg-bg-elevated space-y-3 rounded-2xl p-4 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
                     <div>
                         <p className="text-text text-sm font-semibold">Queue</p>
@@ -270,9 +154,7 @@ export default function CreatePage() {
                         <Button
                             size="sm"
                             variant={
-                                sessionMode === 'all-day'
-                                    ? 'primary'
-                                    : 'secondary'
+                                sessionMode === 'all-day' ? 'primary' : 'secondary'
                             }
                             onClick={handleAllDaySession}>
                             All day

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import {
     decodeLegacyWidgetRoutePayload,
     decodeWidgetRoutePayload,
-} from '@/components/widget-generator/widget-generator.utils'
+} from '@/components/widget-generator/widget-generator.payload'
 import { fetchRiotData, fetchRiotDataByPuuid } from '@/lib/riot/riot'
 import type { RankedQueue, Region } from '@/lib/riot/riot.types'
 

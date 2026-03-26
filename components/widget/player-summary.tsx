@@ -2,6 +2,8 @@ import ProfileIcon from '@/components/profile-icon/profile-icon'
 import { cn } from '@/lib/cn'
 import type { RiotData } from '@/lib/riot/riot.types'
 
+import { formatTierRank } from './widget.utils'
+
 export default function PlayerSummary({
     data,
     size = 'md',
@@ -18,13 +20,13 @@ export default function PlayerSummary({
             <div className="relative shrink-0">
                 <ProfileIcon
                     borderColor={`${tierColor}${compact ? '70' : '80'}`}
-                    iconId={data.profileIconId}
-                    ringClassName={compact ? 'border' : 'border-[1.5px]'}
                     className={cn(
                         compact
                             ? 'h-7 w-7 rounded-[9px]'
                             : 'h-11.5 w-11.5 rounded-xl'
                     )}
+                    iconId={data.profileIconId}
+                    ringClassName={compact ? 'border' : 'border-[1.5px]'}
                 />
                 {!compact && (
                     <div
@@ -54,9 +56,7 @@ export default function PlayerSummary({
                     <span
                         className="text-[10px] font-extrabold tracking-[0.14em] uppercase"
                         style={{ color: tierColor }}>
-                        {data.tier === 'UNRANKED'
-                            ? 'Unranked'
-                            : `${data.tier} ${data.rank}`}
+                        {formatTierRank(data.tier, data.rank)}
                     </span>
                     {data.tier !== 'UNRANKED' && (
                         <span className="text-text-muted text-[10px] font-bold">

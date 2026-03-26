@@ -2,6 +2,7 @@ import ChampionIcon from '@/components/champion-icon/champion-icon'
 import { cn } from '@/lib/cn'
 
 import FooterMark from './footer-mark'
+import KdaLine from './kda-line'
 import MetricTile from './metric-tile'
 import PlayerSummary from './player-summary'
 import SectionLabel from './section-label'
@@ -65,24 +66,12 @@ export default function ClassicWidget({
                         <span className="text-text-subtle text-[10px] font-bold tracking-[0.14em] uppercase">
                             Avg K / D / A
                         </span>
-                        <div className="text-xs font-bold">
-                            <span className="text-win">
-                                {avgKills.toFixed(1)}
-                            </span>
-                            <span className="text-text-subtle"> / </span>
-                            <span className="text-loss">
-                                {avgDeaths.toFixed(1)}
-                            </span>
-                            <span className="text-text-subtle"> / </span>
-                            <span className="text-[#7dd3fc]">
-                                {avgAssists.toFixed(1)}
-                            </span>
-                            {kdaRatio && (
-                                <span className="text-text-muted ml-1.5">
-                                    {kdaRatio} KDA
-                                </span>
-                            )}
-                        </div>
+                        <KdaLine
+                            assists={avgAssists.toFixed(1)}
+                            deaths={avgDeaths.toFixed(1)}
+                            kdaRatio={kdaRatio}
+                            kills={avgKills.toFixed(1)}
+                        />
                     </div>
                 )}
             </div>
@@ -114,17 +103,11 @@ export default function ClassicWidget({
                             <span className="text-text min-w-0 truncate text-[11px] font-bold">
                                 {match.champion}
                             </span>
-                            <span className="text-text-muted text-[11px] whitespace-nowrap">
-                                <span className="text-win">{match.kills}</span>
-                                <span className="text-text-subtle"> / </span>
-                                <span className="text-loss">
-                                    {match.deaths}
-                                </span>
-                                <span className="text-text-subtle"> / </span>
-                                <span className="text-[#7dd3fc]">
-                                    {match.assists}
-                                </span>
-                            </span>
+                            <KdaLine
+                                assists={match.assists}
+                                deaths={match.deaths}
+                                kills={match.kills}
+                            />
                             <span
                                 className={cn(
                                     'text-[10px] font-extrabold tracking-[0.12em]',

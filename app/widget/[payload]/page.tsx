@@ -11,7 +11,7 @@ import {
     decodeLegacyWidgetRoutePayload,
     decodeWidgetRoutePayload,
     resolveSessionTimestamp,
-} from '@/components/widget-generator/widget-generator.utils'
+} from '@/components/widget-generator/widget-generator.payload'
 import { initDdragon } from '@/lib/ddragon-client'
 import type { RiotData } from '@/lib/riot/riot.types'
 

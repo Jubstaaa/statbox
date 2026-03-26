@@ -1,6 +1,7 @@
 import { cn } from '@/lib/cn'
 
 import type { ComputedData } from './widget.types'
+import { formatTierRank } from './widget.utils'
 
 export default function TopbarWidget({
     data,
@@ -26,9 +27,7 @@ export default function TopbarWidget({
                     <span
                         className="text-[12px] font-black tracking-[0.18em] uppercase"
                         style={{ color: tierColor }}>
-                        {data.tier === 'UNRANKED'
-                            ? 'Unranked'
-                            : `${data.tier} ${data.rank}`}
+                        {formatTierRank(data.tier, data.rank)}
                     </span>
                 </div>
 
