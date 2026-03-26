@@ -74,17 +74,6 @@ async function resolveRegionByPuuid(puuid: string) {
     return puuidRegionCache.get(puuid) ?? null
 }
 
-export async function fetchRiotData(
-    name: string,
-    tag: string,
-    region: Region,
-    queue: RankedQueue = 'solo'
-): Promise<RiotData> {
-    const puuid = await resolvePuuidByRiotId(name, tag, region)
-
-    return fetchRiotDataByPuuid(puuid, region, queue)
-}
-
 export async function fetchRiotDataByPuuid(
     puuid: string,
     region?: Region,

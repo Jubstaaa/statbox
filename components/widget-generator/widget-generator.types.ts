@@ -5,6 +5,8 @@ import type {
     WidgetStyle,
 } from '@/lib/riot/riot.types'
 
+export type SessionMode = 'all-day' | 'from-time'
+
 export interface WidgetPreviewPanelProps {
     initialData: RiotData
     session: number | null
@@ -18,33 +20,24 @@ export interface UrlBlockProps {
     url: string
 }
 
-export interface WidgetRoutePayload {
-    puuid: string
-    queue: RankedQueue
-    region: Region
-    sessionMode?: 'all-day' | 'from-time'
-    sessionStartedAt?: number | null
-    sessionTime?: string | null
-    style: WidgetStyle
-}
-
-export interface LegacyWidgetRoutePayload {
-    name: string
-    region: Region
-    style: WidgetStyle
-    tag: string
-}
-
-export interface BuilderSettings {
-    queue: RankedQueue
-    region: Region
-    sessionMode: 'all-day' | 'from-time'
-    sessionTime: string | null
-    style: WidgetStyle
+export interface WidgetUrls {
+    widgetUrl: string
 }
 
 export interface ResolveSummonerParams {
     name: string
     region: Region
     tag: string
+}
+
+export interface BuilderSettings {
+    queue: RankedQueue
+    region: Region
+    sessionMode: SessionMode
+    sessionTime: string | null
+    style: WidgetStyle
+}
+
+export interface WidgetRoutePayload extends BuilderSettings {
+    puuid: RiotData['puuid']
 }

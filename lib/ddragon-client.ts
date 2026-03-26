@@ -1,5 +1,3 @@
-'use client'
-
 const FALLBACK_DDRAGON_VERSION = '14.24.1'
 let ddragonReady: Promise<void> | null = null
 let ddragonVersion = FALLBACK_DDRAGON_VERSION

@@ -2,7 +2,11 @@ import type { RankedQueue, Region, RiotData } from '@/lib/riot/riot.types'
 
 import type { ResolveSummonerParams } from './widget-generator.types'
 
-export async function resolveSummoner({ name, region, tag }: ResolveSummonerParams) {
+export async function resolveSummoner({
+    name,
+    region,
+    tag,
+}: ResolveSummonerParams) {
     const params = new URLSearchParams({ name, region, tag })
     const res = await fetch(`/api/summoner/resolve?${params.toString()}`)
 

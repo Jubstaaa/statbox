@@ -2,18 +2,16 @@ import {
     compressToEncodedURIComponent,
     decompressFromEncodedURIComponent,
 } from 'lz-string'
-
-import type { RankedQueue, Region, WidgetStyle } from '@/lib/riot/riot.types'
+import { z } from 'zod'
 
 import {
-    VALID_QUEUES,
-    VALID_REGIONS,
-    VALID_WIDGET_STYLES,
-} from './widget-generator.constants'
-import type {
-    LegacyWidgetRoutePayload,
-    WidgetRoutePayload,
-} from './widget-generator.types'
+    rankedQueueSchema,
+    regionSchema,
+    widgetStyleSchema,
+} from '@/lib/riot/riot.schemas'
+import type { RankedQueue, Region, WidgetStyle } from '@/lib/riot/riot.types'
+
+import type { WidgetRoutePayload } from './widget-generator.types'
 
 function isValidTimeValue(time: string) {
     return /^([01]\d|2[0-3]):([0-5]\d)$/.test(time)
@@ -27,6 +25,15 @@ function encodeWidgetRoutePayload(payload: WidgetRoutePayload) {
     return compressToEncodedURIComponent(JSON.stringify(payload))
 }
 
+const widgetRoutePayloadSchema = z.object({
+    puuid: z.string().trim().min(1),
+    queue: rankedQueueSchema,
+    region: regionSchema,
+    sessionMode: z.enum(['all-day', 'from-time']).optional(),
+    sessionTime: z.string().refine(isValidDateTimeValue).nullable().optional(),
+    style: widgetStyleSchema,
+})
+
 export function decodeWidgetRoutePayload(
     payload: string
 ): WidgetRoutePayload | null {
@@ -34,93 +41,17 @@ export function decodeWidgetRoutePayload(
         const decoded = decompressFromEncodedURIComponent(payload)
         if (!decoded) return null
 
-        const parsed = JSON.parse(decoded) as Partial<WidgetRoutePayload>
-        if (
-            typeof parsed.puuid !== 'string' ||
-            typeof parsed.queue !== 'string' ||
-            typeof parsed.region !== 'string' ||
-            typeof parsed.style !== 'string' ||
-            !(
-                parsed.sessionMode === undefined ||
-                parsed.sessionMode === 'all-day' ||
-                parsed.sessionMode === 'from-time'
-            ) ||
-            !(
-                parsed.sessionTime === undefined ||
-                parsed.sessionTime === null ||
-                (typeof parsed.sessionTime === 'string' &&
-                    isValidDateTimeValue(parsed.sessionTime))
-            ) ||
-            !(
-                parsed.sessionStartedAt === undefined ||
-                parsed.sessionStartedAt === null ||
-                (typeof parsed.sessionStartedAt === 'number' &&
-                    Number.isFinite(parsed.sessionStartedAt))
-            )
-        ) {
-            return null
-        }
-
-        const puuid = parsed.puuid.trim()
-        const queue = parsed.queue as RankedQueue
-        const region = parsed.region.toUpperCase() as Region
-        const style = parsed.style as WidgetStyle
-
-        if (
-            !puuid ||
-            !VALID_QUEUES.has(queue) ||
-            !VALID_REGIONS.has(region) ||
-            !VALID_WIDGET_STYLES.has(style)
-        ) {
-            return null
-        }
+        const parsed = widgetRoutePayloadSchema.safeParse(JSON.parse(decoded))
+        if (!parsed.success) return null
 
         return {
-            puuid,
-            queue,
-            region,
-            sessionMode: parsed.sessionMode ?? 'all-day',
-            sessionStartedAt: parsed.sessionStartedAt ?? null,
-            sessionTime: parsed.sessionTime ?? null,
-            style,
+            puuid: parsed.data.puuid,
+            queue: parsed.data.queue,
+            region: parsed.data.region,
+            sessionMode: parsed.data.sessionMode ?? 'all-day',
+            sessionTime: parsed.data.sessionTime ?? null,
+            style: parsed.data.style,
         }
-    } catch {
-        return null
-    }
-}
-
-export function decodeLegacyWidgetRoutePayload(
-    payload: string
-): LegacyWidgetRoutePayload | null {
-    try {
-        const decoded = decompressFromEncodedURIComponent(payload)
-        if (!decoded) return null
-
-        const parsed = JSON.parse(decoded) as Partial<LegacyWidgetRoutePayload>
-        if (
-            typeof parsed.name !== 'string' ||
-            typeof parsed.region !== 'string' ||
-            typeof parsed.style !== 'string' ||
-            typeof parsed.tag !== 'string'
-        ) {
-            return null
-        }
-
-        const name = parsed.name.trim()
-        const region = parsed.region.toUpperCase() as Region
-        const style = parsed.style as WidgetStyle
-        const tag = parsed.tag.trim().replace(/^#/, '')
-
-        if (
-            !name ||
-            !tag ||
-            !VALID_REGIONS.has(region) ||
-            !VALID_WIDGET_STYLES.has(style)
-        ) {
-            return null
-        }
-
-        return { name, region, style, tag }
     } catch {
         return null
     }
@@ -194,11 +125,9 @@ export function buildSessionTimestampFromTime(value: string) {
 
 export function resolveSessionTimestamp({
     sessionMode,
-    sessionStartedAt,
     sessionTime,
 }: {
     sessionMode: 'all-day' | 'from-time'
-    sessionStartedAt?: number | null
     sessionTime?: string | null
 }) {
     if (sessionMode === 'all-day') return getStartOfTodayTimestamp()
@@ -208,13 +137,6 @@ export function resolveSessionTimestamp({
         (isValidDateTimeValue(sessionTime) || isValidTimeValue(sessionTime))
     ) {
         return buildSessionTimestampFromTime(sessionTime)
-    }
-
-    if (
-        typeof sessionStartedAt === 'number' &&
-        Number.isFinite(sessionStartedAt)
-    ) {
-        return sessionStartedAt
     }
 
     return getStartOfTodayTimestamp()

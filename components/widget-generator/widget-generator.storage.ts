@@ -1,9 +1,14 @@
+import { z } from 'zod'
+
+import {
+    rankedQueueSchema,
+    regionSchema,
+    widgetStyleSchema,
+} from '@/lib/riot/riot.schemas'
+
 import {
     BUILDER_PUUID_STORAGE_KEY,
     BUILDER_SETTINGS_STORAGE_KEY,
-    VALID_QUEUES,
-    VALID_REGIONS,
-    VALID_WIDGET_STYLES,
 } from './widget-generator.constants'
 import type { BuilderSettings } from './widget-generator.types'
 
@@ -11,10 +16,20 @@ function isValidDateTimeValue(value: string) {
     return /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):([0-5]\d)$/.test(value)
 }
 
+const builderSettingsSchema = z.object({
+    queue: rankedQueueSchema,
+    region: regionSchema,
+    sessionMode: z.enum(['all-day', 'from-time']),
+    sessionTime: z.string().refine(isValidDateTimeValue).nullable(),
+    style: widgetStyleSchema,
+})
+
 export function getStoredBuilderPuuid() {
     if (typeof window === 'undefined') return null
 
-    return window.localStorage.getItem(BUILDER_PUUID_STORAGE_KEY)?.trim() || null
+    return (
+        window.localStorage.getItem(BUILDER_PUUID_STORAGE_KEY)?.trim() || null
+    )
 }
 
 export function setStoredBuilderPuuid(puuid: string) {
@@ -36,32 +51,10 @@ export function getStoredBuilderSettings(): BuilderSettings | null {
         const raw = window.localStorage.getItem(BUILDER_SETTINGS_STORAGE_KEY)
         if (!raw) return null
 
-        const parsed = JSON.parse(raw) as Partial<BuilderSettings>
-        if (
-            typeof parsed.region !== 'string' ||
-            typeof parsed.queue !== 'string' ||
-            !VALID_QUEUES.has(parsed.queue as BuilderSettings['queue']) ||
-            !VALID_REGIONS.has(parsed.region as BuilderSettings['region']) ||
-            typeof parsed.sessionMode !== 'string' ||
-            !['all-day', 'from-time'].includes(parsed.sessionMode) ||
-            !(
-                parsed.sessionTime === null ||
-                (typeof parsed.sessionTime === 'string' &&
-                    isValidDateTimeValue(parsed.sessionTime))
-            ) ||
-            typeof parsed.style !== 'string' ||
-            !VALID_WIDGET_STYLES.has(parsed.style as BuilderSettings['style'])
-        ) {
-            return null
-        }
+        const parsed = builderSettingsSchema.safeParse(JSON.parse(raw))
+        if (!parsed.success) return null
 
-        return {
-            queue: parsed.queue as BuilderSettings['queue'],
-            region: parsed.region as BuilderSettings['region'],
-            sessionMode: parsed.sessionMode as BuilderSettings['sessionMode'],
-            sessionTime: parsed.sessionTime ?? null,
-            style: parsed.style as BuilderSettings['style'],
-        }
+        return parsed.data as BuilderSettings
     } catch {
         return null
     }
@@ -72,7 +65,7 @@ export function setStoredBuilderSettings(settings: BuilderSettings) {
 
     window.localStorage.setItem(
         BUILDER_SETTINGS_STORAGE_KEY,
-        JSON.stringify(settings),
+        JSON.stringify(settings)
     )
 }
 

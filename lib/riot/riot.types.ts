@@ -1,21 +1,8 @@
-export type Region =
-    | 'BR'
-    | 'EUNE'
-    | 'EUW'
-    | 'JP'
-    | 'KR'
-    | 'LAN'
-    | 'LAS'
-    | 'ME'
-    | 'NA'
-    | 'OCE'
-    | 'RU'
-    | 'SG'
-    | 'TR'
-    | 'TW'
-    | 'VN'
-export type RankedQueue = 'solo' | 'flex'
-export type WidgetStyle = 'classic' | 'minimal' | 'compact' | 'topbar'
+import type { RANKED_QUEUES, REGIONS, WIDGET_STYLES } from './riot.constants'
+
+export type Region = (typeof REGIONS)[number]
+export type RankedQueue = (typeof RANKED_QUEUES)[number]
+export type WidgetStyle = (typeof WIDGET_STYLES)[number]
 
 export interface MatchEntry {
     assists: number

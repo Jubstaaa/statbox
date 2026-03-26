@@ -2,35 +2,24 @@ import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 
 import { resolvePuuidByRiotId } from '@/lib/riot/riot'
+import { regionSchema } from '@/lib/riot/riot.schemas'
 import type { Region } from '@/lib/riot/riot.types'
 
 const querySchema = z.object({
     name: z.string().trim().min(1),
-    region: z.enum([
-        'BR',
-        'EUNE',
-        'EUW',
-        'JP',
-        'KR',
-        'LAN',
-        'LAS',
-        'ME',
-        'NA',
-        'OCE',
-        'RU',
-        'SG',
-        'TR',
-        'TW',
-        'VN',
-    ]),
-    tag: z.string().trim().min(1).max(10),
+    region: regionSchema,
+    tag: z
+        .string()
+        .trim()
+        .transform(value => value.replace(/^#/, ''))
+        .pipe(z.string().min(1).max(5)),
 })
 
 export async function GET(request: NextRequest) {
     const parsed = querySchema.safeParse({
         name: request.nextUrl.searchParams.get('name') ?? '',
         region: request.nextUrl.searchParams.get('region') ?? '',
-        tag: (request.nextUrl.searchParams.get('tag') ?? '').replace(/^#/, ''),
+        tag: request.nextUrl.searchParams.get('tag') ?? '',
     })
 
     if (!parsed.success) {

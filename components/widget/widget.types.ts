@@ -1,13 +1,10 @@
-import type {
-    MatchEntry,
-    RankedQueue,
-    Region,
-    RiotData,
-    WidgetStyle,
-} from '@/lib/riot/riot.types'
+import type { MatchEntry, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
+
+export type WidgetData = RiotData
+export type WidgetMatch = MatchEntry
 
 export interface WidgetProps {
-    data: RiotData | null
+    data: WidgetData | null
     isError?: boolean
     isLoading?: boolean
     session: number | null
@@ -18,9 +15,9 @@ export interface ComputedData {
     avgAssists: number
     avgDeaths: number
     avgKills: number
-    data: RiotData
+    data: WidgetData
     kdaRatio: string | null
-    recent: MatchEntry[]
+    recent: WidgetMatch[]
     session: number | null
     sessionGames: number
     sessionLosses: number
@@ -54,4 +51,12 @@ export interface SectionLabelProps {
 
 export interface WidgetFrameProps {
     style: WidgetStyle
+}
+
+export interface WidgetStyleDefinition {
+    description: string
+    height: string
+    label: string
+    style: WidgetStyle
+    width: string
 }

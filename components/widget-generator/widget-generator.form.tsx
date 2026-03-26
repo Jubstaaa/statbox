@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState, useSyncExternalStore } from 'react'
 
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -10,12 +10,16 @@ import Button from '@/components/button/button'
 import Card from '@/components/card/card'
 import Chip from '@/components/chip/chip'
 import Input from '@/components/input/input'
-import PlayerSummary from '@/components/widget/player-summary'
+import PlayerSummary from '@/components/widget/shared/player-summary'
 import { TIER_COLORS } from '@/components/widget/widget.constants'
 import type { Region } from '@/lib/riot/riot.types'
 
 import { fetchSummonerByPuuid, resolveSummoner } from './widget-generator.api'
-import { REGIONS } from './widget-generator.constants'
+import { BUILDER_REGIONS } from './widget-generator.constants'
+import {
+    type WidgetGeneratorFormErrors,
+    widgetGeneratorFormSchema,
+} from './widget-generator.form.schema'
 import {
     clearStoredBuilderPuuid,
     getStoredBuilderPuuid,
@@ -23,22 +27,22 @@ import {
     setStoredBuilderPuuid,
     setStoredBuilderSettings,
 } from './widget-generator.storage'
-import { validateSummonerForm } from './widget-generator.utils'
 
 export default function WidgetGeneratorForm() {
     const router = useRouter()
     const queryClient = useQueryClient()
-    const [storedPuuid, setStoredPuuid] = useState<string | null>(null)
-    const [storageReady, setStorageReady] = useState(false)
+    const [, setStorageVersion] = useState(0)
     const [name, setName] = useState('')
     const [tag, setTag] = useState('')
     const [region, setRegion] = useState<Region>('EUW')
-    const [formErrors, setFormErrors] = useState<{
-        name?: string
-        tag?: string
-    }>({})
+    const [formErrors, setFormErrors] = useState<WidgetGeneratorFormErrors>({})
     const [submitError, setSubmitError] = useState('')
-    const [loading, setLoading] = useState(false)
+    const storageReady = useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false
+    )
+    const storedPuuid = storageReady ? getStoredBuilderPuuid() : null
 
     const connectedAccountQuery = useQuery({
         enabled: storageReady && !!storedPuuid,
@@ -56,17 +60,38 @@ export default function WidgetGeneratorForm() {
         ],
     })
 
-    useEffect(() => {
-        setStoredPuuid(getStoredBuilderPuuid())
-        setStorageReady(true)
-    }, [])
+    const resolveSummonerMutation = useMutation({
+        mutationFn: resolveSummoner,
+        onError: () => {
+            setSubmitError(
+                'Summoner not found. Check the name, tag, and region.'
+            )
+        },
+        onSuccess: async ({ puuid, region: resolvedRegion }) => {
+            setStoredBuilderPuuid(puuid)
+            setStorageVersion(currentValue => currentValue + 1)
 
-    useEffect(() => {
-        if (!connectedAccountQuery.isError) return
+            await queryClient.fetchQuery({
+                queryFn: () =>
+                    fetchSummonerByPuuid({
+                        puuid,
+                        queue: 'solo',
+                        region: resolvedRegion,
+                    }),
+                queryKey: ['summoner', puuid, resolvedRegion, 'solo'],
+            })
 
-        clearStoredBuilderPuuid()
-        setStoredPuuid(null)
-    }, [connectedAccountQuery.isError])
+            setStoredBuilderSettings({
+                queue: 'solo',
+                region: resolvedRegion,
+                sessionMode: 'all-day',
+                sessionTime: null,
+                style: 'classic',
+            })
+
+            router.push('/create')
+        },
+    })
 
     const handleNameChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,56 +118,28 @@ export default function WidgetGeneratorForm() {
         async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault()
 
-            const { cleanName, cleanTag, errors } = validateSummonerForm(
-                name,
-                tag
-            )
-            setFormErrors(errors)
             setSubmitError('')
-            if (Object.keys(errors).length > 0) return
+            const parsed = widgetGeneratorFormSchema.safeParse({ name, tag })
 
-            setLoading(true)
+            if (!parsed.success) {
+                const fieldErrors = parsed.error.flatten().fieldErrors
 
-            try {
-                const { puuid, region: resolvedRegion } = await resolveSummoner(
-                    {
-                        name: cleanName,
-                        region,
-                        tag: cleanTag,
-                    }
-                )
-
-                setStoredBuilderPuuid(puuid)
-                setStoredPuuid(puuid)
-
-                await queryClient.fetchQuery({
-                    queryFn: () =>
-                        fetchSummonerByPuuid({
-                            puuid,
-                            queue: 'solo',
-                            region: resolvedRegion,
-                        }),
-                    queryKey: ['summoner', puuid, resolvedRegion],
+                setFormErrors({
+                    name: fieldErrors.name?.[0],
+                    tag: fieldErrors.tag?.[0],
                 })
-
-                setStoredBuilderSettings({
-                    queue: 'solo',
-                    region: resolvedRegion,
-                    sessionMode: 'all-day',
-                    sessionTime: null,
-                    style: 'classic',
-                })
-
-                router.push('/create')
-            } catch {
-                setSubmitError(
-                    'Summoner not found. Check the name, tag, and region.'
-                )
-            } finally {
-                setLoading(false)
+                return
             }
+
+            setFormErrors({})
+
+            await resolveSummonerMutation.mutateAsync({
+                name: parsed.data.name,
+                region,
+                tag: parsed.data.tag,
+            })
         },
-        [name, queryClient, region, router, tag]
+        [name, region, resolveSummonerMutation, tag]
     )
 
     const handleOpenBuilder = useCallback(() => {
@@ -151,7 +148,7 @@ export default function WidgetGeneratorForm() {
 
     const handleChangeAccount = useCallback(() => {
         clearStoredBuilderPuuid()
-        setStoredPuuid(null)
+        setStorageVersion(currentValue => currentValue + 1)
         setSubmitError('')
     }, [])
 
@@ -228,7 +225,7 @@ export default function WidgetGeneratorForm() {
                     Region
                 </span>
                 <div className="flex flex-wrap gap-2">
-                    {REGIONS.map(value => (
+                    {BUILDER_REGIONS.map(value => (
                         <Chip
                             key={value}
                             active={region === value}
@@ -246,8 +243,12 @@ export default function WidgetGeneratorForm() {
                 </p>
             ) : null}
 
-            <Button fullWidth disabled={loading} size="lg" type="submit">
-                {loading ? (
+            <Button
+                fullWidth
+                disabled={resolveSummonerMutation.isPending}
+                size="lg"
+                type="submit">
+                {resolveSummonerMutation.isPending ? (
                     <>
                         <RefreshCw className="h-4 w-4 animate-spin" />
                         Checking account...
