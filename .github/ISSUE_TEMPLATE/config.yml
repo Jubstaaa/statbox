@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions or discussion
+    url: https://github.com/Jubstaaa/statbox/discussions
+    about: Use discussions for general questions and feedback.

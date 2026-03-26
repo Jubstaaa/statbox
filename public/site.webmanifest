@@ -1,0 +1,16 @@
+{
+  "name": "StatBox",
+  "short_name": "StatBox",
+  "description": "OBS browser source widget builder for League of Legends streamers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

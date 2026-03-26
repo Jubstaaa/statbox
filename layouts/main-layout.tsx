@@ -6,6 +6,9 @@ import Button from '@/components/button/button'
 import Logo from '@/components/logo/logo'
 
 export const mainLayoutMetadata: Metadata = {
+    alternates: {
+        canonical: 'https://statbox.live',
+    },
     description:
         'Real-time LoL stats widget for streamers. Session-based W/L tracking, live rank, KDA, and more. Free OBS browser source.',
     metadataBase: new URL('https://statbox.live'),
@@ -14,6 +17,7 @@ export const mainLayoutMetadata: Metadata = {
             'Real-time LoL stats widget for streamers. Session-based W/L tracking.',
         siteName: 'StatBox',
         title: 'StatBox — Stream Widget for League of Legends',
+        type: 'website',
         url: 'https://statbox.live',
     },
     title: 'StatBox — Stream Widget for League of Legends',
@@ -73,6 +77,18 @@ export default function MainLayout({
                             target="_blank">
                             Jubstaaa
                         </a>
+                        {' · '}
+                        <Link
+                            className="text-text-strong hover:text-accent"
+                            href="/privacy">
+                            Privacy
+                        </Link>
+                        {' · '}
+                        <Link
+                            className="text-text-strong hover:text-accent"
+                            href="/terms">
+                            Terms
+                        </Link>
                         {' · '}
                         <a
                             className="text-text-strong hover:text-accent"
