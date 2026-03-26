@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 
 import QueryProvider from '@/providers/query-provider/query-provider'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
+const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 export const metadata: Metadata = {
     applicationName: 'StatBox',
@@ -54,6 +56,22 @@ export default function RootLayout({
 }) {
     return (
         <html className="dark" lang="en">
+            {gaMeasurementId ? (
+                <>
+                    <Script
+                        src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+                        strategy="afterInteractive"
+                    />
+                    <Script id="google-analytics" strategy="afterInteractive">
+                        {`
+                          window.dataLayer = window.dataLayer || [];
+                          function gtag(){dataLayer.push(arguments);}
+                          gtag('js', new Date());
+                          gtag('config', '${gaMeasurementId}');
+                        `}
+                    </Script>
+                </>
+            ) : null}
             <body
                 className={`${inter.className} bg-background text-foreground`}>
                 <QueryProvider>{children}</QueryProvider>

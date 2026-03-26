@@ -48,6 +48,7 @@ bun run build
 
 ```bash
 RIOT_API_KEY=RGAPI-your-riot-api-key
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
 
 ## Routes
