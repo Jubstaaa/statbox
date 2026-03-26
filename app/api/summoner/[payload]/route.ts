@@ -2,6 +2,7 @@ import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 
 import { decodeWidgetRoutePayload } from '@/components/widget-generator/widget-generator.payload'
+import { checkRateLimit } from '@/lib/rate-limit'
 import { fetchRiotDataByPuuid } from '@/lib/riot/riot'
 import { rankedQueueSchema, regionSchema } from '@/lib/riot/riot.schemas'
 import type { RankedQueue, Region } from '@/lib/riot/riot.types'
@@ -13,6 +14,9 @@ const querySchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
+    const rateLimitError = await checkRateLimit(request)
+    if (rateLimitError) return rateLimitError
+
     const { searchParams } = request.nextUrl
     const rawPayload = request.nextUrl.pathname.split('/').pop()?.trim() ?? ''
     const payload = decodeURIComponent(rawPayload)
