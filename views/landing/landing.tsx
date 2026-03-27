@@ -42,6 +42,17 @@ export default function LandingPage() {
                             Pick a layout, generate the link and drop it into
                             OBS. No plugin, no client install, no extra setup.
                         </p>
+                        <div className="border-border-secondary bg-bg-elevated/70 mb-10 max-w-xl rounded-2xl border px-4 py-3">
+                            <p className="text-accent-2 text-[11px] font-semibold tracking-[0.22em] uppercase">
+                                Beta status
+                            </p>
+                            <p className="text-text-muted mt-2 text-sm leading-relaxed">
+                                StatBox is currently waiting for Riot
+                                production-key approval. Until the app is fully
+                                approved, requests may sometimes be slower or
+                                fail temporarily.
+                            </p>
+                        </div>
                         <div className="grid gap-3 sm:grid-cols-3">
                             <MetricCard
                                 label="Widget styles"
