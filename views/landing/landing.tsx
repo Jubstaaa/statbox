@@ -1,4 +1,4 @@
-import { Tv } from 'lucide-react'
+import { AlertTriangle, Tv } from 'lucide-react'
 
 import Badge from '@/components/badge/badge'
 import FeatureCard from '@/components/card/feature-card/feature-card'
@@ -42,15 +42,15 @@ export default function LandingPage() {
                             Pick a layout, generate the link and drop it into
                             OBS. No plugin, no client install, no extra setup.
                         </p>
-                        <div className="border-border-secondary bg-bg-elevated/70 mb-10 max-w-xl rounded-2xl border px-4 py-3">
-                            <p className="text-accent-2 text-[11px] font-semibold tracking-[0.22em] uppercase">
+                        <div className="border-loss/35 bg-loss/12 mb-10 max-w-xl rounded-2xl border px-4 py-3 shadow-[0_12px_32px_rgba(255,122,138,0.08)]">
+                            <div className="text-loss flex items-center gap-2 text-[11px] font-semibold tracking-[0.22em] uppercase">
+                                <AlertTriangle className="h-3.5 w-3.5" />
                                 Beta status
-                            </p>
-                            <p className="text-text-muted mt-2 text-sm leading-relaxed">
-                                StatBox is currently waiting for Riot
-                                production-key approval. Until the app is fully
-                                approved, requests may sometimes be slower or
-                                fail temporarily.
+                            </div>
+                            <p className="text-text mt-2 text-sm leading-relaxed">
+                                Riot production-key approval is still pending.
+                                Until the app is fully approved, requests may
+                                occasionally be slower or fail temporarily.
                             </p>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-3">
