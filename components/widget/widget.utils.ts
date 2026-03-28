@@ -27,24 +27,20 @@ export function computeWidgetData({
               match => new Date(match.timestamp).getTime() >= session
           )
         : data.matchHistory
+    const statMatches = filteredMatchHistory.filter(match => !match.isRemake)
 
-    const sessionWins = filteredMatchHistory.filter(match => match.win).length
-    const sessionLosses = filteredMatchHistory.filter(
-        match => !match.win
-    ).length
+    const sessionWins = statMatches.filter(match => match.win).length
+    const sessionLosses = statMatches.filter(match => !match.win).length
     const sessionGames = sessionWins + sessionLosses
     const winRate =
         sessionGames > 0 ? Math.round((sessionWins / sessionGames) * 100) : null
 
-    const totalKills = filteredMatchHistory.reduce(
-        (sum, match) => sum + match.kills,
-        0
-    )
-    const totalDeaths = filteredMatchHistory.reduce(
+    const totalKills = statMatches.reduce((sum, match) => sum + match.kills, 0)
+    const totalDeaths = statMatches.reduce(
         (sum, match) => sum + match.deaths,
         0
     )
-    const totalAssists = filteredMatchHistory.reduce(
+    const totalAssists = statMatches.reduce(
         (sum, match) => sum + match.assists,
         0
     )

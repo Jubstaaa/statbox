@@ -89,12 +89,16 @@ export default function ClassicWidget({
                             key={match.matchId}
                             className="rounded-2.5 grid grid-cols-[24px_1fr_auto_auto] items-center gap-2 border px-2 py-1.75"
                             style={{
-                                background: match.win
-                                    ? 'rgba(94,242,162,0.08)'
-                                    : 'rgba(255,122,138,0.08)',
-                                borderColor: match.win
-                                    ? 'rgba(94,242,162,0.18)'
-                                    : 'rgba(255,122,138,0.18)',
+                                background: match.isRemake
+                                    ? 'rgba(173,196,219,0.08)'
+                                    : match.win
+                                      ? 'rgba(94,242,162,0.08)'
+                                      : 'rgba(255,122,138,0.08)',
+                                borderColor: match.isRemake
+                                    ? 'rgba(173,196,219,0.18)'
+                                    : match.win
+                                      ? 'rgba(94,242,162,0.18)'
+                                      : 'rgba(255,122,138,0.18)',
                             }}>
                             <ChampionIcon
                                 champion={match.champion}
@@ -111,9 +115,17 @@ export default function ClassicWidget({
                             <span
                                 className={cn(
                                     'text-[10px] font-extrabold tracking-[0.12em]',
-                                    match.win ? 'text-win' : 'text-loss'
+                                    match.isRemake
+                                        ? 'text-text-subtle'
+                                        : match.win
+                                          ? 'text-win'
+                                          : 'text-loss'
                                 )}>
-                                {match.win ? 'WIN' : 'LOSS'}
+                                {match.isRemake
+                                    ? 'REMAKE'
+                                    : match.win
+                                      ? 'WIN'
+                                      : 'LOSS'}
                             </span>
                         </div>
                     ))}

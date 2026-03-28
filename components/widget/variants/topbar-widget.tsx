@@ -56,11 +56,13 @@ export default function TopbarWidget({
                             key={match.matchId}
                             className={cn(
                                 'inline-flex h-5 min-w-4.5 items-center justify-center rounded-md border px-1 text-[9px] font-black',
-                                match.win
-                                    ? 'border-win/45 bg-win/12 text-win'
-                                    : 'border-loss/45 bg-loss/12 text-loss'
+                                match.isRemake
+                                    ? 'border-border-secondary text-text-subtle bg-white/8'
+                                    : match.win
+                                      ? 'border-win/45 bg-win/12 text-win'
+                                      : 'border-loss/45 bg-loss/12 text-loss'
                             )}>
-                            {match.win ? 'W' : 'L'}
+                            {match.isRemake ? 'R' : match.win ? 'W' : 'L'}
                         </span>
                     ))}
                 </div>

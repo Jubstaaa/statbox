@@ -9,6 +9,7 @@ export interface MatchEntry {
     champion: string
     championId: number
     deaths: number
+    isRemake: boolean
     kills: number
     matchId: string
     timestamp: string

@@ -114,14 +114,23 @@ export default function CompactWidget({
                     {recent.map(match => (
                         <div
                             key={match.matchId}
-                            className="h-[38px] w-[38px] overflow-hidden rounded-xl border-2 bg-[#162b42]"
+                            className="relative h-[38px] w-[38px] overflow-hidden rounded-xl border-2 bg-[#162b42]"
                             style={{
-                                borderColor: match.win ? '#5ef2a2' : '#ff7a8a',
+                                borderColor: match.isRemake
+                                    ? '#adc4db'
+                                    : match.win
+                                      ? '#5ef2a2'
+                                      : '#ff7a8a',
                             }}>
                             <ChampionIcon
                                 champion={match.champion}
                                 className="h-[38px] w-[38px]"
                             />
+                            {match.isRemake ? (
+                                <span className="bg-bg-base/90 text-text absolute top-1 right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-md border border-white/10 px-1 text-[8px] font-black">
+                                    R
+                                </span>
+                            ) : null}
                         </div>
                     ))}
                 </div>

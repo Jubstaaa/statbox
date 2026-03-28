@@ -80,15 +80,23 @@ export default function MinimalWidget({
                         key={match.matchId}
                         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-[9px] font-black"
                         style={{
-                            background: match.win
-                                ? 'rgba(94,242,162,0.2)'
-                                : 'rgba(255,122,138,0.2)',
-                            borderColor: match.win
-                                ? 'rgba(94,242,162,0.55)'
-                                : 'rgba(255,122,138,0.55)',
-                            color: match.win ? '#5ef2a2' : '#ff7a8a',
+                            background: match.isRemake
+                                ? 'rgba(173,196,219,0.16)'
+                                : match.win
+                                  ? 'rgba(94,242,162,0.2)'
+                                  : 'rgba(255,122,138,0.2)',
+                            borderColor: match.isRemake
+                                ? 'rgba(173,196,219,0.42)'
+                                : match.win
+                                  ? 'rgba(94,242,162,0.55)'
+                                  : 'rgba(255,122,138,0.55)',
+                            color: match.isRemake
+                                ? '#adc4db'
+                                : match.win
+                                  ? '#5ef2a2'
+                                  : '#ff7a8a',
                         }}>
-                        {match.win ? 'W' : 'L'}
+                        {match.isRemake ? 'R' : match.win ? 'W' : 'L'}
                     </div>
                 ))}
             </div>

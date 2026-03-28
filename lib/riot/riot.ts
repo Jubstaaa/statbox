@@ -124,11 +124,15 @@ export async function fetchRiotDataByPuuid(
             if (info.queueId !== expectedQueueId) return null
             const participant = info.participants.find(p => p.puuid === puuid)
             if (!participant) return null
+
             return {
                 assists: participant.assists,
                 champion: participant.championName,
                 championId: participant.championId,
                 deaths: participant.deaths,
+                isRemake:
+                    participant.gameEndedInEarlySurrender ||
+                    info.gameDuration < 300,
                 kills: participant.kills,
                 matchId: match!.response.metadata.matchId,
                 timestamp: new Date(info.gameEndTimestamp).toISOString(),
