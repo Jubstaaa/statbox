@@ -5,6 +5,7 @@ import CompactWidget from './variants/compact-widget'
 import MinimalWidget from './variants/minimal-widget'
 import TopbarWidget from './variants/topbar-widget'
 import type { ComputedData } from './widget.types'
+import { getWidgetHeight, getWidgetWidth } from './widget.utils'
 
 const widgetVariants = {
     classic: ClassicWidget,
@@ -21,6 +22,12 @@ export default function WidgetContent({
     style: WidgetStyle
 }) {
     const WidgetVariant = widgetVariants[style]
+    const width = getWidgetWidth(style)
+    const height = getWidgetHeight(style)
 
-    return <WidgetVariant {...data} />
+    return (
+        <div style={{ height, width }}>
+            <WidgetVariant {...data} />
+        </div>
+    )
 }

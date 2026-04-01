@@ -24,14 +24,14 @@ export const WIDGET_STYLE_DEFINITIONS: Record<
 > = {
     classic: {
         description: 'Full vertical card for side placement.',
-        height: '380px',
+        height: '500px',
         label: 'Classic',
         style: 'classic',
         width: '300px',
     },
     compact: {
         description: 'Compact panel for corner placement.',
-        height: '250px',
+        height: '400px',
         label: 'Compact',
         style: 'compact',
         width: '260px',

@@ -11,6 +11,7 @@ import {
     decodeWidgetRoutePayload,
     resolveSessionTimestamp,
 } from '@/components/widget-generator/widget-generator.payload'
+import { cn } from '@/lib/cn'
 import { initDdragon } from '@/lib/ddragon-client'
 import type { RiotData } from '@/lib/riot/riot.types'
 
@@ -75,15 +76,22 @@ export default function WidgetPage() {
     })
     const isLoading = !assetsReady || !summonerQuery.isFetched
     const isError = !isLoading && summonerQuery.isError && !summonerQuery.data
+    const style = decoded?.style ?? 'classic'
 
     return (
-        <div className="bg-transparent">
+        <div
+            className={cn('flex min-h-screen bg-transparent', {
+                'items-center justify-end': style === 'compact',
+                'items-center justify-start': style === 'classic',
+                'items-end justify-center': style === 'minimal',
+                'items-start justify-center': style === 'topbar',
+            })}>
             <Widget
                 data={summonerQuery.data ?? null}
                 isError={isError}
                 isLoading={isLoading}
                 session={session}
-                style={decoded?.style ?? 'classic'}
+                style={style}
             />
         </div>
     )
