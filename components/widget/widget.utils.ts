@@ -1,7 +1,11 @@
-import type { WidgetStyle } from '@/lib/riot/riot.types'
+import type { MatchEntry, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
-import { TIER_COLORS, WIDGET_STYLE_DEFINITIONS } from './widget.constants'
-import type { ComputedData, WidgetData } from './widget.types'
+import {
+    GAME_COLORS,
+    TIER_COLORS,
+    WIDGET_STYLE_DEFINITIONS,
+} from './widget.constants'
+import type { ComputedData } from './widget.types'
 
 export function getWidgetWidth(style: WidgetStyle) {
     return WIDGET_STYLE_DEFINITIONS[style].width
@@ -9,6 +13,24 @@ export function getWidgetWidth(style: WidgetStyle) {
 
 export function getWidgetHeight(style: WidgetStyle) {
     return WIDGET_STYLE_DEFINITIONS[style].height
+}
+
+export function getMatchResultColors(
+    match: Pick<MatchEntry, 'isRemake' | 'win'>
+) {
+    if (match.isRemake) {
+        return {
+            bg: `${GAME_COLORS.remake}14`,
+            border: `${GAME_COLORS.remake}2e`,
+            color: GAME_COLORS.remake,
+        }
+    }
+    const base = match.win ? GAME_COLORS.win : GAME_COLORS.loss
+    return {
+        bg: `${base}14`,
+        border: `${base}2e`,
+        color: base,
+    }
 }
 
 export function formatTierRank(tier: string, rank: string) {
@@ -19,7 +41,7 @@ export function computeWidgetData({
     data,
     session,
 }: {
-    data: WidgetData
+    data: RiotData
     session: number | null
 }): ComputedData {
     const filteredMatchHistory = session

@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 
-export type CardProps = HTMLAttributes<HTMLDivElement> & {
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
     children: ReactNode
 }

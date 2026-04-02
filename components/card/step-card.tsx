@@ -1,8 +1,5 @@
-import React from 'react'
-
-import SurfaceCard from '../surface-card/surface-card'
-
 import type { StepCardProps } from './step-card.types'
+import SurfaceCard from './surface-card'
 
 export default function StepCard({ description, step, title }: StepCardProps) {
     return (

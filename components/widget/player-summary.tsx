@@ -1,18 +1,14 @@
 import ProfileIcon from '@/components/profile-icon/profile-icon'
 import { cn } from '@/lib/cn'
-import type { RiotData } from '@/lib/riot/riot.types'
 
-import { formatTierRank } from '../widget.utils'
+import type { PlayerSummaryProps } from './widget.types'
+import { formatTierRank } from './widget.utils'
 
 export default function PlayerSummary({
     data,
     size = 'md',
     tierColor,
-}: {
-    data: RiotData
-    size?: 'sm' | 'md'
-    tierColor: string
-}) {
+}: PlayerSummaryProps) {
     const compact = size === 'sm'
 
     return (

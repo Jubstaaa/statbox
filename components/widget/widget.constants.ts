@@ -4,6 +4,13 @@ import type { WidgetStyleDefinition } from './widget.types'
 
 export const POLL_INTERVAL = 30_000
 
+export const GAME_COLORS = {
+    accent: '#7dd3fc',
+    loss: '#ff7a8a',
+    remake: '#adc4db',
+    win: '#5ef2a2',
+} as const
+
 export const TIER_COLORS: Record<string, string> = {
     BRONZE: '#c28b60',
     CHALLENGER: '#74b7ff',

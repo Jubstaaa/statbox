@@ -1,4 +1,4 @@
-import type { ScoreBoxProps } from '../widget.types'
+import type { ScoreBoxProps } from './widget.types'
 
 export default function ScoreBox({ color, label, value }: ScoreBoxProps) {
     return (

@@ -1,5 +1,4 @@
-import SurfaceCard from '../surface-card/surface-card'
-
+import SurfaceCard from './surface-card'
 import type { WidgetShowcaseCardProps } from './widget-showcase-card.types'
 
 export default function WidgetShowcaseCard({

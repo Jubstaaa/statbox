@@ -1,8 +1,5 @@
-import React from 'react'
-
-import SurfaceCard from '../surface-card/surface-card'
-
 import type { MetricCardProps } from './metric-card.types'
+import SurfaceCard from './surface-card'
 
 export default function MetricCard({ label, note, value }: MetricCardProps) {
     return (

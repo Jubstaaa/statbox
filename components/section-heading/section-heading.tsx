@@ -1,6 +1,4 @@
-import React from 'react'
-
-import type { SectionHeadingProps } from './section.heading.types'
+import type { SectionHeadingProps } from './section-heading.types'
 
 export default function SectionHeading({
     children,

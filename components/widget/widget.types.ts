@@ -1,10 +1,7 @@
 import type { MatchEntry, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
-export type WidgetData = RiotData
-export type WidgetMatch = MatchEntry
-
 export interface WidgetProps {
-    data: WidgetData | null
+    data: RiotData | null
     isError?: boolean
     isLoading?: boolean
     session: number | null
@@ -15,9 +12,9 @@ export interface ComputedData {
     avgAssists: number
     avgDeaths: number
     avgKills: number
-    data: WidgetData
+    data: RiotData
     kdaRatio: string | null
-    recent: WidgetMatch[]
+    recent: MatchEntry[]
     session: number | null
     sessionGames: number
     sessionLosses: number
@@ -31,6 +28,18 @@ export interface KdaLineProps {
     deaths: string | number
     kdaRatio?: string | null
     kills: string | number
+}
+
+export interface MetricTileProps {
+    label: string
+    tone: 'win' | 'loss' | 'blue'
+    value: string
+}
+
+export interface PlayerSummaryProps {
+    data: RiotData
+    size?: 'sm' | 'md'
+    tierColor: string
 }
 
 export interface ScoreBoxProps {

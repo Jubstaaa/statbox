@@ -1,4 +1,4 @@
-import type { StripStatProps } from '../widget.types'
+import type { StripStatProps } from './widget.types'
 
 export default function StripStat({ color, label, value }: StripStatProps) {
     return (

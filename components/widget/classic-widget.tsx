@@ -1,12 +1,13 @@
 import ChampionIcon from '@/components/champion-icon/champion-icon'
 import { cn } from '@/lib/cn'
 
-import FooterMark from '../shared/footer-mark'
-import KdaLine from '../shared/kda-line'
-import MetricTile from '../shared/metric-tile'
-import PlayerSummary from '../shared/player-summary'
-import SectionLabel from '../shared/section-label'
-import type { ComputedData } from '../widget.types'
+import FooterMark from './footer-mark'
+import KdaLine from './kda-line'
+import MetricTile from './metric-tile'
+import PlayerSummary from './player-summary'
+import SectionLabel from './section-label'
+import type { ComputedData } from './widget.types'
+import { getMatchResultColors } from './widget.utils'
 
 export default function ClassicWidget({
     avgAssists,
@@ -84,51 +85,46 @@ export default function ClassicWidget({
                             No ranked games found
                         </div>
                     )}
-                    {recent.map(match => (
-                        <div
-                            key={match.matchId}
-                            className="rounded-2.5 grid grid-cols-[24px_1fr_auto_auto] items-center gap-2 border px-2 py-1.75"
-                            style={{
-                                background: match.isRemake
-                                    ? 'rgba(173,196,219,0.08)'
-                                    : match.win
-                                      ? 'rgba(94,242,162,0.08)'
-                                      : 'rgba(255,122,138,0.08)',
-                                borderColor: match.isRemake
-                                    ? 'rgba(173,196,219,0.18)'
-                                    : match.win
-                                      ? 'rgba(94,242,162,0.18)'
-                                      : 'rgba(255,122,138,0.18)',
-                            }}>
-                            <ChampionIcon
-                                champion={match.champion}
-                                className="h-6 w-6 rounded-md"
-                            />
-                            <span className="text-text min-w-0 truncate text-[11px] font-bold">
-                                {match.champion}
-                            </span>
-                            <KdaLine
-                                assists={match.assists}
-                                deaths={match.deaths}
-                                kills={match.kills}
-                            />
-                            <span
-                                className={cn(
-                                    'text-[10px] font-extrabold tracking-[0.12em]',
-                                    match.isRemake
-                                        ? 'text-text-subtle'
+                    {recent.map(match => {
+                        const resultColors = getMatchResultColors(match)
+                        return (
+                            <div
+                                key={match.matchId}
+                                className="rounded-2.5 grid grid-cols-[24px_1fr_auto_auto] items-center gap-2 border px-2 py-1.75"
+                                style={{
+                                    background: resultColors.bg,
+                                    borderColor: resultColors.border,
+                                }}>
+                                <ChampionIcon
+                                    champion={match.champion}
+                                    className="h-6 w-6 rounded-md"
+                                />
+                                <span className="text-text min-w-0 truncate text-[11px] font-bold">
+                                    {match.champion}
+                                </span>
+                                <KdaLine
+                                    assists={match.assists}
+                                    deaths={match.deaths}
+                                    kills={match.kills}
+                                />
+                                <span
+                                    className={cn(
+                                        'text-[10px] font-extrabold tracking-[0.12em]',
+                                        match.isRemake
+                                            ? 'text-text-subtle'
+                                            : match.win
+                                              ? 'text-win'
+                                              : 'text-loss'
+                                    )}>
+                                    {match.isRemake
+                                        ? 'REMAKE'
                                         : match.win
-                                          ? 'text-win'
-                                          : 'text-loss'
-                                )}>
-                                {match.isRemake
-                                    ? 'REMAKE'
-                                    : match.win
-                                      ? 'WIN'
-                                      : 'LOSS'}
-                            </span>
-                        </div>
-                    ))}
+                                          ? 'WIN'
+                                          : 'LOSS'}
+                                </span>
+                            </div>
+                        )
+                    })}
                 </div>
             </div>
 

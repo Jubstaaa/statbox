@@ -1,4 +1,4 @@
-export type SurfaceCardProps = {
+export interface SurfaceCardProps {
     children: React.ReactNode
     className?: string
 }

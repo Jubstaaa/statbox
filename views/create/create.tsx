@@ -3,7 +3,7 @@
 import Badge from '@/components/badge/badge'
 import Button from '@/components/button/button'
 import Card from '@/components/card/card'
-import PlayerSummary from '@/components/widget/shared/player-summary'
+import PlayerSummary from '@/components/widget/player-summary'
 import { STYLES } from '@/components/widget-generator/widget-generator.constants'
 import { cn } from '@/lib/cn'
 

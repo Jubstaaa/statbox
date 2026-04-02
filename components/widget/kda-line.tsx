@@ -1,4 +1,5 @@
-import type { KdaLineProps } from '../widget.types'
+import { GAME_COLORS } from './widget.constants'
+import type { KdaLineProps } from './widget.types'
 
 export default function KdaLine({
     assists,
@@ -12,7 +13,7 @@ export default function KdaLine({
             <span className="text-text-subtle"> / </span>
             <span className="text-loss">{deaths}</span>
             <span className="text-text-subtle"> / </span>
-            <span className="text-[#7dd3fc]">{assists}</span>
+            <span style={{ color: GAME_COLORS.accent }}>{assists}</span>
             {kdaRatio ? (
                 <span className="text-text-muted ml-1.5">{kdaRatio} KDA</span>
             ) : null}

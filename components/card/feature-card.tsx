@@ -1,8 +1,7 @@
 import { cn } from '@/lib/cn'
 
-import SurfaceCard from '../surface-card/surface-card'
-
 import type { FeatureCardProps } from './feature-card.types'
+import SurfaceCard from './surface-card'
 
 export default function FeatureCard({ item }: FeatureCardProps) {
     const IconComponent = item.icon

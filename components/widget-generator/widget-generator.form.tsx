@@ -10,7 +10,7 @@ import Button from '@/components/button/button'
 import Card from '@/components/card/card'
 import Chip from '@/components/chip/chip'
 import Input from '@/components/input/input'
-import PlayerSummary from '@/components/widget/shared/player-summary'
+import PlayerSummary from '@/components/widget/player-summary'
 import { TIER_COLORS } from '@/components/widget/widget.constants'
 import type { Region } from '@/lib/riot/riot.types'
 

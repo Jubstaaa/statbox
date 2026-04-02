@@ -1,12 +1,12 @@
 import { AlertTriangle, Tv } from 'lucide-react'
 
 import Badge from '@/components/badge/badge'
-import FeatureCard from '@/components/card/feature-card/feature-card'
-import MetricCard from '@/components/card/metric-card/metric-card'
-import StepCard from '@/components/card/step-card/step-card'
-import SurfaceCard from '@/components/card/surface-card/surface-card'
-import WidgetShowcaseCard from '@/components/card/widget-showcase-card/widget-showcase-card'
-import SectionHeading from '@/components/section-heading/section.heading'
+import FeatureCard from '@/components/card/feature-card'
+import MetricCard from '@/components/card/metric-card'
+import StepCard from '@/components/card/step-card'
+import SurfaceCard from '@/components/card/surface-card'
+import WidgetShowcaseCard from '@/components/card/widget-showcase-card'
+import SectionHeading from '@/components/section-heading/section-heading'
 import Widget from '@/components/widget/widget'
 import WidgetGeneratorForm from '@/components/widget-generator/widget-generator.form'
 

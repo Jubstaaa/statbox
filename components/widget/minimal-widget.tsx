@@ -1,8 +1,9 @@
 import ProfileIcon from '@/components/profile-icon/profile-icon'
 
-import StripStat from '../shared/strip-stat'
-import type { ComputedData } from '../widget.types'
-import { formatTierRank } from '../widget.utils'
+import StripStat from './strip-stat'
+import { GAME_COLORS } from './widget.constants'
+import type { ComputedData } from './widget.types'
+import { formatTierRank, getMatchResultColors } from './widget.utils'
 
 export default function MinimalWidget({
     data,
@@ -53,17 +54,17 @@ export default function MinimalWidget({
 
             <div className="border-border flex items-center gap-[10px] border-x border-white/10 px-[14px]">
                 <StripStat
-                    color="#5ef2a2"
+                    color={GAME_COLORS.win}
                     label="W"
                     value={String(sessionWins)}
                 />
                 <StripStat
-                    color="#ff7a8a"
+                    color={GAME_COLORS.loss}
                     label="L"
                     value={String(sessionLosses)}
                 />
                 <StripStat
-                    color="#7dd3fc"
+                    color={GAME_COLORS.accent}
                     label="WR"
                     value={winRate !== null ? `${winRate}%` : '--'}
                 />
@@ -75,30 +76,21 @@ export default function MinimalWidget({
                         No games
                     </span>
                 )}
-                {recent.map(match => (
-                    <div
-                        key={match.matchId}
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-[9px] font-black"
-                        style={{
-                            background: match.isRemake
-                                ? 'rgba(173,196,219,0.16)'
-                                : match.win
-                                  ? 'rgba(94,242,162,0.2)'
-                                  : 'rgba(255,122,138,0.2)',
-                            borderColor: match.isRemake
-                                ? 'rgba(173,196,219,0.42)'
-                                : match.win
-                                  ? 'rgba(94,242,162,0.55)'
-                                  : 'rgba(255,122,138,0.55)',
-                            color: match.isRemake
-                                ? '#adc4db'
-                                : match.win
-                                  ? '#5ef2a2'
-                                  : '#ff7a8a',
-                        }}>
-                        {match.isRemake ? 'R' : match.win ? 'W' : 'L'}
-                    </div>
-                ))}
+                {recent.map(match => {
+                    const resultColors = getMatchResultColors(match)
+                    return (
+                        <div
+                            key={match.matchId}
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-[9px] font-black"
+                            style={{
+                                background: resultColors.bg,
+                                borderColor: resultColors.border,
+                                color: resultColors.color,
+                            }}>
+                            {match.isRemake ? 'R' : match.win ? 'W' : 'L'}
+                        </div>
+                    )
+                })}
             </div>
         </div>
     )

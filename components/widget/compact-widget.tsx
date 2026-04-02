@@ -1,12 +1,13 @@
 import ChampionIcon from '@/components/champion-icon/champion-icon'
 import ProfileIcon from '@/components/profile-icon/profile-icon'
 
-import FooterMark from '../shared/footer-mark'
-import MetricTile from '../shared/metric-tile'
-import ScoreBox from '../shared/score-box'
-import SectionLabel from '../shared/section-label'
-import type { ComputedData } from '../widget.types'
-import { formatTierRank } from '../widget.utils'
+import FooterMark from './footer-mark'
+import MetricTile from './metric-tile'
+import ScoreBox from './score-box'
+import SectionLabel from './section-label'
+import { GAME_COLORS } from './widget.constants'
+import type { ComputedData } from './widget.types'
+import { formatTierRank } from './widget.utils'
 
 export default function CompactWidget({
     avgAssists,
@@ -48,12 +49,12 @@ export default function CompactWidget({
 
                 <div className="grid grid-cols-2 gap-2">
                     <ScoreBox
-                        color="#5ef2a2"
+                        color={GAME_COLORS.win}
                         label="Wins"
                         value={String(sessionWins)}
                     />
                     <ScoreBox
-                        color="#ff7a8a"
+                        color={GAME_COLORS.loss}
                         label="Losses"
                         value={String(sessionLosses)}
                     />
@@ -117,10 +118,10 @@ export default function CompactWidget({
                             className="relative h-[38px] w-[38px] overflow-hidden rounded-xl border-2 bg-[#162b42]"
                             style={{
                                 borderColor: match.isRemake
-                                    ? '#adc4db'
+                                    ? GAME_COLORS.remake
                                     : match.win
-                                      ? '#5ef2a2'
-                                      : '#ff7a8a',
+                                      ? GAME_COLORS.win
+                                      : GAME_COLORS.loss,
                             }}>
                             <ChampionIcon
                                 champion={match.champion}

@@ -1,7 +1,7 @@
 import { cn } from '@/lib/cn'
 
-import type { ComputedData } from '../widget.types'
-import { formatTierRank } from '../widget.utils'
+import type { ComputedData } from './widget.types'
+import { formatTierRank } from './widget.utils'
 
 export default function TopbarWidget({
     data,

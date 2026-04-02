@@ -1,11 +1,10 @@
 import { BarChart3, RefreshCw, Zap } from 'lucide-react'
 
-import type { FeatureCardItemProps } from '@/components/card/feature-card/feature-card.types'
-import type { StepCardProps } from '@/components/card/step-card/step-card.types'
+import type { FeatureCardItemProps } from '@/components/card/feature-card.types'
+import type { StepCardProps } from '@/components/card/step-card.types'
 import { WIDGET_STYLE_OPTIONS } from '@/components/widget/widget.constants'
+import type { WidgetStyleDefinition } from '@/components/widget/widget.types'
 import type { RiotData } from '@/lib/riot/riot.types'
-
-import type { LandingWidgetLayout } from './landing.types'
 
 export const EXAMPLE_SUMMONER: RiotData = {
     gameName: 'doydos enjoyer',
@@ -121,7 +120,7 @@ export const STEPS: StepCardProps[] = [
     },
 ]
 
-export const WIDGET_LAYOUTS: LandingWidgetLayout[] = [
+export const WIDGET_LAYOUTS: WidgetStyleDefinition[] = [
     WIDGET_STYLE_OPTIONS.find(option => option.style === 'topbar')!,
     WIDGET_STYLE_OPTIONS.find(option => option.style === 'minimal')!,
     WIDGET_STYLE_OPTIONS.find(option => option.style === 'classic')!,

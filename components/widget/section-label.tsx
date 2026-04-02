@@ -1,4 +1,4 @@
-import type { SectionLabelProps } from '../widget.types'
+import type { SectionLabelProps } from './widget.types'
 
 export default function SectionLabel({ children }: SectionLabelProps) {
     return (
