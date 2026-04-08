@@ -153,7 +153,7 @@ export default function WidgetGeneratorForm() {
     }, [])
 
     if (storageReady && storedPuuid) {
-        if (connectedAccountQuery.isLoading || !connectedAccountQuery.data) {
+        if (connectedAccountQuery.isLoading) {
             return (
                 <Card className="border-border-secondary bg-bg-elevated space-y-4 rounded-4xl p-5">
                     <div>
@@ -167,6 +167,29 @@ export default function WidgetGeneratorForm() {
                     <Button disabled fullWidth size="lg">
                         <RefreshCw className="h-4 w-4 animate-spin" />
                         Loading account...
+                    </Button>
+                </Card>
+            )
+        }
+
+        if (connectedAccountQuery.isError || !connectedAccountQuery.data) {
+            return (
+                <Card className="border-loss/25 bg-loss/8 space-y-4 rounded-4xl border p-5">
+                    <div>
+                        <p className="text-loss text-[11px] font-semibold tracking-[0.22em] uppercase">
+                            Saved account unavailable
+                        </p>
+                        <p className="text-text-muted mt-1 text-sm">
+                            The last connected account could not be restored.
+                            Pick another account to continue.
+                        </p>
+                    </div>
+
+                    <Button
+                        fullWidth
+                        variant="secondary"
+                        onClick={handleChangeAccount}>
+                        Change account
                     </Button>
                 </Card>
             )
