@@ -54,7 +54,15 @@ const REGION_GROUP_MAP: Record<Region, RegionGroups> = {
 }
 
 const puuidRegionCache = new Map<string, Region>()
+const ACCOUNT_CACHE_TTL_SECONDS = 60 * 60 * 24
 const MATCH_CACHE_TTL_SECONDS = 60 * 60 * 24 * 90
+const SUMMONER_CACHE_TTL_SECONDS = 60 * 60 * 6
+
+interface CachedAccount {
+    gameName: string
+    puuid: string
+    tagLine: string
+}
 
 interface CachedMatchParticipant {
     assists: number
@@ -73,6 +81,11 @@ interface CachedMatchDetail {
     matchId: string
     participants: CachedMatchParticipant[]
     queueId: number
+}
+
+interface CachedSummoner {
+    profileIconId: number
+    summonerLevel: number
 }
 
 export async function resolvePuuidByRiotId(
@@ -98,6 +111,39 @@ async function resolveRegionByPuuid(puuid: string) {
 
 function getMatchCacheKey(matchId: string) {
     return `riot:match:${matchId}`
+}
+
+function getAccountCacheKey(puuid: string) {
+    return `riot:account:${puuid}`
+}
+
+function getSummonerCacheKey(puuid: string, region: Region) {
+    return `riot:summoner:${region}:${puuid}`
+}
+
+async function getCachedAccount(
+    puuid: string,
+    regionGroup: RegionGroups
+): Promise<CachedAccount> {
+    const cached = await kv.get<CachedAccount>(getAccountCacheKey(puuid))
+    if (cached) return cached
+
+    const response = await riotApi.Account.getByPUUID(
+        puuid,
+        regionGroup as AccountAPIRegionGroups
+    )
+
+    const account: CachedAccount = {
+        gameName: response.response.gameName,
+        puuid: response.response.puuid,
+        tagLine: response.response.tagLine,
+    }
+
+    await kv.set(getAccountCacheKey(puuid), account, {
+        ex: ACCOUNT_CACHE_TTL_SECONDS,
+    })
+
+    return account
 }
 
 async function getCachedMatchDetail(
@@ -136,6 +182,30 @@ async function getCachedMatchDetail(
     return detail
 }
 
+async function getCachedSummoner(
+    puuid: string,
+    region: Region,
+    twistedRegion: Regions
+): Promise<CachedSummoner> {
+    const cached = await kv.get<CachedSummoner>(
+        getSummonerCacheKey(puuid, region)
+    )
+    if (cached) return cached
+
+    const response = await lolApi.Summoner.getByPUUID(puuid, twistedRegion)
+
+    const summoner: CachedSummoner = {
+        profileIconId: response.response.profileIconId,
+        summonerLevel: response.response.summonerLevel,
+    }
+
+    await kv.set(getSummonerCacheKey(puuid, region), summoner, {
+        ex: SUMMONER_CACHE_TTL_SECONDS,
+    })
+
+    return summoner
+}
+
 export async function fetchRiotDataByPuuid(
     puuid: string,
     region?: Region,
@@ -149,24 +219,18 @@ export async function fetchRiotDataByPuuid(
     const regionGroup = REGION_GROUP_MAP[resolvedRegion]
     const expectedQueueId = queue === 'solo' ? 420 : 440
 
-    const [accountRes, summonerRes, matchIdsRes, leagueRes] = await Promise.all(
-        [
-            riotApi.Account.getByPUUID(
-                puuid,
-                regionGroup as AccountAPIRegionGroups
-            ),
-            lolApi.Summoner.getByPUUID(puuid, twistedRegion),
-            lolApi.MatchV5.list(puuid, regionGroup, {
-                count: 20,
-                queue: queue === 'solo' ? 420 : 440,
-            }).catch(() => ({ response: [] })),
-            lolApi.League.byPUUID(puuid, twistedRegion).catch(() => ({
-                response: [],
-            })),
-        ]
-    )
+    const [account, summoner, matchIdsRes, leagueRes] = await Promise.all([
+        getCachedAccount(puuid, regionGroup),
+        getCachedSummoner(puuid, resolvedRegion, twistedRegion),
+        lolApi.MatchV5.list(puuid, regionGroup, {
+            count: 20,
+            queue: queue === 'solo' ? 420 : 440,
+        }).catch(() => ({ response: [] })),
+        lolApi.League.byPUUID(puuid, twistedRegion).catch(() => ({
+            response: [],
+        })),
+    ])
 
-    const account = accountRes.response
     const rankedQueue = leagueRes.response.find(
         l =>
             l.queueType ===
@@ -208,10 +272,10 @@ export async function fetchRiotDataByPuuid(
         leaguePoints: rankedQueue?.leaguePoints ?? 0,
         losses: rankedQueue?.losses ?? 0,
         matchHistory,
-        profileIconId: summonerRes.response.profileIconId,
+        profileIconId: summoner.profileIconId,
         puuid,
         rank: rankedQueue?.rank ?? '',
-        summonerLevel: summonerRes.response.summonerLevel,
+        summonerLevel: summoner.summonerLevel,
         tagLine: account.tagLine,
         tier: rankedQueue?.tier ?? 'UNRANKED',
         wins: rankedQueue?.wins ?? 0,
