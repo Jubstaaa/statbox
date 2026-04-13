@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "gsd-workflow": {
+      "command": "/Users/ilker/.local/share/fnm/node-versions/v24.13.0/installation/bin/node",
+      "args": [
+        "/Users/ilker/.bun/install/global/node_modules/gsd-pi/packages/mcp-server/dist/cli.js"
+      ],
+      "cwd": "/Users/ilker/Desktop/personal/statbox",
+      "env": {
+        "GSD_CLI_PATH": "/Users/ilker/.bun/bin/gsd",
+        "GSD_WORKFLOW_EXECUTORS_MODULE": "/Users/ilker/.gsd/agent/extensions/gsd/tools/workflow-tool-executors.js",
+        "GSD_WORKFLOW_WRITE_GATE_MODULE": "/Users/ilker/.gsd/agent/extensions/gsd/bootstrap/write-gate.js",
+        "GSD_PERSIST_WRITE_GATE_STATE": "1",
+        "GSD_WORKFLOW_PROJECT_ROOT": "/Users/ilker/Desktop/personal/statbox"
+      }
+    }
+  }
+}
