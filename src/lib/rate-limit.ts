@@ -1,9 +1,16 @@
 import { Ratelimit } from '@upstash/ratelimit'
 
 import { kv } from './kv'
+import {
+    RATE_LIMIT_MAX_REQUESTS,
+    RATE_LIMIT_WINDOW,
+} from './riot/riot.constants'
 
 export const ratelimit = new Ratelimit({
-    limiter: Ratelimit.slidingWindow(20, '1 m'),
+    limiter: Ratelimit.slidingWindow(
+        RATE_LIMIT_MAX_REQUESTS,
+        RATE_LIMIT_WINDOW
+    ),
     redis: kv,
 })
 

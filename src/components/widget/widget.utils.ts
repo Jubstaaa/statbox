@@ -1,3 +1,4 @@
+import { RECENT_MATCHES_DISPLAY_COUNT } from '@/lib/riot/riot.constants'
 import type { MatchEntry, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
 import {
@@ -80,7 +81,7 @@ export function computeWidgetData({
         avgKills,
         data,
         kdaRatio,
-        recent: filteredMatchHistory.slice(0, 5),
+        recent: filteredMatchHistory.slice(0, RECENT_MATCHES_DISPLAY_COUNT),
         session,
         sessionGames,
         sessionLosses,

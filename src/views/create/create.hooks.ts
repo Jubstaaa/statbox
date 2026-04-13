@@ -1,10 +1,4 @@
-import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-    useSyncExternalStore,
-} from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
@@ -24,6 +18,7 @@ import {
     getStoredBuilderSettings,
     setStoredBuilderSettings,
 } from '@/components/widget-generator/widget-generator.storage'
+import { useHydrationReady } from '@/hooks/use-hydration-ready'
 import type { RankedQueue, WidgetStyle } from '@/lib/riot/riot.types'
 
 import type { CreatePageState } from './create.types'
@@ -48,11 +43,7 @@ export function useCreatePage(): CreatePageState {
             getStoredBuilderSettings()?.sessionTime ??
             getCurrentDateTimeInputValue()
     )
-    const storageReady = useSyncExternalStore(
-        () => () => {},
-        () => true,
-        () => false
-    )
+    const storageReady = useHydrationReady()
 
     useEffect(() => {
         if (!storageReady) return

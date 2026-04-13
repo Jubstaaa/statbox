@@ -1,21 +1,19 @@
 'use client'
 
-import { useCallback, useState, useSyncExternalStore } from 'react'
+import { useCallback, useState } from 'react'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 import Button from '@/components/button/button'
-import Card from '@/components/card/card'
-import Chip from '@/components/chip/chip'
 import Input from '@/components/input/input'
-import PlayerSummary from '@/components/widget/player-summary'
-import { TIER_COLORS } from '@/components/widget/widget.constants'
+import { useHydrationReady } from '@/hooks/use-hydration-ready'
 import type { Region } from '@/lib/riot/riot.types'
 
+import ConnectedAccountCard from './connected-account-card'
+import RegionPicker from './region-picker'
 import { fetchSummonerByPuuid, resolveSummoner } from './widget-generator.api'
-import { BUILDER_REGIONS } from './widget-generator.constants'
 import {
     type WidgetGeneratorFormErrors,
     widgetGeneratorFormSchema,
@@ -37,11 +35,7 @@ export default function WidgetGeneratorForm() {
     const [region, setRegion] = useState<Region>('EUW')
     const [formErrors, setFormErrors] = useState<WidgetGeneratorFormErrors>({})
     const [submitError, setSubmitError] = useState('')
-    const storageReady = useSyncExternalStore(
-        () => () => {},
-        () => true,
-        () => false
-    )
+    const storageReady = useHydrationReady()
     const storedPuuid = storageReady ? getStoredBuilderPuuid() : null
 
     const connectedAccountQuery = useQuery({
@@ -153,74 +147,12 @@ export default function WidgetGeneratorForm() {
     }, [])
 
     if (storageReady && storedPuuid) {
-        if (connectedAccountQuery.isLoading) {
-            return (
-                <Card className="border-border-secondary bg-bg-elevated space-y-4 rounded-4xl p-5">
-                    <div>
-                        <p className="text-accent-2 text-[11px] font-semibold tracking-[0.22em] uppercase">
-                            Connected account
-                        </p>
-                        <p className="text-text-muted mt-1 text-sm">
-                            Restoring your last builder session.
-                        </p>
-                    </div>
-                    <Button disabled fullWidth size="lg">
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                        Loading account...
-                    </Button>
-                </Card>
-            )
-        }
-
-        if (connectedAccountQuery.isError || !connectedAccountQuery.data) {
-            return (
-                <Card className="border-loss/25 bg-loss/8 space-y-4 rounded-4xl border p-5">
-                    <div>
-                        <p className="text-loss text-[11px] font-semibold tracking-[0.22em] uppercase">
-                            Saved account unavailable
-                        </p>
-                        <p className="text-text-muted mt-1 text-sm">
-                            The last connected account could not be restored.
-                            Pick another account to continue.
-                        </p>
-                    </div>
-
-                    <Button
-                        fullWidth
-                        variant="secondary"
-                        onClick={handleChangeAccount}>
-                        Change account
-                    </Button>
-                </Card>
-            )
-        }
-
         return (
-            <Card className="border-border-secondary bg-bg-elevated space-y-4 rounded-4xl p-5">
-                <div>
-                    <p className="text-accent-2 text-[11px] font-semibold tracking-[0.22em] uppercase">
-                        Connected account
-                    </p>
-                    <p className="text-text-muted mt-1 text-sm">
-                        Your builder is ready with the saved Riot account.
-                    </p>
-                </div>
-
-                <PlayerSummary
-                    data={connectedAccountQuery.data}
-                    tierColor={
-                        TIER_COLORS[connectedAccountQuery.data.tier] ??
-                        TIER_COLORS.UNRANKED
-                    }
-                />
-
-                <div className="flex flex-wrap gap-3">
-                    <Button onClick={handleOpenBuilder}>Open builder</Button>
-                    <Button variant="secondary" onClick={handleChangeAccount}>
-                        Change account
-                    </Button>
-                </div>
-            </Card>
+            <ConnectedAccountCard
+                query={connectedAccountQuery}
+                onChangeAccount={handleChangeAccount}
+                onOpenBuilder={handleOpenBuilder}
+            />
         )
     }
 
@@ -243,22 +175,7 @@ export default function WidgetGeneratorForm() {
                 />
             </div>
 
-            <div className="flex flex-col gap-2">
-                <span className="text-text-strong text-[11px] font-semibold tracking-[0.18em] uppercase">
-                    Region
-                </span>
-                <div className="flex flex-wrap gap-2">
-                    {BUILDER_REGIONS.map(value => (
-                        <Chip
-                            key={value}
-                            active={region === value}
-                            className="flex-1 basis-[calc(25%-0.375rem)]"
-                            onClick={createRegionSelectHandler(value)}>
-                            {value}
-                        </Chip>
-                    ))}
-                </div>
-            </div>
+            <RegionPicker value={region} onSelect={createRegionSelectHandler} />
 
             {submitError ? (
                 <p className="border-loss/25 bg-loss/10 text-loss rounded-xl border px-3 py-2.5 text-xs">
