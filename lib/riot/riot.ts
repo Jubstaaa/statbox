@@ -5,6 +5,8 @@ import type {
     Regions,
 } from 'twisted/dist/constants/regions'
 
+import { kv } from '@/lib/kv'
+
 import type { RankedQueue, Region } from './riot.types'
 import type { MatchEntry, RiotData } from './riot.types'
 
@@ -52,6 +54,26 @@ const REGION_GROUP_MAP: Record<Region, RegionGroups> = {
 }
 
 const puuidRegionCache = new Map<string, Region>()
+const MATCH_CACHE_TTL_SECONDS = 60 * 60 * 24 * 90
+
+interface CachedMatchParticipant {
+    assists: number
+    championId: number
+    championName: string
+    deaths: number
+    gameEndedInEarlySurrender: boolean
+    kills: number
+    puuid: string
+    win: boolean
+}
+
+interface CachedMatchDetail {
+    gameDuration: number
+    gameEndTimestamp: number
+    matchId: string
+    participants: CachedMatchParticipant[]
+    queueId: number
+}
 
 export async function resolvePuuidByRiotId(
     name: string,
@@ -72,6 +94,46 @@ export async function resolvePuuidByRiotId(
 
 async function resolveRegionByPuuid(puuid: string) {
     return puuidRegionCache.get(puuid) ?? null
+}
+
+function getMatchCacheKey(matchId: string) {
+    return `riot:match:${matchId}`
+}
+
+async function getCachedMatchDetail(
+    matchId: string,
+    regionGroup: RegionGroups
+): Promise<CachedMatchDetail | null> {
+    const cached = await kv.get<CachedMatchDetail>(getMatchCacheKey(matchId))
+    if (cached) return cached
+
+    const response = await lolApi.MatchV5.get(matchId, regionGroup).catch(
+        () => null
+    )
+    if (!response) return null
+
+    const detail: CachedMatchDetail = {
+        gameDuration: response.response.info.gameDuration,
+        gameEndTimestamp: response.response.info.gameEndTimestamp,
+        matchId: response.response.metadata.matchId,
+        participants: response.response.info.participants.map(participant => ({
+            assists: participant.assists,
+            championId: participant.championId,
+            championName: participant.championName,
+            deaths: participant.deaths,
+            gameEndedInEarlySurrender: participant.gameEndedInEarlySurrender,
+            kills: participant.kills,
+            puuid: participant.puuid,
+            win: participant.win,
+        })),
+        queueId: response.response.info.queueId,
+    }
+
+    await kv.set(getMatchCacheKey(matchId), detail, {
+        ex: MATCH_CACHE_TTL_SECONDS,
+    })
+
+    return detail
 }
 
 export async function fetchRiotDataByPuuid(
@@ -112,17 +174,16 @@ export async function fetchRiotDataByPuuid(
     )
 
     const matchDetails = await Promise.all(
-        matchIdsRes.response.map(id =>
-            lolApi.MatchV5.get(id, regionGroup).catch(() => null)
+        matchIdsRes.response.map(matchId =>
+            getCachedMatchDetail(matchId, regionGroup)
         )
     )
 
     const matchHistory: MatchEntry[] = matchDetails
         .filter(Boolean)
         .map(match => {
-            const info = match!.response.info
-            if (info.queueId !== expectedQueueId) return null
-            const participant = info.participants.find(p => p.puuid === puuid)
+            if (match!.queueId !== expectedQueueId) return null
+            const participant = match!.participants.find(p => p.puuid === puuid)
             if (!participant) return null
 
             return {
@@ -132,10 +193,10 @@ export async function fetchRiotDataByPuuid(
                 deaths: participant.deaths,
                 isRemake:
                     participant.gameEndedInEarlySurrender ||
-                    info.gameDuration < 300,
+                    match!.gameDuration < 300,
                 kills: participant.kills,
-                matchId: match!.response.metadata.matchId,
-                timestamp: new Date(info.gameEndTimestamp).toISOString(),
+                matchId: match!.matchId,
+                timestamp: new Date(match!.gameEndTimestamp).toISOString(),
                 win: participant.win,
             }
         })

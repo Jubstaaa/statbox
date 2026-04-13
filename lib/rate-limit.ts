@@ -1,12 +1,10 @@
 import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
+
+import { kv } from './kv'
 
 export const ratelimit = new Ratelimit({
     limiter: Ratelimit.slidingWindow(20, '1 m'),
-    redis: new Redis({
-        token: process.env.KV_REST_API_TOKEN!,
-        url: process.env.KV_REST_API_URL!,
-    }),
+    redis: kv,
 })
 
 export async function checkRateLimit(request: Request) {
