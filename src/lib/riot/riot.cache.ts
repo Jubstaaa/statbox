@@ -1,13 +1,15 @@
+import { getCache } from '@vercel/functions'
 import type { RegionGroups, Regions } from 'twisted/dist/constants/regions'
 
-import { kv } from '@/lib/kv'
-
 import { lolApi, riotApi } from './riot.client'
-import type { Region } from './riot.types'
+import type { RankedQueue, Region, RiotData } from './riot.types'
 
-const ACCOUNT_CACHE_TTL_SECONDS = 60 * 60 * 24
-const MATCH_CACHE_TTL_SECONDS = 60 * 60 * 24 * 90
-const SUMMONER_CACHE_TTL_SECONDS = 60 * 60 * 6
+const cache = getCache({ namespace: 'riot' })
+
+const ACCOUNT_TTL_SECONDS = 60 * 60 * 24
+const MATCH_TTL_SECONDS = 60 * 60 * 24 * 90
+const SUMMONER_TTL_SECONDS = 60 * 60 * 6
+const WIDGET_TTL_SECONDS = 60
 
 interface CachedAccount {
     gameName: string
@@ -39,23 +41,29 @@ interface CachedSummoner {
     summonerLevel: number
 }
 
-function getMatchCacheKey(matchId: string) {
-    return `riot:match:${matchId}`
+function getAccountKey(puuid: string) {
+    return `account:${puuid}`
 }
 
-function getAccountCacheKey(puuid: string) {
-    return `riot:account:${puuid}`
+function getMatchKey(matchId: string) {
+    return `match:${matchId}`
 }
 
-function getSummonerCacheKey(puuid: string, region: Region) {
-    return `riot:summoner:${region}:${puuid}`
+function getSummonerKey(puuid: string, region: Region) {
+    return `summoner:${region}:${puuid}`
+}
+
+function getWidgetKey(puuid: string, region: Region, queue: RankedQueue) {
+    return `widget:${region}:${queue}:${puuid}`
 }
 
 export async function getCachedAccount(
     puuid: string,
     regionGroup: RegionGroups
 ): Promise<CachedAccount> {
-    const cached = await kv.get<CachedAccount>(getAccountCacheKey(puuid))
+    const cached = (await cache.get(getAccountKey(puuid))) as
+        | CachedAccount
+        | undefined
     if (cached) return cached
 
     const response = await riotApi.Account.getByPUUID(
@@ -69,8 +77,9 @@ export async function getCachedAccount(
         tagLine: response.response.tagLine,
     }
 
-    await kv.set(getAccountCacheKey(puuid), account, {
-        ex: ACCOUNT_CACHE_TTL_SECONDS,
+    await cache.set(getAccountKey(puuid), account, {
+        tags: [`puuid:${puuid}`],
+        ttl: ACCOUNT_TTL_SECONDS,
     })
 
     return account
@@ -80,7 +89,9 @@ export async function getCachedMatchDetail(
     matchId: string,
     regionGroup: RegionGroups
 ): Promise<CachedMatchDetail | null> {
-    const cached = await kv.get<CachedMatchDetail>(getMatchCacheKey(matchId))
+    const cached = (await cache.get(getMatchKey(matchId))) as
+        | CachedMatchDetail
+        | undefined
     if (cached) return cached
 
     const response = await lolApi.MatchV5.get(matchId, regionGroup).catch(
@@ -105,8 +116,9 @@ export async function getCachedMatchDetail(
         queueId: response.response.info.queueId,
     }
 
-    await kv.set(getMatchCacheKey(matchId), detail, {
-        ex: MATCH_CACHE_TTL_SECONDS,
+    await cache.set(getMatchKey(matchId), detail, {
+        tags: ['match'],
+        ttl: MATCH_TTL_SECONDS,
     })
 
     return detail
@@ -117,9 +129,9 @@ export async function getCachedSummoner(
     region: Region,
     twistedRegion: Regions
 ): Promise<CachedSummoner> {
-    const cached = await kv.get<CachedSummoner>(
-        getSummonerCacheKey(puuid, region)
-    )
+    const cached = (await cache.get(getSummonerKey(puuid, region))) as
+        | CachedSummoner
+        | undefined
     if (cached) return cached
 
     const response = await lolApi.Summoner.getByPUUID(puuid, twistedRegion)
@@ -129,9 +141,30 @@ export async function getCachedSummoner(
         summonerLevel: response.response.summonerLevel,
     }
 
-    await kv.set(getSummonerCacheKey(puuid, region), summoner, {
-        ex: SUMMONER_CACHE_TTL_SECONDS,
+    await cache.set(getSummonerKey(puuid, region), summoner, {
+        tags: [`puuid:${puuid}`],
+        ttl: SUMMONER_TTL_SECONDS,
     })
 
     return summoner
+}
+
+export async function getCachedWidgetData(
+    puuid: string,
+    region: Region,
+    queue: RankedQueue,
+    fetcher: () => Promise<RiotData>
+): Promise<RiotData> {
+    const key = getWidgetKey(puuid, region, queue)
+    const cached = (await cache.get(key)) as RiotData | undefined
+    if (cached) return cached
+
+    const data = await fetcher()
+
+    await cache.set(key, data, {
+        tags: [`puuid:${puuid}`, 'widget'],
+        ttl: WIDGET_TTL_SECONDS,
+    })
+
+    return data
 }

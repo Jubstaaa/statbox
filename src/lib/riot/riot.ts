@@ -9,6 +9,7 @@ import {
     getCachedAccount,
     getCachedMatchDetail,
     getCachedSummoner,
+    getCachedWidgetData,
 } from './riot.cache'
 import { lolApi, riotApi } from './riot.client'
 import {
@@ -90,13 +91,24 @@ export async function fetchRiotDataByPuuid(
     if (!resolvedRegion) {
         throw new Error('Summoner region not found')
     }
-    const twistedRegion = REGION_MAP[resolvedRegion]
-    const regionGroup = REGION_GROUP_MAP[resolvedRegion]
+
+    return getCachedWidgetData(puuid, resolvedRegion, queue, () =>
+        buildRiotData(puuid, resolvedRegion, queue)
+    )
+}
+
+async function buildRiotData(
+    puuid: string,
+    region: Region,
+    queue: RankedQueue
+): Promise<RiotData> {
+    const twistedRegion = REGION_MAP[region]
+    const regionGroup = REGION_GROUP_MAP[region]
     const expectedQueueId = queue === 'solo' ? QUEUE_ID_SOLO : QUEUE_ID_FLEX
 
     const [account, summoner, matchIdsRes, leagueRes] = await Promise.all([
         getCachedAccount(puuid, regionGroup),
-        getCachedSummoner(puuid, resolvedRegion, twistedRegion),
+        getCachedSummoner(puuid, region, twistedRegion),
         lolApi.MatchV5.list(puuid, regionGroup, {
             count: MATCH_FETCH_COUNT,
             queue: queue === 'solo' ? QUEUE_ID_SOLO : QUEUE_ID_FLEX,

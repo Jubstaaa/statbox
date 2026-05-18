@@ -7,10 +7,7 @@ import {
 } from './riot/riot.constants'
 
 export const ratelimit = new Ratelimit({
-    limiter: Ratelimit.slidingWindow(
-        RATE_LIMIT_MAX_REQUESTS,
-        RATE_LIMIT_WINDOW
-    ),
+    limiter: Ratelimit.fixedWindow(RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW),
     redis: kv,
 })
 
