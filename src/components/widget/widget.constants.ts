@@ -2,7 +2,7 @@ import type { WidgetStyle } from '@/lib/riot/riot.types'
 
 import type { WidgetStyleDefinition } from './widget.types'
 
-export const POLL_INTERVAL = 30_000
+export const POLL_INTERVAL = 120_000
 
 export const GAME_COLORS = {
     accent: '#7dd3fc',

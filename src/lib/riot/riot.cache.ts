@@ -9,7 +9,7 @@ const cache = getCache({ namespace: 'riot' })
 const ACCOUNT_TTL_SECONDS = 60 * 60 * 24
 const MATCH_TTL_SECONDS = 60 * 60 * 24 * 90
 const SUMMONER_TTL_SECONDS = 60 * 60 * 6
-const WIDGET_TTL_SECONDS = 60
+const WIDGET_TTL_SECONDS = 300
 
 interface CachedAccount {
     gameName: string

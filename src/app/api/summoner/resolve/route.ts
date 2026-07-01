@@ -1,7 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 
-import { checkRateLimit } from '@/lib/rate-limit'
 import { resolvePuuidByRiotId } from '@/lib/riot/riot'
 import { regionSchema } from '@/lib/riot/riot.schemas'
 import type { Region } from '@/lib/riot/riot.types'
@@ -17,9 +16,6 @@ const querySchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
-    const rateLimitError = await checkRateLimit(request)
-    if (rateLimitError) return rateLimitError
-
     const parsed = querySchema.safeParse({
         name: request.nextUrl.searchParams.get('name') ?? '',
         region: request.nextUrl.searchParams.get('region') ?? '',
