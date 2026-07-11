@@ -48,7 +48,11 @@ export async function GET(request: NextRequest) {
                   region as Region,
                   queue as RankedQueue
               )
-        return Response.json(data)
+        return Response.json(data, {
+            headers: {
+                'Cache-Control': 'public, s-maxage=300',
+            },
+        })
     } catch {
         return Response.json({ error: 'Summoner not found' }, { status: 404 })
     }
