@@ -1,5 +1,6 @@
-import { getCache } from '@vercel/functions'
 import type { RegionGroups, Regions } from 'twisted/dist/constants/regions'
+
+import { getCache } from '@/lib/cache'
 
 import { lolApi, riotApi } from './riot.client'
 import type { RankedQueue, Region, RiotData } from './riot.types'

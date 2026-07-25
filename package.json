@@ -21,14 +21,15 @@
     ]
   },
   "dependencies": {
+    "@libsql/client": "^0.17.4",
     "@tanstack/react-query": "^5.95.2",
-    "@vercel/functions": "^3.6.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
     "lz-string": "^1.5.0",
     "next": "16.2.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "sharp": "^0.34.1",
     "simple-icons": "^16.13.0",
     "tailwind-merge": "^3.5.0",
     "twisted": "^1.72.2",
