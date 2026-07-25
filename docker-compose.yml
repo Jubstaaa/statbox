@@ -1,0 +1,24 @@
+# Runtime stack on the droplet (/opt/statbox). Published only on localhost:3003;
+# the shared Caddy in /opt/proxy terminates TLS and reverse-proxies to it, next to
+# the other apps. The image is pulled from GHCR by the deploy workflow.
+services:
+    app:
+        image: ghcr.io/jubstaaa/statbox:latest
+        container_name: statbox
+        restart: unless-stopped
+        # Measured 109MB idle for the standalone server; 256m leaves room for
+        # request spikes without letting it crowd the other apps.
+        mem_limit: 256m
+        env_file: .env
+        ports:
+            - '127.0.0.1:3003:3000'
+        environment:
+            NODE_ENV: production
+            # Persisted deliberately: match details are cached for 90 days and the
+            # Riot API is rate limited, so an empty cache after a deploy costs quota.
+            CACHE_DATABASE_URI: file:/app/data/statbox-cache.db
+        volumes:
+            - /opt/statbox/data:/app/data
+            # Next's optimized output for the remote ddragon icons — without this a
+            # deploy throws the whole set away and every icon is refetched.
+            - /opt/statbox/cache/images:/app/.next/cache/images
