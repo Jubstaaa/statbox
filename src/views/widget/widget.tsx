@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'next/navigation'
@@ -12,13 +12,11 @@ import {
     resolveSessionTimestamp,
 } from '@/components/widget-generator/widget-generator.payload'
 import { cn } from '@/lib/cn'
-import { initDdragon } from '@/lib/ddragon-client'
 import type { RiotData } from '@/lib/riot/riot.types'
 
 export default function WidgetPage() {
     const params = useParams<{ payload: string }>()
     const searchParams = useSearchParams()
-    const [assetsReady, setAssetsReady] = useState(false)
     const payload = decodeURIComponent(params.payload)
     const decoded = decodeWidgetRoutePayload(payload)
     const session = useMemo(() => {
@@ -32,10 +30,6 @@ export default function WidgetPage() {
         const sessionRaw = searchParams.get('session')
         return sessionRaw ? parseInt(sessionRaw, 10) || null : null
     }, [decoded, searchParams])
-
-    useEffect(() => {
-        void initDdragon().then(() => setAssetsReady(true))
-    }, [])
 
     const summonerQuery = useQuery({
         enabled: !!params.payload,
@@ -74,7 +68,7 @@ export default function WidgetPage() {
         refetchInterval: POLL_INTERVAL,
         refetchIntervalInBackground: true,
     })
-    const isLoading = !assetsReady || !summonerQuery.isFetched
+    const isLoading = !summonerQuery.isFetched
     const isError = !isLoading && summonerQuery.isError && !summonerQuery.data
     const style = decoded?.style ?? 'classic'
 

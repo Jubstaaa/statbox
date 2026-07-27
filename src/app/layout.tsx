@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 
+import { getDdragonVersion } from '@/lib/ddragon'
+import DdragonProvider from '@/providers/ddragon-provider/ddragon-provider'
 import QueryProvider from '@/providers/query-provider/query-provider'
 import './globals.css'
 
@@ -47,16 +49,20 @@ export const metadata: Metadata = {
     },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    const ddragonVersion = await getDdragonVersion()
+
     return (
         <html className="dark" lang="en">
             <body
                 className={`${inter.className} bg-background text-foreground`}>
-                <QueryProvider>{children}</QueryProvider>
+                <DdragonProvider version={ddragonVersion}>
+                    <QueryProvider>{children}</QueryProvider>
+                </DdragonProvider>
             </body>
         </html>
     )
