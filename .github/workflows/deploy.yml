@@ -87,13 +87,13 @@ jobs:
                   registry: ghcr.io
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
-            - uses: Jubstaaa/deploy-actions/ssh@bf5c90422dc8dc2ed3d5ec002510817500913469
+            - uses: Jubstaaa/deploy-actions/ssh@fe798b53bd39de86318a04ae42416fa939c8debe # v1.1.0
               with:
                   host: ${{ secrets.DO_HOST }}
                   user: ${{ secrets.DO_USER }}
                   key: ${{ secrets.DO_SSH_KEY }}
                   known-hosts: ${{ secrets.DO_KNOWN_HOSTS }}
-            - uses: Jubstaaa/deploy-actions/compose@bf5c90422dc8dc2ed3d5ec002510817500913469
+            - uses: Jubstaaa/deploy-actions/compose@fe798b53bd39de86318a04ae42416fa939c8debe # v1.1.0
               with:
                   app-dir: /opt/statbox
                   container: statbox
