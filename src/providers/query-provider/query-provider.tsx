@@ -4,6 +4,8 @@ import { useState } from 'react'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+import '@/lib/zod-config'
+
 import { QUERY_CLIENT_DEFAULT_OPTIONS } from './query-provider.constants'
 import type { QueryProviderProps } from './query-provider.types'
 
