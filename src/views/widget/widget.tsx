@@ -2,17 +2,18 @@
 
 import { useMemo } from 'react'
 
-import { useQuery } from '@tanstack/react-query'
+import { skipToken, useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'next/navigation'
 
 import Widget from '@/components/widget/widget'
 import { POLL_INTERVAL } from '@/components/widget/widget.constants'
+import { fetchSummonerByPuuid } from '@/components/widget-generator/widget-generator.api'
 import {
     decodeWidgetRoutePayload,
     resolveSessionTimestamp,
 } from '@/components/widget-generator/widget-generator.payload'
 import { cn } from '@/lib/cn'
-import type { RiotData } from '@/lib/riot/riot.types'
+import { rankedQueueSchema, regionSchema } from '@/lib/riot/riot.schemas'
 
 export default function WidgetPage() {
     const params = useParams<{ payload: string }>()
@@ -31,45 +32,32 @@ export default function WidgetPage() {
         return sessionRaw ? parseInt(sessionRaw, 10) || null : null
     }, [decoded, searchParams])
 
+    // Links from before the payload format carry the PUUID bare, with region
+    // and queue in the query string.
+    const legacyRegion = regionSchema.safeParse(searchParams.get('region'))
+    const target =
+        decoded ??
+        (legacyRegion.success
+            ? {
+                  puuid: payload,
+                  queue: rankedQueueSchema
+                      .catch('solo')
+                      .parse(searchParams.get('queue')),
+                  region: legacyRegion.data,
+              }
+            : null)
+
     const summonerQuery = useQuery({
-        enabled: !!params.payload,
+        enabled: target !== null,
         placeholderData: previousData => previousData,
-        queryFn: async () => {
-            const url = new URL(
-                `/api/summoner/${params.payload}`,
-                window.location.origin
-            )
-
-            url.searchParams.set('queue', decoded?.queue ?? 'solo')
-
-            if (decoded?.region) {
-                url.searchParams.set('region', decoded.region)
-            }
-
-            if (!decoded && session) {
-                url.searchParams.set('session', String(session))
-            }
-
-            const response = await fetch(url.toString())
-
-            if (!response.ok) {
-                throw new Error('Failed to load widget data')
-            }
-
-            return (await response.json()) as RiotData
-        },
-        queryKey: [
-            'widget',
-            payload,
-            decoded?.queue ?? 'solo',
-            decoded?.region ?? '',
-            session,
-        ],
+        queryFn: target ? () => fetchSummonerByPuuid(target) : skipToken,
+        queryKey: ['summoner', target?.puuid, target?.region, target?.queue],
         refetchInterval: POLL_INTERVAL,
         refetchIntervalInBackground: true,
     })
-    const isLoading = !summonerQuery.isFetched
-    const isError = !isLoading && summonerQuery.isError && !summonerQuery.data
+    const isLoading = target !== null && !summonerQuery.isFetched
+    const isError =
+        target === null || (summonerQuery.isError && !summonerQuery.data)
     const style = decoded?.style ?? 'classic'
 
     return (

@@ -3,57 +3,61 @@ import { z } from 'zod'
 
 import { decodeWidgetRoutePayload } from '@/components/widget-generator/widget-generator.payload'
 import { fetchRiotDataByPuuid } from '@/lib/riot/riot'
-import { rankedQueueSchema, regionSchema } from '@/lib/riot/riot.schemas'
-import type { RankedQueue, Region } from '@/lib/riot/riot.types'
+import {
+    puuidSchema,
+    rankedQueueSchema,
+    regionSchema,
+} from '@/lib/riot/riot.schemas'
+
+import {
+    errorResponse,
+    jsonResponse,
+    riotFailureResponse,
+} from '../_lib/responses'
+
+// The server keeps widget data for five minutes; the edge and the browser may
+// reuse a response for one more, well inside the widget's 120 s poll.
+const CACHE_CONTROL = 'public, max-age=60, s-maxage=60'
 
 const querySchema = z.object({
-    queue: rankedQueueSchema.optional(),
+    puuid: puuidSchema,
+    queue: rankedQueueSchema.default('solo'),
     region: regionSchema,
-    session: z.string().optional(),
 })
 
-export async function GET(request: NextRequest) {
-    const { searchParams } = request.nextUrl
-    const rawPayload = request.nextUrl.pathname.split('/').pop()?.trim() ?? ''
-    const payload = decodeURIComponent(rawPayload)
-    const decodedPayload = decodeWidgetRoutePayload(payload)
+// The segment is either a PUUID with region/queue in the query, or an older
+// widget payload that carries all three.
+function parseTarget(segment: string, searchParams: URLSearchParams) {
+    const decoded = decodeWidgetRoutePayload(segment)
+    if (decoded) return decoded
+
     const parsed = querySchema.safeParse({
+        puuid: segment,
         queue: searchParams.get('queue') ?? undefined,
-        region: searchParams.get('region') ?? '',
-        session: searchParams.get('session') ?? undefined,
+        region: searchParams.get('region'),
     })
 
-    if ((!parsed.success && !decodedPayload) || !payload) {
-        return Response.json({ error: 'Invalid parameters' }, { status: 400 })
-    }
+    return parsed.success ? parsed.data : null
+}
 
-    const queue =
-        decodedPayload?.queue ??
-        (parsed.success ? (parsed.data.queue ?? 'solo') : 'solo')
-    const fallbackRegion = parsed.success ? parsed.data.region : null
-    const region = decodedPayload?.region ?? fallbackRegion
-    if (!region) {
-        return Response.json({ error: 'Invalid parameters' }, { status: 400 })
-    }
+export async function GET(
+    request: NextRequest,
+    { params }: { params: Promise<{ payload: string }> }
+) {
+    const { payload } = await params
+    const target = parseTarget(payload, request.nextUrl.searchParams)
+
+    if (!target) return errorResponse(400, 'Invalid parameters')
 
     try {
-        const data = decodedPayload
-            ? await fetchRiotDataByPuuid(
-                  decodedPayload.puuid,
-                  region as Region,
-                  queue as RankedQueue
-              )
-            : await fetchRiotDataByPuuid(
-                  payload,
-                  region as Region,
-                  queue as RankedQueue
-              )
-        return Response.json(data, {
-            headers: {
-                'Cache-Control': 'public, s-maxage=300',
-            },
-        })
-    } catch {
-        return Response.json({ error: 'Summoner not found' }, { status: 404 })
+        const data = await fetchRiotDataByPuuid(
+            target.puuid,
+            target.region,
+            target.queue
+        )
+
+        return jsonResponse(data, CACHE_CONTROL)
+    } catch (error) {
+        return riotFailureResponse('api/summoner', error)
     }
 }

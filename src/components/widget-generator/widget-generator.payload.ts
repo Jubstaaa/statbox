@@ -5,6 +5,7 @@ import {
 import { z } from 'zod'
 
 import {
+    puuidSchema,
     rankedQueueSchema,
     regionSchema,
     widgetStyleSchema,
@@ -26,7 +27,7 @@ function encodeWidgetRoutePayload(payload: WidgetRoutePayload) {
 }
 
 const widgetRoutePayloadSchema = z.object({
-    puuid: z.string().trim().min(1),
+    puuid: puuidSchema,
     queue: rankedQueueSchema,
     region: regionSchema,
     sessionMode: z.enum(['all-day', 'from-time']).optional(),
