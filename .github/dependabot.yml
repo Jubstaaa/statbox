@@ -17,12 +17,11 @@ updates:
       tailwind:
         patterns: ["tailwindcss", "@tailwindcss/*"]
     ignore:
-      # typescript-eslint does not support TypeScript 7 yet.
+      # `typescript` is the TypeScript 6 API package (@typescript/typescript6)
+      # that eslint-config-next and next build load; TypeScript 7 itself updates
+      # through @typescript/native, so a 7.x bump of this alias key is wrong.
       - dependency-name: typescript
         versions: [">=7"]
-      # Must match the Node.js major the code runs on, not the newest one.
-      - dependency-name: "@types/node"
-        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

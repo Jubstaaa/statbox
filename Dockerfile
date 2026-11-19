@@ -30,7 +30,7 @@ RUN bun run build
 # ─── runner ──────────────────────────────────────────────────────────────
 # Next's standalone server on Node (not `bun run start`) — keeps idle RSS near the
 # measured 110MB instead of ~400MB, which matters on a shared 1GB droplet.
-FROM node:22-alpine AS runner
+FROM node:26-alpine AS runner
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 ENV NODE_ENV=production
