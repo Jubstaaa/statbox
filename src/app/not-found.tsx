@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import Button from '@/components/button'
+import { buttonClassName } from '@/components/button'
 
 export default function NotFound() {
     return (
@@ -20,11 +20,15 @@ export default function NotFound() {
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                        <Link href="/">
-                            <Button>Back home</Button>
+                        <Link className={buttonClassName()} href="/">
+                            Back home
                         </Link>
-                        <Link href="/create">
-                            <Button variant="secondary">Open builder</Button>
+                        <Link
+                            href="/create"
+                            className={buttonClassName({
+                                variant: 'secondary',
+                            })}>
+                            Open builder
                         </Link>
                     </div>
                 </div>

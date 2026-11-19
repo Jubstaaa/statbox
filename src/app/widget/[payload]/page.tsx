@@ -61,13 +61,14 @@ export default function WidgetPage() {
     const style = decoded?.style ?? 'classic'
 
     return (
-        <div
+        <main
             className={cn('flex min-h-screen bg-transparent', {
                 'items-center justify-end': style === 'compact',
                 'items-center justify-start': style === 'classic',
                 'items-end justify-center': style === 'minimal',
                 'items-start justify-center': style === 'topbar',
             })}>
+            <h1 className="sr-only">StatBox widget</h1>
             <Widget
                 data={summonerQuery.data ?? null}
                 isError={isError}
@@ -75,6 +76,6 @@ export default function WidgetPage() {
                 session={session}
                 style={style}
             />
-        </div>
+        </main>
     )
 }

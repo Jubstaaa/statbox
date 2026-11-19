@@ -3,7 +3,7 @@
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-import Button from '@/components/button'
+import { buttonClassName } from '@/components/button'
 import Card from '@/components/card'
 
 export default function CreateError() {
@@ -13,20 +13,20 @@ export default function CreateError() {
                 <p className="text-loss text-[11px] font-semibold tracking-[0.22em] uppercase">
                     Summoner error
                 </p>
-                <h1 className="text-text mt-2 text-2xl font-black">
+                <h2 className="text-text mt-2 text-2xl font-black">
                     Couldn&apos;t find that account
-                </h1>
+                </h2>
                 <p className="text-text-muted mt-2 text-sm leading-relaxed">
                     Check the Riot ID and region, then try again from the home
                     page.
                 </p>
             </div>
             <div className="flex flex-wrap gap-3">
-                <Link href="/">
-                    <Button variant="secondary">
-                        <ArrowLeft className="h-4 w-4" />
-                        Back home
-                    </Button>
+                <Link
+                    className={buttonClassName({ variant: 'secondary' })}
+                    href="/">
+                    <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+                    Back home
                 </Link>
             </div>
         </Card>
