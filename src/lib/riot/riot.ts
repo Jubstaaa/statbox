@@ -1,9 +1,4 @@
 import { Constants } from 'twisted'
-import type {
-    AccountAPIRegionGroups,
-    RegionGroups,
-    Regions,
-} from 'twisted/dist/constants/regions'
 
 import {
     getCachedAccount,
@@ -19,11 +14,17 @@ import {
     REMAKE_DURATION_THRESHOLD_SECONDS,
 } from './riot.constants'
 import type { MatchEntry, RiotData } from './riot.types'
-import type { RankedQueue, Region } from './riot.types'
+import type {
+    RankedQueue,
+    Region,
+    TwistedAccountRegionGroup,
+    TwistedRegion,
+    TwistedRegionGroup,
+} from './riot.types'
 
 const { RegionGroups: RG, Regions: R } = Constants
 
-const REGION_MAP: Record<Region, Regions> = {
+const REGION_MAP: Record<Region, TwistedRegion> = {
     BR: R.BRAZIL,
     EUNE: R.EU_EAST,
     EUW: R.EU_WEST,
@@ -41,7 +42,7 @@ const REGION_MAP: Record<Region, Regions> = {
     VN: R.VIETNAM,
 }
 
-const REGION_GROUP_MAP: Record<Region, RegionGroups> = {
+const REGION_GROUP_MAP: Record<Region, TwistedRegionGroup> = {
     BR: RG.AMERICAS,
     EUNE: RG.EUROPE,
     EUW: RG.EUROPE,
@@ -70,7 +71,7 @@ export async function resolvePuuidByRiotId(
     const { response: account } = await riotApi.Account.getByRiotId(
         name,
         tag,
-        regionGroup as AccountAPIRegionGroups
+        regionGroup as TwistedAccountRegionGroup
     )
 
     puuidRegionCache.set(account.puuid, region)

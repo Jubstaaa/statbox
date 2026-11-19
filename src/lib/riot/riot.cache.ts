@@ -1,9 +1,13 @@
-import type { RegionGroups, Regions } from 'twisted/dist/constants/regions'
-
 import { getCache } from '@/lib/cache'
 
 import { lolApi, riotApi } from './riot.client'
-import type { RankedQueue, Region, RiotData } from './riot.types'
+import type {
+    RankedQueue,
+    Region,
+    RiotData,
+    TwistedRegion,
+    TwistedRegionGroup,
+} from './riot.types'
 
 const cache = getCache({ namespace: 'riot' })
 
@@ -60,7 +64,7 @@ function getWidgetKey(puuid: string, region: Region, queue: RankedQueue) {
 
 export async function getCachedAccount(
     puuid: string,
-    regionGroup: RegionGroups
+    regionGroup: TwistedRegionGroup
 ): Promise<CachedAccount> {
     const cached = (await cache.get(getAccountKey(puuid))) as
         CachedAccount | undefined
@@ -87,7 +91,7 @@ export async function getCachedAccount(
 
 export async function getCachedMatchDetail(
     matchId: string,
-    regionGroup: RegionGroups
+    regionGroup: TwistedRegionGroup
 ): Promise<CachedMatchDetail | null> {
     const cached = (await cache.get(getMatchKey(matchId))) as
         CachedMatchDetail | undefined
@@ -126,7 +130,7 @@ export async function getCachedMatchDetail(
 export async function getCachedSummoner(
     puuid: string,
     region: Region,
-    twistedRegion: Regions
+    twistedRegion: TwistedRegion
 ): Promise<CachedSummoner> {
     const cached = (await cache.get(getSummonerKey(puuid, region))) as
         CachedSummoner | undefined
