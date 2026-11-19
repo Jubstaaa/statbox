@@ -7,7 +7,7 @@ import { RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 import Button from '@/components/button/button'
-import Input from '@/components/input/input'
+import Input from '@/features/widget-generator/input'
 import { useHydrationReady } from '@/hooks/use-hydration-ready'
 import type { Region } from '@/lib/riot/riot.types'
 

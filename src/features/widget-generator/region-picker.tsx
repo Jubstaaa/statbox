@@ -1,4 +1,4 @@
-import Chip from '@/components/chip/chip'
+import Chip from '@/features/widget-generator/chip'
 import type { Region } from '@/lib/riot/riot.types'
 
 import { BUILDER_REGIONS } from './widget-generator.constants'

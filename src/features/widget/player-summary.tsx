@@ -1,4 +1,4 @@
-import ProfileIcon from '@/components/profile-icon/profile-icon'
+import ProfileIcon from '@/features/widget/profile-icon'
 import { cn } from '@/lib/cn'
 
 import type { PlayerSummaryProps } from './widget.types'

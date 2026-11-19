@@ -1,5 +1,5 @@
-import ChampionIcon from '@/components/champion-icon/champion-icon'
-import ProfileIcon from '@/components/profile-icon/profile-icon'
+import ChampionIcon from '@/features/widget/champion-icon'
+import ProfileIcon from '@/features/widget/profile-icon'
 
 import FooterMark from './footer-mark'
 import MetricTile from './metric-tile'

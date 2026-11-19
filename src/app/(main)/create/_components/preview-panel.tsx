@@ -1,6 +1,6 @@
 import Card from '@/components/card/card'
-import Widget from '@/components/widget/widget'
-import type { WidgetPreviewPanelProps } from '@/components/widget-generator/widget-generator.types'
+import Widget from '@/features/widget/widget'
+import type { WidgetPreviewPanelProps } from '@/features/widget-generator/widget-generator.types'
 
 export default function CreatePreviewPanel({
     initialData,

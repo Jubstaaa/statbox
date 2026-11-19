@@ -6,7 +6,7 @@ import { Check, Copy } from 'lucide-react'
 
 import Button from '@/components/button/button'
 
-import type { CopyButtonProps } from './create-copy-button.types'
+import type { CopyButtonProps } from './copy-button.types'
 
 export default function CreateCopyButton({ text }: CopyButtonProps) {
     const [copied, setCopied] = useState(false)

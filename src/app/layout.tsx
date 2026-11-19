@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 
 import { getDdragonVersion } from '@/lib/ddragon'
-import DdragonProvider from '@/providers/ddragon-provider/ddragon-provider'
-import QueryProvider from '@/providers/query-provider/query-provider'
+import DdragonProvider from '@/features/widget/ddragon-provider'
+import QueryProvider from '@/app/_components/query-provider'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })

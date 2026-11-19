@@ -1,4 +1,4 @@
-import ProfileIcon from '@/components/profile-icon/profile-icon'
+import ProfileIcon from '@/features/widget/profile-icon'
 
 import StripStat from './strip-stat'
 import { GAME_COLORS } from './widget.constants'

@@ -3,25 +3,25 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 
-import { TIER_COLORS } from '@/components/widget/widget.constants'
-import { fetchSummonerByPuuid } from '@/components/widget-generator/widget-generator.api'
+import { TIER_COLORS } from '@/features/widget/widget.constants'
+import { fetchSummonerByPuuid } from '@/features/widget-generator/widget-generator.api'
 import {
     buildSessionTimestampFromTime,
     buildWidgetUrls,
     getCurrentDateTimeInputValue,
     resolveSessionTimestamp,
-} from '@/components/widget-generator/widget-generator.payload'
+} from '@/features/widget-generator/widget-generator.payload'
 import {
     clearStoredBuilderPuuid,
     clearStoredBuilderSettings,
     getStoredBuilderPuuid,
     getStoredBuilderSettings,
     setStoredBuilderSettings,
-} from '@/components/widget-generator/widget-generator.storage'
+} from '@/features/widget-generator/widget-generator.storage'
 import { useHydrationReady } from '@/hooks/use-hydration-ready'
 import type { RankedQueue, WidgetStyle } from '@/lib/riot/riot.types'
 
-import type { CreatePageState } from './create.types'
+import type { CreatePageState } from './use-create-page.types'
 
 export function useCreatePage(): CreatePageState {
     const router = useRouter()

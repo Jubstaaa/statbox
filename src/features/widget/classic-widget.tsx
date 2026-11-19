@@ -1,4 +1,4 @@
-import ChampionIcon from '@/components/champion-icon/champion-icon'
+import ChampionIcon from '@/features/widget/champion-icon'
 import { cn } from '@/lib/cn'
 
 import FooterMark from './footer-mark'

@@ -3,8 +3,8 @@ import { RefreshCw } from 'lucide-react'
 
 import Button from '@/components/button/button'
 import Card from '@/components/card/card'
-import PlayerSummary from '@/components/widget/player-summary'
-import { TIER_COLORS } from '@/components/widget/widget.constants'
+import PlayerSummary from '@/features/widget/player-summary'
+import { TIER_COLORS } from '@/features/widget/widget.constants'
 import type { RiotData } from '@/lib/riot/riot.types'
 
 interface ConnectedAccountCardProps {

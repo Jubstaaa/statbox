@@ -1,4 +1,4 @@
-import { WIDGET_STYLE_OPTIONS } from '@/components/widget/widget.constants'
+import { WIDGET_STYLE_OPTIONS } from '@/features/widget/widget.constants'
 import { REGIONS } from '@/lib/riot/riot.constants'
 import type { Region } from '@/lib/riot/riot.types'
 

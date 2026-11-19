@@ -4,7 +4,7 @@ import Image from 'next/image'
 
 import { cn } from '@/lib/cn'
 import { buildChampionIconUrl } from '@/lib/ddragon'
-import { useDdragonVersion } from '@/providers/ddragon-provider/ddragon-provider'
+import { useDdragonVersion } from '@/features/widget/ddragon-provider'
 
 import type { ChampionIconProps } from './champion-icon.types'
 

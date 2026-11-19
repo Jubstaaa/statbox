@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react'
 
-import type { WidgetUrls } from '@/components/widget-generator/widget-generator.types'
+import type { WidgetUrls } from '@/features/widget-generator/widget-generator.types'
 import type { RankedQueue, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
 export interface CreateErrorProps {

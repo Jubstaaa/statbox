@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Button from '@/components/button/button'
 import Card from '@/components/card/card'
 
-import type { CreateErrorProps } from './create.types'
+import type { CreateErrorProps } from '../use-create-page.types'
 
 export default function CreateError({}: CreateErrorProps) {
     return (

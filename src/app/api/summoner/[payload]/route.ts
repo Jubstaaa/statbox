@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 
-import { decodeWidgetRoutePayload } from '@/components/widget-generator/widget-generator.payload'
+import { decodeWidgetRoutePayload } from '@/features/widget-generator/widget-generator.payload'
 import { fetchRiotDataByPuuid } from '@/lib/riot/riot'
 import {
     puuidSchema,

@@ -4,7 +4,7 @@ import Image from 'next/image'
 
 import { cn } from '@/lib/cn'
 import { buildProfileIconUrl } from '@/lib/ddragon'
-import { useDdragonVersion } from '@/providers/ddragon-provider/ddragon-provider'
+import { useDdragonVersion } from '@/features/widget/ddragon-provider'
 
 import type { ProfileIconProps } from './profile-icon.types'
 
