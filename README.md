@@ -39,9 +39,12 @@ bun run dev
 ## Scripts
 
 ```bash
-bun run dev
-bun run lint
-bun run build
+bun run dev        # next dev
+bun run lint       # eslint
+bun run typecheck  # tsc --noEmit
+bun run test       # vitest run
+bun run audit      # bun audit --audit-level=high
+bun run build      # next build (standalone)
 ```
 
 ## Environment

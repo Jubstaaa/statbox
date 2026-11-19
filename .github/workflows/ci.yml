@@ -26,6 +26,12 @@ jobs:
             - run: bun run lint
             - run: bun run typecheck
             - run: bun run test
+            # The deploy only builds after merge; a broken build should fail the PR.
+            - run: bun run build
+              env:
+                  # Route modules validate it on import; no Riot call happens at build.
+                  RIOT_API_KEY: build-time-placeholder
+                  NEXT_TELEMETRY_DISABLED: '1'
             - run: bun run audit
             - name: actionlint
               run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
