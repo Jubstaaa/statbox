@@ -23,13 +23,15 @@
   },
   "knip": {
     "ignoreDependencies": [
-      "prettier-plugin-tailwindcss"
+      "prettier-plugin-tailwindcss",
+      "sharp"
     ]
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
     "@tanstack/react-query": "^5.108.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
     "lucide-react": "^1.76.0",
     "lz-string": "^1.5.0",
     "next": "16.4.6",

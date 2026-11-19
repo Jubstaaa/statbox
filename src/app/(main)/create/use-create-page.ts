@@ -18,7 +18,10 @@ import {
     getStoredBuilderSettings,
     setStoredBuilderSettings,
 } from '@/features/widget-generator/widget-generator.storage'
-import type { WidgetUrls } from '@/features/widget-generator/widget-generator.types'
+import type {
+    SessionMode,
+    WidgetUrls,
+} from '@/features/widget-generator/widget-generator.types'
 import { TIER_COLORS } from '@/features/widget/widget.constants'
 import { useHydrationReady } from '@/hooks/use-hydration-ready'
 import type { RankedQueue, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
@@ -37,7 +40,7 @@ interface CreatePageState {
     previewSession: number | null
     puuid: string | null
     queue: RankedQueue
-    sessionMode: 'all-day' | 'from-time'
+    sessionMode: SessionMode
     sessionTime: string
     storageReady: boolean
     style: WidgetStyle
@@ -58,7 +61,7 @@ export function useCreatePage(): CreatePageState {
         () => getStoredBuilderSettings()?.queue ?? 'solo'
     )
     const [region] = useState(() => getStoredBuilderSettings()?.region ?? 'EUW')
-    const [sessionMode, setSessionMode] = useState<'all-day' | 'from-time'>(
+    const [sessionMode, setSessionMode] = useState<SessionMode>(
         () => getStoredBuilderSettings()?.sessionMode ?? 'all-day'
     )
     const [sessionTime, setSessionTime] = useState<string>(

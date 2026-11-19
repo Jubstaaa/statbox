@@ -10,17 +10,17 @@ import {
     BUILDER_PUUID_STORAGE_KEY,
     BUILDER_SETTINGS_STORAGE_KEY,
 } from './widget-generator.constants'
+import {
+    sessionDateTimeSchema,
+    sessionModeSchema,
+} from './widget-generator.payload'
 import type { BuilderSettings } from './widget-generator.types'
-
-function isValidDateTimeValue(value: string) {
-    return /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):([0-5]\d)$/.test(value)
-}
 
 const builderSettingsSchema = z.object({
     queue: rankedQueueSchema,
     region: regionSchema,
-    sessionMode: z.enum(['all-day', 'from-time']),
-    sessionTime: z.string().refine(isValidDateTimeValue).nullable(),
+    sessionMode: sessionModeSchema,
+    sessionTime: sessionDateTimeSchema.nullable(),
     style: widgetStyleSchema,
 })
 
@@ -54,7 +54,7 @@ export function getStoredBuilderSettings(): BuilderSettings | null {
         const parsed = builderSettingsSchema.safeParse(JSON.parse(raw))
         if (!parsed.success) return null
 
-        return parsed.data as BuilderSettings
+        return parsed.data
     } catch {
         return null
     }

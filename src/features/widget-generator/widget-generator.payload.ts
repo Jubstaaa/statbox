@@ -1,3 +1,4 @@
+import { format, parse, startOfToday } from 'date-fns'
 import {
     compressToEncodedURIComponent,
     decompressFromEncodedURIComponent,
@@ -12,15 +13,17 @@ import {
 } from '@/lib/riot/riot.schemas'
 import type { RankedQueue, Region, WidgetStyle } from '@/lib/riot/riot.types'
 
-import type { WidgetRoutePayload } from './widget-generator.types'
+import type { SessionMode, WidgetRoutePayload } from './widget-generator.types'
 
-function isValidTimeValue(time: string) {
-    return /^([01]\d|2[0-3]):([0-5]\d)$/.test(time)
-}
+// The value of an <input type="datetime-local">, minute precision.
+export const sessionDateTimeSchema = z.iso.datetime({
+    local: true,
+    precision: -1,
+})
+const sessionClockTimeSchema = z.iso.time({ precision: -1 })
+export const sessionModeSchema = z.enum(['all-day', 'from-time'])
 
-function isValidDateTimeValue(value: string) {
-    return /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):([0-5]\d)$/.test(value)
-}
+const DATETIME_LOCAL_FORMAT = "yyyy-MM-dd'T'HH:mm"
 
 function encodeWidgetRoutePayload(payload: WidgetRoutePayload) {
     return compressToEncodedURIComponent(JSON.stringify(payload))
@@ -30,8 +33,8 @@ const widgetRoutePayloadSchema = z.object({
     puuid: puuidSchema,
     queue: rankedQueueSchema,
     region: regionSchema,
-    sessionMode: z.enum(['all-day', 'from-time']).optional(),
-    sessionTime: z.string().refine(isValidDateTimeValue).nullable().optional(),
+    sessionMode: sessionModeSchema.optional(),
+    sessionTime: sessionDateTimeSchema.nullable().optional(),
     style: widgetStyleSchema,
 })
 
@@ -69,7 +72,7 @@ export function buildWidgetUrls({
     puuid: string
     queue: RankedQueue
     region: Region
-    sessionMode: 'all-day' | 'from-time'
+    sessionMode: SessionMode
     sessionTime: string | null
     style: WidgetStyle
 }) {
@@ -89,56 +92,37 @@ export function buildWidgetUrls({
     return { widgetUrl: `${base}/widget/${payload}` }
 }
 
-function getStartOfTodayTimestamp() {
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
-    return now.getTime()
-}
-
 function clampSessionTimestamp(timestamp: number) {
     return Math.min(timestamp, Date.now())
 }
 
 export function getCurrentDateTimeInputValue() {
-    const date = new Date()
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const hours = String(date.getHours()).padStart(2, '0')
-    const minutes = String(date.getMinutes()).padStart(2, '0')
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`
+    return format(new Date(), DATETIME_LOCAL_FORMAT)
 }
 
+// Accepts the datetime-local value the builder stores, or a bare HH:mm (today)
+// from older widget links. Returns null for anything else.
 export function buildSessionTimestampFromTime(value: string) {
-    if (isValidDateTimeValue(value)) {
+    if (sessionDateTimeSchema.safeParse(value).success) {
         return clampSessionTimestamp(new Date(value).getTime())
     }
 
-    if (!isValidTimeValue(value)) return null
+    if (!sessionClockTimeSchema.safeParse(value).success) return null
 
-    const [hoursRaw, minutesRaw] = value.split(':')
-    const date = new Date()
-    date.setHours(Number(hoursRaw), Number(minutesRaw), 0, 0)
-
-    return clampSessionTimestamp(date.getTime())
+    return clampSessionTimestamp(parse(value, 'HH:mm', new Date()).getTime())
 }
 
 export function resolveSessionTimestamp({
     sessionMode,
     sessionTime,
 }: {
-    sessionMode: 'all-day' | 'from-time'
+    sessionMode: SessionMode
     sessionTime?: string | null
 }) {
-    if (sessionMode === 'all-day') return getStartOfTodayTimestamp()
+    const fromTime =
+        sessionMode === 'from-time' && sessionTime
+            ? buildSessionTimestampFromTime(sessionTime)
+            : null
 
-    if (
-        sessionTime &&
-        (isValidDateTimeValue(sessionTime) || isValidTimeValue(sessionTime))
-    ) {
-        return buildSessionTimestampFromTime(sessionTime)
-    }
-
-    return getStartOfTodayTimestamp()
+    return fromTime ?? startOfToday().getTime()
 }
