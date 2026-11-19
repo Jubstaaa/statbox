@@ -1,5 +1,12 @@
+import type { ReactNode } from 'react'
+
 import SurfaceCard from './surface-card'
-import type { WidgetShowcaseCardProps } from './widget-showcase-card.types'
+
+export interface WidgetShowcaseCardProps {
+    children: ReactNode
+    description: string
+    name: string
+}
 
 export default function WidgetShowcaseCard({
     children,

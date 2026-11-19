@@ -1,7 +1,18 @@
+import type { InputHTMLAttributes } from 'react'
+
 import { cn } from '@/lib/cn'
 
-import type { InputProps } from './input.types'
-import { getInputStateClasses } from './input.utils'
+function getInputStateClasses(error?: string) {
+    return error
+        ? 'border-loss/50 focus:border-loss'
+        : 'border-border-secondary focus:border-accent'
+}
+
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+    description?: string
+    error?: string
+    label: string
+}
 
 export default function Input({
     className,

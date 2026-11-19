@@ -1,9 +1,9 @@
+import type { ChangeEvent } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 
-import { TIER_COLORS } from '@/features/widget/widget.constants'
 import { fetchSummonerByPuuid } from '@/features/widget-generator/widget-generator.api'
 import {
     buildSessionTimestampFromTime,
@@ -18,10 +18,33 @@ import {
     getStoredBuilderSettings,
     setStoredBuilderSettings,
 } from '@/features/widget-generator/widget-generator.storage'
+import type { WidgetUrls } from '@/features/widget-generator/widget-generator.types'
+import { TIER_COLORS } from '@/features/widget/widget.constants'
 import { useHydrationReady } from '@/hooks/use-hydration-ready'
-import type { RankedQueue, WidgetStyle } from '@/lib/riot/riot.types'
+import type { RankedQueue, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
-import type { CreatePageState } from './use-create-page.types'
+interface CreatePageState {
+    createStyleSelectHandler: (value: WidgetStyle) => () => void
+    handleAllDaySession: () => void
+    handleChangeAccount: () => void
+    handleFlexQueue: () => void
+    handleFromTimeSession: () => void
+    handleSessionTimeChange: (event: ChangeEvent<HTMLInputElement>) => void
+    handleSoloQueue: () => void
+    isError: boolean
+    isLoading: boolean
+    maxSessionTime: string
+    previewSession: number | null
+    puuid: string | null
+    queue: RankedQueue
+    sessionMode: 'all-day' | 'from-time'
+    sessionTime: string
+    storageReady: boolean
+    style: WidgetStyle
+    summonerData: RiotData | null
+    tierColor: string
+    urls: WidgetUrls | null
+}
 
 export function useCreatePage(): CreatePageState {
     const router = useRouter()
@@ -108,7 +131,7 @@ export function useCreatePage(): CreatePageState {
     }, [])
 
     const handleSessionTimeChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
+        (event: ChangeEvent<HTMLInputElement>) => {
             if (buildSessionTimestampFromTime(event.target.value) === null)
                 return
 

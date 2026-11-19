@@ -1,14 +1,13 @@
 import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 
-import { resolvePuuidByRiotId } from '@/lib/riot/riot'
-import { regionSchema } from '@/lib/riot/riot.schemas'
-
 import {
     errorResponse,
     jsonResponse,
     riotFailureResponse,
-} from '../_lib/responses'
+} from '@/app/api/summoner/_lib/responses'
+import { resolvePuuidByRiotId } from '@/lib/riot/riot'
+import { regionSchema } from '@/lib/riot/riot.schemas'
 
 // A Riot ID points at the same PUUID until the player renames, so the edge can
 // answer repeat lookups for a day.

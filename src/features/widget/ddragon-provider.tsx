@@ -1,8 +1,12 @@
 'use client'
 
 import { createContext, useContext } from 'react'
+import type { ReactNode } from 'react'
 
-import type { DdragonProviderProps } from './ddragon-provider.types'
+export interface DdragonProviderProps {
+    children: ReactNode
+    version: string
+}
 
 const DdragonVersionContext = createContext<string | null>(null)
 

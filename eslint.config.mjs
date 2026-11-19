@@ -3,7 +3,6 @@ import nextVitals from 'eslint-config-next/core-web-vitals'
 import nextTs from 'eslint-config-next/typescript'
 import eslintConfigPrettier from 'eslint-config-prettier'
 import globals from 'globals'
-import importPlugin from 'eslint-plugin-import'
 import perfectionistPlugin from 'eslint-plugin-perfectionist'
 import prettierPlugin from 'eslint-plugin-prettier'
 import reactPlugin from 'eslint-plugin-react'
@@ -21,15 +20,9 @@ const eslintConfig = defineConfig([
             },
         },
         plugins: {
-            import: importPlugin,
             perfectionist: perfectionistPlugin,
             prettier: prettierPlugin,
             react: reactPlugin,
-        },
-        settings: {
-            'import/resolver': {
-                typescript: true,
-            },
         },
         rules: {
             ...eslintConfigPrettier.rules,
@@ -37,33 +30,31 @@ const eslintConfig = defineConfig([
             '@typescript-eslint/no-explicit-any': 'error',
             '@typescript-eslint/no-empty-object-type': 'off',
             '@typescript-eslint/no-unused-expressions': 'off',
-            'import/order': [
+            // Replaces import/order: eslint-plugin-import 2.x crashes under
+            // ESLint 10 whenever that rule reports.
+            'perfectionist/sort-imports': [
                 'error',
                 {
-                    alphabetize: {
-                        caseInsensitive: true,
-                        order: 'asc',
-                    },
-                    groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-                    'newlines-between': 'always',
-                    pathGroups: [
+                    customGroups: [
                         {
-                            group: 'external',
-                            pattern: 'react',
-                            position: 'before',
-                        },
-                        {
-                            group: 'external',
-                            pattern: 'react-*',
-                            position: 'before',
-                        },
-                        {
-                            group: 'internal',
-                            pattern: '@/**',
-                            position: 'after',
+                            elementNamePattern: ['^react$', '^react-dom(/.*)?$'],
+                            groupName: 'react',
                         },
                     ],
-                    pathGroupsExcludedImportTypes: ['react'],
+                    groups: [
+                        'react',
+                        'builtin',
+                        'external',
+                        'internal',
+                        ['parent', 'sibling', 'index'],
+                        'side-effect',
+                        'unknown',
+                    ],
+                    ignoreCase: true,
+                    internalPattern: ['^@/.+'],
+                    newlinesBetween: 1,
+                    order: 'asc',
+                    type: 'alphabetical',
                 },
             ],
             'perfectionist/sort-interfaces': [

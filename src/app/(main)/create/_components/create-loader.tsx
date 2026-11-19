@@ -1,5 +1,5 @@
-import Card from '@/components/card/card'
-import Spinner from '@/components/spinner/spinner'
+import Card from '@/components/card'
+import Spinner from '@/components/spinner'
 
 export default function CreateLoader() {
     return (

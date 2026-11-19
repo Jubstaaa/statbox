@@ -2,7 +2,10 @@ import Image from 'next/image'
 
 import { cn } from '@/lib/cn'
 
-import type { LogoProps } from './logo.types'
+export interface LogoProps {
+    className?: string
+    size?: 'sm' | 'md' | 'lg'
+}
 
 export default function Logo({ className, size = 'md' }: LogoProps) {
     const px = { lg: 44, md: 36, sm: 28 }[size]

@@ -1,17 +1,17 @@
 'use client'
 
 import Badge from '@/app/(main)/_components/badge'
-import Button from '@/components/button/button'
-import Card from '@/components/card/card'
-import PlayerSummary from '@/features/widget/player-summary'
+import Button from '@/components/button'
+import Card from '@/components/card'
 import { STYLES } from '@/features/widget-generator/widget-generator.constants'
+import PlayerSummary from '@/features/widget/player-summary'
 import { cn } from '@/lib/cn'
 
 import CreateError from './_components/create-error'
-import { useCreatePage } from './use-create-page'
 import CreateLoader from './_components/create-loader'
 import CreatePreviewPanel from './_components/preview-panel'
 import CreateUrlBlock from './_components/url-block'
+import { useCreatePage } from './use-create-page'
 
 export default function CreateView() {
     const {

@@ -2,11 +2,16 @@
 
 import Image from 'next/image'
 
+import { useDdragonVersion } from '@/features/widget/ddragon-provider'
 import { cn } from '@/lib/cn'
 import { buildProfileIconUrl } from '@/lib/ddragon'
-import { useDdragonVersion } from '@/features/widget/ddragon-provider'
 
-import type { ProfileIconProps } from './profile-icon.types'
+export interface ProfileIconProps {
+    borderColor?: string
+    className?: string
+    iconId: number
+    ringClassName?: string
+}
 
 export default function ProfileIcon({
     borderColor,

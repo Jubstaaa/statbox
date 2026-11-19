@@ -3,12 +3,10 @@
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-import Button from '@/components/button/button'
-import Card from '@/components/card/card'
+import Button from '@/components/button'
+import Card from '@/components/card'
 
-import type { CreateErrorProps } from '../use-create-page.types'
-
-export default function CreateError({}: CreateErrorProps) {
+export default function CreateError() {
     return (
         <Card className="border-border-secondary bg-bg-elevated space-y-5 rounded-4xl p-6 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
             <div>

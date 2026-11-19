@@ -1,6 +1,8 @@
 import { cn } from '@/lib/cn'
 
-import type { SpinnerProps } from './spinner.types'
+export interface SpinnerProps {
+    className?: string
+}
 
 export default function Spinner({ className }: SpinnerProps) {
     return (

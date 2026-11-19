@@ -3,12 +3,12 @@ import { AlertTriangle, Tv } from 'lucide-react'
 import Badge from '@/app/(main)/_components/badge'
 import FeatureCard from '@/app/(main)/_components/feature-card'
 import MetricCard from '@/app/(main)/_components/metric-card'
+import SectionHeading from '@/app/(main)/_components/section-heading'
 import StepCard from '@/app/(main)/_components/step-card'
 import SurfaceCard from '@/app/(main)/_components/surface-card'
 import WidgetShowcaseCard from '@/app/(main)/_components/widget-showcase-card'
-import SectionHeading from '@/app/(main)/_components/section-heading'
-import Widget from '@/features/widget/widget'
 import WidgetGeneratorForm from '@/features/widget-generator/widget-generator.form'
+import Widget from '@/features/widget/widget'
 
 import {
     EXAMPLE_SUMMONER,

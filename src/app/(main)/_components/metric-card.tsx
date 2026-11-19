@@ -1,5 +1,10 @@
-import type { MetricCardProps } from './metric-card.types'
 import SurfaceCard from './surface-card'
+
+export interface MetricCardProps {
+    label: string
+    note: string
+    value: string
+}
 
 export default function MetricCard({ label, note, value }: MetricCardProps) {
     return (

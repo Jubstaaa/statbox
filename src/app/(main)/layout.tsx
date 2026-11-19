@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { siGithub } from 'simple-icons'
 
-import Button from '@/components/button/button'
 import Logo from '@/app/(main)/_components/logo'
+import Button from '@/components/button'
 
-export const mainLayoutMetadata: Metadata = {
+export const metadata: Metadata = {
     alternates: {
         canonical: 'https://statbox.live',
     },

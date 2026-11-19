@@ -1,7 +1,7 @@
 import { BarChart3, RefreshCw, Zap } from 'lucide-react'
 
-import type { FeatureCardItemProps } from '@/app/(main)/_components/feature-card.types'
-import type { StepCardProps } from '@/app/(main)/_components/step-card.types'
+import type { FeatureCardItemProps } from '@/app/(main)/_components/feature-card'
+import type { StepCardProps } from '@/app/(main)/_components/step-card'
 import { WIDGET_STYLE_OPTIONS } from '@/features/widget/widget.constants'
 import type { WidgetStyleDefinition } from '@/features/widget/widget.types'
 import type { RiotData } from '@/lib/riot/riot.types'

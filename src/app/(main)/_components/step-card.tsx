@@ -1,5 +1,10 @@
-import type { StepCardProps } from './step-card.types'
 import SurfaceCard from './surface-card'
+
+export interface StepCardProps {
+    description: string
+    step: number
+    title: string
+}
 
 export default function StepCard({ description, step, title }: StepCardProps) {
     return (

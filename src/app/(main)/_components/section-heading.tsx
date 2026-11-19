@@ -1,4 +1,10 @@
-import type { SectionHeadingProps } from './section-heading.types'
+import type { ReactNode } from 'react'
+
+export interface SectionHeadingProps {
+    children?: ReactNode
+    eyebrow?: string
+    title: string
+}
 
 export default function SectionHeading({
     children,

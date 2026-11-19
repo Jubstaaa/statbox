@@ -1,4 +1,4 @@
-import Spinner from '@/components/spinner/spinner'
+import Spinner from '@/components/spinner'
 import { cn } from '@/lib/cn'
 
 import type { WidgetFrameProps } from './widget.types'

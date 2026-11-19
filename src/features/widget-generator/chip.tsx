@@ -1,6 +1,11 @@
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
+
 import { cn } from '@/lib/cn'
 
-import type { ChipProps } from './chip.types'
+export interface ChipProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+    active?: boolean
+    children: ReactNode
+}
 
 export default function Chip({
     active = false,

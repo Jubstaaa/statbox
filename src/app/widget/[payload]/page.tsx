@@ -5,13 +5,13 @@ import { useMemo } from 'react'
 import { skipToken, useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'next/navigation'
 
-import Widget from '@/features/widget/widget'
-import { POLL_INTERVAL } from '@/features/widget/widget.constants'
 import { fetchSummonerByPuuid } from '@/features/widget-generator/widget-generator.api'
 import {
     decodeWidgetRoutePayload,
     resolveSessionTimestamp,
 } from '@/features/widget-generator/widget-generator.payload'
+import Widget from '@/features/widget/widget'
+import { POLL_INTERVAL } from '@/features/widget/widget.constants'
 import { cn } from '@/lib/cn'
 import { rankedQueueSchema, regionSchema } from '@/lib/riot/riot.schemas'
 

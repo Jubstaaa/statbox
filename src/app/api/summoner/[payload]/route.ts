@@ -1,6 +1,11 @@
 import type { NextRequest } from 'next/server'
 import { z } from 'zod'
 
+import {
+    errorResponse,
+    jsonResponse,
+    riotFailureResponse,
+} from '@/app/api/summoner/_lib/responses'
 import { decodeWidgetRoutePayload } from '@/features/widget-generator/widget-generator.payload'
 import { fetchRiotDataByPuuid } from '@/lib/riot/riot'
 import {
@@ -8,12 +13,6 @@ import {
     rankedQueueSchema,
     regionSchema,
 } from '@/lib/riot/riot.schemas'
-
-import {
-    errorResponse,
-    jsonResponse,
-    riotFailureResponse,
-} from '../_lib/responses'
 
 // The server keeps widget data for five minutes; the edge and the browser may
 // reuse a response for one more, well inside the widget's 120 s poll.

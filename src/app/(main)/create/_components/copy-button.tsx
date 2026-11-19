@@ -4,9 +4,11 @@ import { useCallback, useState } from 'react'
 
 import { Check, Copy } from 'lucide-react'
 
-import Button from '@/components/button/button'
+import Button from '@/components/button'
 
-import type { CopyButtonProps } from './copy-button.types'
+export interface CopyButtonProps {
+    text: string
+}
 
 export default function CreateCopyButton({ text }: CopyButtonProps) {
     const [copied, setCopied] = useState(false)

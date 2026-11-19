@@ -2,7 +2,7 @@
 
 import { ExternalLink } from 'lucide-react'
 
-import Card from '@/components/card/card'
+import Card from '@/components/card'
 import type { UrlBlockProps } from '@/features/widget-generator/widget-generator.types'
 
 import CreateCopyButton from './copy-button'

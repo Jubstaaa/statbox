@@ -1,9 +1,12 @@
 import React from 'react'
 
-import Card from '@/components/card/card'
+import Card from '@/components/card'
 import { cn } from '@/lib/cn'
 
-import type { SurfaceCardProps } from './surface-card.types'
+export interface SurfaceCardProps {
+    children: React.ReactNode
+    className?: string
+}
 
 export default function SurfaceCard({ children, className }: SurfaceCardProps) {
     return (

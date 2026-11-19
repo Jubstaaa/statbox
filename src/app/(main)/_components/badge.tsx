@@ -1,6 +1,12 @@
+import type { ReactNode } from 'react'
+
 import { cn } from '@/lib/cn'
 
-import type { BadgeProps } from './badge.types'
+export interface BadgeProps {
+    children: ReactNode
+    className?: string
+    tone?: 'default' | 'accent' | 'success'
+}
 
 const tones = {
     accent: 'border-accent/30 bg-accent/12 text-accent',
