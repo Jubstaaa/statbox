@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { siGithub } from 'simple-icons'
 
 import Logo from '@/app/(main)/_components/logo'
-import Button from '@/components/button'
+import { buttonClassName } from '@/components/button'
 
 export const metadata: Metadata = {
     alternates: {
@@ -30,6 +30,11 @@ export default function MainLayout({
 }) {
     return (
         <div className="text-text min-h-screen bg-[radial-gradient(circle_at_top,rgba(10,200,185,0.1),transparent_28%),radial-gradient(circle_at_20%_20%,rgba(244,201,93,0.1),transparent_22%),linear-gradient(180deg,#07111f_0%,#060e1a_45%,#07111f_100%)]">
+            <a
+                className="focus:bg-accent focus:text-bg-base sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-60 focus:rounded-xl focus:px-4 focus:py-2 focus:text-sm focus:font-semibold"
+                href="#main">
+                Skip to content
+            </a>
             <header className="border-border/80 bg-bg-base/85 sticky top-0 z-50 border-b backdrop-blur-xl">
                 <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
                     <Link
@@ -43,23 +48,23 @@ export default function MainLayout({
                             Free &amp; open source
                         </span>
                         <a
+                            aria-label="GitHub"
+                            className={buttonClassName({ size: 'sm' })}
                             href="https://github.com/Jubstaaa/statbox"
                             rel="noopener noreferrer"
                             target="_blank">
-                            <Button aria-label="GitHub" size="sm">
-                                <svg
-                                    aria-hidden="true"
-                                    className="h-4 w-4 fill-current"
-                                    viewBox="0 0 24 24">
-                                    <path d={siGithub.path} />
-                                </svg>
-                            </Button>
+                            <svg
+                                aria-hidden="true"
+                                className="h-4 w-4 fill-current"
+                                viewBox="0 0 24 24">
+                                <path d={siGithub.path} />
+                            </svg>
                         </a>
                     </div>
                 </div>
             </header>
 
-            <main>{children}</main>
+            <main id="main">{children}</main>
 
             <footer className="border-border/70 border-t py-8">
                 <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">

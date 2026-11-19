@@ -62,3 +62,9 @@ describe('security headers', () => {
         expect(csp).toContain("object-src 'none'")
     })
 })
+
+describe('performance config', () => {
+    it('inlines the Tailwind stylesheet so it does not block first render', () => {
+        expect(nextConfig.experimental?.inlineCss).toBe(true)
+    })
+})

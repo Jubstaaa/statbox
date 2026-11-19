@@ -36,6 +36,11 @@ const baseHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+    experimental: {
+        // Most visitors arrive once (from search or a streamer's link), so the
+        // ~7 kB of Tailwind is cheaper inline than as a render-blocking request.
+        inlineCss: true,
+    },
     async headers() {
         return [
             { headers: baseHeaders, source: '/:path*' },

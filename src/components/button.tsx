@@ -25,23 +25,39 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'ghost' | 'outline'
 }
 
-export default function Button({
-    children,
+type ButtonStyle = Pick<
+    ButtonProps,
+    'className' | 'fullWidth' | 'size' | 'variant'
+>
+
+// For links that look like buttons: styling the <a> itself avoids nesting a
+// <button> inside it, which leaves two interactive controls in one.
+export function buttonClassName({
     className,
     fullWidth,
     size = 'md',
     variant = 'primary',
+}: ButtonStyle = {}) {
+    return cn(
+        'inline-flex items-center justify-center gap-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
+        buttonVariants[variant],
+        buttonSizes[size],
+        fullWidth && 'w-full',
+        className
+    )
+}
+
+export default function Button({
+    children,
+    className,
+    fullWidth,
+    size,
+    variant,
     ...props
 }: ButtonProps) {
     return (
         <button
-            className={cn(
-                'inline-flex items-center justify-center gap-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
-                buttonVariants[variant],
-                buttonSizes[size],
-                fullWidth && 'w-full',
-                className
-            )}
+            className={buttonClassName({ className, fullWidth, size, variant })}
             {...props}>
             {children}
         </button>
