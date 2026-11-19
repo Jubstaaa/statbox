@@ -63,8 +63,7 @@ export async function getCachedAccount(
     regionGroup: RegionGroups
 ): Promise<CachedAccount> {
     const cached = (await cache.get(getAccountKey(puuid))) as
-        | CachedAccount
-        | undefined
+        CachedAccount | undefined
     if (cached) return cached
 
     const response = await riotApi.Account.getByPUUID(
@@ -91,8 +90,7 @@ export async function getCachedMatchDetail(
     regionGroup: RegionGroups
 ): Promise<CachedMatchDetail | null> {
     const cached = (await cache.get(getMatchKey(matchId))) as
-        | CachedMatchDetail
-        | undefined
+        CachedMatchDetail | undefined
     if (cached) return cached
 
     const response = await lolApi.MatchV5.get(matchId, regionGroup).catch(
@@ -131,8 +129,7 @@ export async function getCachedSummoner(
     twistedRegion: Regions
 ): Promise<CachedSummoner> {
     const cached = (await cache.get(getSummonerKey(puuid, region))) as
-        | CachedSummoner
-        | undefined
+        CachedSummoner | undefined
     if (cached) return cached
 
     const response = await lolApi.Summoner.getByPUUID(puuid, twistedRegion)
