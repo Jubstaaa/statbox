@@ -19,21 +19,17 @@ export async function fetchSummonerByPuuid({
     puuid,
     queue,
     region,
-    session,
 }: {
     puuid: string
     queue: RankedQueue
     region: Region
-    session?: number | null
 }) {
-    const params = new URLSearchParams()
-    params.set('queue', queue)
-    params.set('region', region)
-
-    if (typeof session === 'number') params.set('session', String(session))
-
-    const query = params.toString()
-    const res = await fetch(`/api/summoner/${puuid}${query ? `?${query}` : ''}`)
+    const params = new URLSearchParams({ queue, region })
+    // Revalidate on every poll: the edge answers from its own short cache, but a
+    // browser-cached copy could otherwise keep an overlay frozen for hours.
+    const res = await fetch(`/api/summoner/${puuid}?${params.toString()}`, {
+        cache: 'no-cache',
+    })
 
     if (!res.ok) throw new Error('Summoner not found')
 

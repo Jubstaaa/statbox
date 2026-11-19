@@ -1,11 +1,7 @@
 import { Constants } from 'twisted'
+import { z } from 'zod'
 
-import {
-    getCachedAccount,
-    getCachedMatchDetail,
-    getCachedSummoner,
-    getCachedWidgetData,
-} from './riot.cache'
+import { cachedLoader } from './riot.cache'
 import { lolApi, riotApi } from './riot.client'
 import {
     MATCH_FETCH_COUNT,
@@ -13,11 +9,14 @@ import {
     QUEUE_ID_SOLO,
     REMAKE_DURATION_THRESHOLD_SECONDS,
 } from './riot.constants'
-import type { MatchEntry, RiotData } from './riot.types'
+import { isRiotNotFound } from './riot.errors'
+import { callRiot } from './riot.gate'
+import { riotDataSchema } from './riot.schemas'
 import type {
+    MatchEntry,
     RankedQueue,
     Region,
-    TwistedAccountRegionGroup,
+    RiotData,
     TwistedRegion,
     TwistedRegionGroup,
 } from './riot.types'
@@ -60,42 +59,143 @@ const REGION_GROUP_MAP: Record<Region, TwistedRegionGroup> = {
     VN: RG.SEA,
 }
 
-const puuidRegionCache = new Map<string, Region>()
+const QUEUE = {
+    flex: { id: QUEUE_ID_FLEX, leagueType: 'RANKED_FLEX_SR' },
+    solo: { id: QUEUE_ID_SOLO, leagueType: 'RANKED_SOLO_5x5' },
+} as const satisfies Record<RankedQueue, { id: number; leagueType: string }>
 
-export async function resolvePuuidByRiotId(
-    name: string,
-    tag: string,
-    region: Region
-) {
-    const regionGroup = REGION_GROUP_MAP[region]
-    const { response: account } = await riotApi.Account.getByRiotId(
-        name,
-        tag,
-        regionGroup as TwistedAccountRegionGroup
-    )
+const MINUTE = 60
+const HOUR = 60 * MINUTE
+const DAY = 24 * HOUR
 
-    puuidRegionCache.set(account.puuid, region)
-
-    return account.puuid
+function accountRoute(region: Region) {
+    return Constants.regionToRegionGroupForAccountAPI(REGION_MAP[region])
 }
 
-async function resolveRegionByPuuid(puuid: string) {
-    return puuidRegionCache.get(puuid) ?? null
-}
+const accountSchema = z.object({ gameName: z.string(), tagLine: z.string() })
 
-export async function fetchRiotDataByPuuid(
+const getAccount = cachedLoader({
+    key: ([puuid]) => `account:${puuid}`,
+    load: async (puuid: string, region: Region) => {
+        const route = accountRoute(region)
+        const { response } = await callRiot(route, () =>
+            riotApi.Account.getByPUUID(puuid, route)
+        )
+
+        return { gameName: response.gameName, tagLine: response.tagLine }
+    },
+    schema: accountSchema,
+    ttlSeconds: DAY,
+})
+
+const summonerSchema = z.object({
+    profileIconId: z.number(),
+    summonerLevel: z.number(),
+})
+
+const getSummoner = cachedLoader({
+    key: ([puuid, region]) => `summoner:${region}:${puuid}`,
+    load: async (puuid: string, region: Region) => {
+        const platform = REGION_MAP[region]
+        const { response } = await callRiot(platform, () =>
+            lolApi.Summoner.getByPUUID(puuid, platform)
+        )
+
+        return {
+            profileIconId: response.profileIconId,
+            summonerLevel: response.summonerLevel,
+        }
+    },
+    schema: summonerSchema,
+    ttlSeconds: 6 * HOUR,
+})
+
+const matchDetailSchema = z
+    .object({
+        gameDuration: z.number(),
+        gameEndTimestamp: z.number(),
+        matchId: z.string(),
+        participants: z.array(
+            z.object({
+                assists: z.number(),
+                championId: z.number(),
+                championName: z.string(),
+                deaths: z.number(),
+                gameEndedInEarlySurrender: z.boolean(),
+                kills: z.number(),
+                puuid: z.string(),
+                win: z.boolean(),
+            })
+        ),
+        queueId: z.number(),
+    })
+    .nullable()
+
+const getMatchDetail = cachedLoader({
+    key: ([matchId]) => `match:${matchId}`,
+    load: async (matchId: string, regionGroup: TwistedRegionGroup) => {
+        try {
+            const { response } = await callRiot(regionGroup, () =>
+                lolApi.MatchV5.get(matchId, regionGroup)
+            )
+            const { info, metadata } = response
+
+            return {
+                gameDuration: info.gameDuration,
+                gameEndTimestamp: info.gameEndTimestamp,
+                matchId: metadata.matchId,
+                participants: info.participants.map(participant => ({
+                    assists: participant.assists,
+                    championId: participant.championId,
+                    championName: participant.championName,
+                    deaths: participant.deaths,
+                    gameEndedInEarlySurrender:
+                        participant.gameEndedInEarlySurrender,
+                    kills: participant.kills,
+                    puuid: participant.puuid,
+                    win: participant.win,
+                })),
+                queueId: info.queueId,
+            }
+        } catch (error) {
+            // A match id from the list that Riot no longer serves is skipped;
+            // anything else (429, 5xx) must fail the widget, not shrink it.
+            if (isRiotNotFound(error)) return null
+            throw error
+        }
+    },
+    schema: matchDetailSchema,
+    // A finished match never changes.
+    ttlSeconds: detail => (detail ? 90 * DAY : DAY),
+})
+
+type MatchDetail = NonNullable<z.infer<typeof matchDetailSchema>>
+
+function toMatchEntry(
+    match: MatchDetail | null,
     puuid: string,
-    region?: Region,
-    queue: RankedQueue = 'solo'
-): Promise<RiotData> {
-    const resolvedRegion = region ?? (await resolveRegionByPuuid(puuid))
-    if (!resolvedRegion) {
-        throw new Error('Summoner region not found')
-    }
+    queue: RankedQueue
+): MatchEntry[] {
+    if (!match || match.queueId !== QUEUE[queue].id) return []
 
-    return getCachedWidgetData(puuid, resolvedRegion, queue, () =>
-        buildRiotData(puuid, resolvedRegion, queue)
-    )
+    const participant = match.participants.find(p => p.puuid === puuid)
+    if (!participant) return []
+
+    return [
+        {
+            assists: participant.assists,
+            champion: participant.championName,
+            championId: participant.championId,
+            deaths: participant.deaths,
+            isRemake:
+                participant.gameEndedInEarlySurrender ||
+                match.gameDuration < REMAKE_DURATION_THRESHOLD_SECONDS,
+            kills: participant.kills,
+            matchId: match.matchId,
+            timestamp: new Date(match.gameEndTimestamp).toISOString(),
+            win: participant.win,
+        },
+    ]
 }
 
 async function buildRiotData(
@@ -103,69 +203,85 @@ async function buildRiotData(
     region: Region,
     queue: RankedQueue
 ): Promise<RiotData> {
-    const twistedRegion = REGION_MAP[region]
+    const platform = REGION_MAP[region]
     const regionGroup = REGION_GROUP_MAP[region]
-    const expectedQueueId = queue === 'solo' ? QUEUE_ID_SOLO : QUEUE_ID_FLEX
 
-    const [account, summoner, matchIdsRes, leagueRes] = await Promise.all([
-        getCachedAccount(puuid, regionGroup),
-        getCachedSummoner(puuid, region, twistedRegion),
-        lolApi.MatchV5.list(puuid, regionGroup, {
-            count: MATCH_FETCH_COUNT,
-            queue: queue === 'solo' ? QUEUE_ID_SOLO : QUEUE_ID_FLEX,
-        }).catch(() => ({ response: [] })),
-        lolApi.League.byPUUID(puuid, twistedRegion).catch(() => ({
-            response: [],
-        })),
+    const [account, summoner, matchIds, leagues] = await Promise.all([
+        getAccount(puuid, region),
+        getSummoner(puuid, region),
+        callRiot(regionGroup, () =>
+            lolApi.MatchV5.list(puuid, regionGroup, {
+                count: MATCH_FETCH_COUNT,
+                queue: QUEUE[queue].id,
+            })
+        ),
+        callRiot(platform, () => lolApi.League.byPUUID(puuid, platform)),
     ])
 
-    const rankedQueue = leagueRes.response.find(
-        l =>
-            l.queueType ===
-            (queue === 'solo' ? 'RANKED_SOLO_5x5' : 'RANKED_FLEX_SR')
+    const league = leagues.response.find(
+        entry => entry.queueType === QUEUE[queue].leagueType
     )
-
-    const matchDetails = await Promise.all(
-        matchIdsRes.response.map(matchId =>
-            getCachedMatchDetail(matchId, regionGroup)
-        )
+    const matches = await Promise.all(
+        matchIds.response.map(matchId => getMatchDetail(matchId, regionGroup))
     )
-
-    const matchHistory: MatchEntry[] = matchDetails
-        .filter(Boolean)
-        .map(match => {
-            if (match!.queueId !== expectedQueueId) return null
-            const participant = match!.participants.find(p => p.puuid === puuid)
-            if (!participant) return null
-
-            return {
-                assists: participant.assists,
-                champion: participant.championName,
-                championId: participant.championId,
-                deaths: participant.deaths,
-                isRemake:
-                    participant.gameEndedInEarlySurrender ||
-                    match!.gameDuration < REMAKE_DURATION_THRESHOLD_SECONDS,
-                kills: participant.kills,
-                matchId: match!.matchId,
-                timestamp: new Date(match!.gameEndTimestamp).toISOString(),
-                win: participant.win,
-            }
-        })
-        .filter(Boolean) as MatchEntry[]
 
     return {
         gameName: account.gameName,
-        hotStreak: rankedQueue?.hotStreak ?? false,
-        leaguePoints: rankedQueue?.leaguePoints ?? 0,
-        losses: rankedQueue?.losses ?? 0,
-        matchHistory,
+        hotStreak: league?.hotStreak ?? false,
+        leaguePoints: league?.leaguePoints ?? 0,
+        losses: league?.losses ?? 0,
+        matchHistory: matches.flatMap(match =>
+            toMatchEntry(match, puuid, queue)
+        ),
         profileIconId: summoner.profileIconId,
         puuid,
-        rank: rankedQueue?.rank ?? '',
+        rank: league?.rank ?? '',
         summonerLevel: summoner.summonerLevel,
         tagLine: account.tagLine,
-        tier: rankedQueue?.tier ?? 'UNRANKED',
-        wins: rankedQueue?.wins ?? 0,
+        tier: league?.tier ?? 'UNRANKED',
+        wins: league?.wins ?? 0,
     }
+}
+
+export const fetchRiotDataByPuuid = cachedLoader({
+    key: ([puuid, region, queue]) => `widget:${region}:${queue}:${puuid}`,
+    load: buildRiotData,
+    schema: riotDataSchema,
+    ttlSeconds: 5 * MINUTE,
+})
+
+const resolvedRiotIdSchema = z.object({ puuid: z.string().nullable() })
+
+const resolveRiotId = cachedLoader({
+    // Riot IDs are case-insensitive, so every spelling shares one entry.
+    key: ([name, tag, region]) =>
+        `riot-id:${accountRoute(region)}:${name.toLowerCase()}#${tag.toLowerCase()}`,
+    load: async (name: string, tag: string, region: Region) => {
+        const route = accountRoute(region)
+
+        try {
+            const { response } = await callRiot(route, () =>
+                riotApi.Account.getByRiotId(name, tag, route)
+            )
+
+            return { puuid: response.puuid }
+        } catch (error) {
+            if (isRiotNotFound(error)) return { puuid: null }
+            throw error
+        }
+    },
+    schema: resolvedRiotIdSchema,
+    // Misses are remembered briefly so repeated typos or scans cost one call,
+    // but a freshly renamed account is found again within minutes.
+    ttlSeconds: ({ puuid }) => (puuid ? DAY : 10 * MINUTE),
+})
+
+export async function resolvePuuidByRiotId(
+    name: string,
+    tag: string,
+    region: Region
+): Promise<null | string> {
+    const { puuid } = await resolveRiotId(name, tag, region)
+
+    return puuid
 }

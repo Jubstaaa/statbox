@@ -33,6 +33,7 @@
     "lucide-react": "^1.76.0",
     "lz-string": "^1.5.0",
     "next": "16.4.6",
+    "p-memoize": "^9.0.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "sharp": "^0.35.5",
