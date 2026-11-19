@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { GenericError } from 'twisted'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { buildWidgetUrls } from '@/components/widget-generator/widget-generator.payload'
+import { buildWidgetUrls } from '@/features/widget-generator/widget-generator.payload'
 import { RiotRateLimitedError } from '@/lib/riot/riot.errors'
 
 import { GET } from './route'
