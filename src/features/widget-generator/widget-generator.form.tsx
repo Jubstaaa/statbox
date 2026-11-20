@@ -1,6 +1,5 @@
 'use client'
 
-import type { ChangeEvent, SubmitEvent } from 'react'
 import { useCallback, useState } from 'react'
 
 import {
@@ -15,95 +14,99 @@ import { z } from 'zod'
 
 import Button from '@/components/button'
 import Input from '@/features/widget-generator/input'
-import { useHydrationReady } from '@/hooks/use-hydration-ready'
 import type { Region } from '@/lib/riot/riot.types'
 
 import ConnectedAccountCard from './connected-account-card'
 import RegionPicker from './region-picker'
-import { fetchSummonerByPuuid, resolveSummoner } from './widget-generator.api'
+import {
+    describeLookupError,
+    fetchSummonerByPuuid,
+    resolveSummoner,
+} from './widget-generator.api'
 import {
     type WidgetGeneratorFormErrors,
     widgetGeneratorFormSchema,
 } from './widget-generator.form.schema'
+import type { BuilderSettings } from './widget-generator.payload'
 import {
-    clearStoredBuilderPuuid,
-    getStoredBuilderPuuid,
-    getStoredBuilderSettings,
-    setStoredBuilderPuuid,
-    setStoredBuilderSettings,
+    clearBuilderAccount,
+    saveBuilderAccount,
+    useBuilderAccount,
 } from './widget-generator.storage'
+
+const DEFAULT_SETTINGS: Omit<BuilderSettings, 'region'> = {
+    queue: 'solo',
+    sessionMode: 'all-day',
+    sessionTime: null,
+    style: 'classic',
+}
 
 export default function WidgetGeneratorForm() {
     const router = useRouter()
     const queryClient = useQueryClient()
-    const [, setStorageVersion] = useState(0)
     const [name, setName] = useState('')
     const [tag, setTag] = useState('')
     const [region, setRegion] = useState<Region>('EUW')
     const [formErrors, setFormErrors] = useState<WidgetGeneratorFormErrors>({})
     const [submitError, setSubmitError] = useState('')
-    const storageReady = useHydrationReady()
-    const storedPuuid = storageReady ? getStoredBuilderPuuid() : null
+    const account = useBuilderAccount()
 
     const connectedAccountQuery = useQuery({
-        queryFn: storedPuuid
+        queryFn: account
             ? () =>
                   fetchSummonerByPuuid({
-                      puuid: storedPuuid,
-                      queue: getStoredBuilderSettings()?.queue ?? 'solo',
-                      region: getStoredBuilderSettings()?.region ?? 'EUW',
+                      puuid: account.puuid,
+                      queue: account.settings.queue,
+                      region: account.settings.region,
                   })
             : skipToken,
         queryKey: [
             'summoner',
-            storedPuuid,
-            getStoredBuilderSettings()?.region,
-            getStoredBuilderSettings()?.queue,
+            account?.puuid,
+            account?.settings.region,
+            account?.settings.queue,
         ],
     })
 
     const resolveSummonerMutation = useMutation({
-        mutationFn: resolveSummoner,
-        onError: () => {
-            setSubmitError(
-                'Summoner not found. Check the name, tag, and region.'
-            )
-        },
-        onSuccess: async ({ puuid, region: resolvedRegion }) => {
-            setStoredBuilderPuuid(puuid)
-            setStorageVersion(currentValue => currentValue + 1)
+        // The account is saved only once its data is in the query cache under
+        // the key the builder reads, so the connected card and /create never
+        // fetch it again, and a failed lookup leaves nothing behind.
+        mutationFn: async (params: Parameters<typeof resolveSummoner>[0]) => {
+            const { puuid, region: resolvedRegion } =
+                await resolveSummoner(params)
+            const settings = { ...DEFAULT_SETTINGS, region: resolvedRegion }
 
-            await queryClient.query({
+            await queryClient.fetchQuery({
                 queryFn: () =>
                     fetchSummonerByPuuid({
                         puuid,
-                        queue: 'solo',
-                        region: resolvedRegion,
+                        queue: settings.queue,
+                        region: settings.region,
                     }),
-                queryKey: ['summoner', puuid, resolvedRegion, 'solo'],
+                queryKey: ['summoner', puuid, settings.region, settings.queue],
             })
 
-            setStoredBuilderSettings({
-                queue: 'solo',
-                region: resolvedRegion,
-                sessionMode: 'all-day',
-                sessionTime: null,
-                style: 'classic',
-            })
-
+            return { puuid, settings }
+        },
+        onError: error => {
+            setSubmitError(describeLookupError(error))
+        },
+        onSuccess: savedAccount => {
+            saveBuilderAccount(savedAccount)
             router.push('/create')
         },
     })
 
     const handleNameChange = useCallback(
-        (event: ChangeEvent<HTMLInputElement>) => {
+        (event: React.ChangeEvent<HTMLInputElement>) => {
             setName(event.target.value)
         },
         []
     )
 
     const handleTagChange = useCallback(
-        (event: ChangeEvent<HTMLInputElement>) => {
+        (event: React.ChangeEvent<HTMLInputElement>) => {
             setTag(event.target.value)
         },
         []
@@ -117,14 +120,14 @@ export default function WidgetGeneratorForm() {
     )
 
     const handleSubmit = useCallback(
-        (event: SubmitEvent<HTMLFormElement>) => {
+        (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault()
 
             setSubmitError('')
             const parsed = widgetGeneratorFormSchema.safeParse({ name, tag })
 
             if (!parsed.success) {
-                const fieldErrors = z.flattenError(parsed.error).fieldErrors
+                const { fieldErrors } = z.flattenError(parsed.error)
 
                 setFormErrors({
                     name: fieldErrors.name?.[0],
@@ -149,12 +152,11 @@ export default function WidgetGeneratorForm() {
     }, [router])
 
     const handleChangeAccount = useCallback(() => {
-        clearStoredBuilderPuuid()
-        setStorageVersion(currentValue => currentValue + 1)
+        clearBuilderAccount()
         setSubmitError('')
     }, [])
 
-    if (storageReady && storedPuuid) {
+    if (account) {
         return (
             <ConnectedAccountCard
                 query={connectedAccountQuery}
@@ -186,7 +188,9 @@ export default function WidgetGeneratorForm() {
             <RegionPicker value={region} onSelect={createRegionSelectHandler} />
 
             {submitError ? (
-                <p className="border-loss/25 bg-loss/10 text-loss rounded-xl border px-3 py-2.5 text-xs">
+                <p
+                    className="border-loss/25 bg-loss/10 text-loss rounded-xl border px-3 py-2.5 text-xs"
+                    role="alert">
                     {submitError}
                 </p>
             ) : null}

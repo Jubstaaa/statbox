@@ -13,8 +13,6 @@ import {
 } from '@/lib/riot/riot.schemas'
 import type { RankedQueue, Region, WidgetStyle } from '@/lib/riot/riot.types'
 
-import type { SessionMode, WidgetRoutePayload } from './widget-generator.types'
-
 // The value of an <input type="datetime-local">, minute precision.
 export const sessionDateTimeSchema = z.iso.datetime({
     local: true,
@@ -22,6 +20,20 @@ export const sessionDateTimeSchema = z.iso.datetime({
 })
 const sessionClockTimeSchema = z.iso.time({ precision: -1 })
 export const sessionModeSchema = z.enum(['all-day', 'from-time'])
+
+export type SessionMode = z.infer<typeof sessionModeSchema>
+
+export interface BuilderSettings {
+    queue: RankedQueue
+    region: Region
+    sessionMode: SessionMode
+    sessionTime: string | null
+    style: WidgetStyle
+}
+
+interface WidgetRoutePayload extends BuilderSettings {
+    puuid: string
+}
 
 const DATETIME_LOCAL_FORMAT = "yyyy-MM-dd'T'HH:mm"
 
@@ -131,14 +143,7 @@ export function buildWidgetUrls({
     sessionMode,
     sessionTime,
     style,
-}: {
-    puuid: string
-    queue: RankedQueue
-    region: Region
-    sessionMode: SessionMode
-    sessionTime: string | null
-    style: WidgetStyle
-}) {
+}: WidgetRoutePayload) {
     const base =
         typeof window !== 'undefined'
             ? window.location.origin

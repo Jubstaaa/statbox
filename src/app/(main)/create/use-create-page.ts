@@ -10,18 +10,13 @@ import {
     buildWidgetUrls,
     getCurrentDateTimeInputValue,
     resolveSessionTimestamp,
+    type SessionMode,
 } from '@/features/widget-generator/widget-generator.payload'
 import {
-    clearStoredBuilderPuuid,
-    clearStoredBuilderSettings,
-    getStoredBuilderPuuid,
-    getStoredBuilderSettings,
-    setStoredBuilderSettings,
+    clearBuilderAccount,
+    getBuilderAccount,
+    saveBuilderSettings,
 } from '@/features/widget-generator/widget-generator.storage'
-import type {
-    SessionMode,
-    WidgetUrls,
-} from '@/features/widget-generator/widget-generator.types'
 import { TIER_COLORS } from '@/features/widget/widget.constants'
 import { useHydrationReady } from '@/hooks/use-hydration-ready'
 import type { RankedQueue, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
@@ -46,42 +41,44 @@ interface CreatePageState {
     style: WidgetStyle
     summonerData: RiotData | null
     tierColor: string
-    urls: WidgetUrls | null
+    urls: ReturnType<typeof buildWidgetUrls> | null
 }
 
 export function useCreatePage(): CreatePageState {
     const router = useRouter()
 
     const [maxSessionTime] = useState(() => getCurrentDateTimeInputValue())
-    const [puuid] = useState<string | null>(() => getStoredBuilderPuuid())
+    // Read once: from here on this page owns the settings and writes them back.
+    // Without a saved account there is no region to ask Riot with, so the page
+    // sends the visitor home instead of guessing one.
+    const [account] = useState(getBuilderAccount)
+    const puuid = account?.puuid ?? null
+    const region = account?.settings.region ?? 'EUW'
     const [style, setStyle] = useState<WidgetStyle>(
-        () => getStoredBuilderSettings()?.style ?? 'classic'
+        account?.settings.style ?? 'classic'
     )
     const [queue, setQueue] = useState<RankedQueue>(
-        () => getStoredBuilderSettings()?.queue ?? 'solo'
+        account?.settings.queue ?? 'solo'
     )
-    const [region] = useState(() => getStoredBuilderSettings()?.region ?? 'EUW')
     const [sessionMode, setSessionMode] = useState<SessionMode>(
-        () => getStoredBuilderSettings()?.sessionMode ?? 'all-day'
+        account?.settings.sessionMode ?? 'all-day'
     )
     const [sessionTime, setSessionTime] = useState<string>(
-        () =>
-            getStoredBuilderSettings()?.sessionTime ??
-            getCurrentDateTimeInputValue()
+        () => account?.settings.sessionTime ?? getCurrentDateTimeInputValue()
     )
     const storageReady = useHydrationReady()
 
     useEffect(() => {
-        if (!storageReady) return
+        if (!storageReady || !puuid) return
 
-        setStoredBuilderSettings({
+        saveBuilderSettings({
             queue,
             region,
             sessionMode,
             sessionTime,
             style,
         })
-    }, [queue, region, sessionMode, sessionTime, storageReady, style])
+    }, [puuid, queue, region, sessionMode, sessionTime, storageReady, style])
 
     useEffect(() => {
         if (storageReady && !puuid) router.replace('/')
@@ -145,8 +142,7 @@ export function useCreatePage(): CreatePageState {
     )
 
     const handleChangeAccount = useCallback(() => {
-        clearStoredBuilderPuuid()
-        clearStoredBuilderSettings()
+        clearBuilderAccount()
         router.push('/')
     }, [router])
 
