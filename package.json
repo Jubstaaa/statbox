@@ -28,7 +28,6 @@
     },
     "knip": {
         "ignoreDependencies": [
-            "prettier-plugin-tailwindcss",
             "sharp"
         ]
     },

@@ -1,6 +1,6 @@
 {
     "minTokens": 60,
-    "threshold": 1,
+    "threshold": 0,
     "reporters": ["console"],
     "ignore": ["**/*.test.ts", "**/*.test.tsx"],
     "gitignore": true

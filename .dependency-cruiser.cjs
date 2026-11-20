@@ -17,8 +17,10 @@ module.exports = {
                     '\\.test\\.tsx?$',
                     // Root config files are loaded by their tools.
                     '^[^/]+\\.config\\.(ts|mts|mjs|cjs)$',
-                    // Next.js special files are entry points, not orphans.
-                    '^src/app/.*/?(page|layout|not-found|error|global-error|loading|route|template|default|opengraph-image|twitter-image|icon|apple-icon|manifest|robots|sitemap)\\.(tsx?|js)$',
+                    // Next.js special files are entry points, not orphans,
+                    // matched as a whole file name, so `create-error.tsx` is not exempt.
+                    '^src/app/.*/(page|layout|not-found|error|global-error|loading|route|template|default|opengraph-image|twitter-image|icon|apple-icon|manifest|robots|sitemap)\\.(tsx?|js)$',
+                    '^src/app/(page|layout|not-found|error|global-error|loading|route|template|default|opengraph-image|twitter-image|icon|apple-icon|manifest|robots|sitemap)\\.(tsx?|js)$',
                 ],
             },
             to: {},
