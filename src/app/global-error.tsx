@@ -1,6 +1,6 @@
 'use client'
 
-import Button from '@/components/button'
+import Button, { buttonClassName } from '@/components/button'
 
 export default function GlobalError({
     error,
@@ -12,7 +12,7 @@ export default function GlobalError({
     return (
         <html className="dark" lang="en">
             <body className="bg-background text-foreground">
-                <main className="text-text min-h-screen bg-[radial-gradient(circle_at_top,rgba(10,200,185,0.1),transparent_28%),radial-gradient(circle_at_20%_20%,rgba(244,201,93,0.1),transparent_22%),linear-gradient(180deg,#07111f_0%,#060e1a_45%,#07111f_100%)]">
+                <main className="text-text bg-page min-h-screen">
                     <div className="mx-auto flex min-h-screen max-w-3xl items-center px-6 py-16">
                         <div className="space-y-6">
                             <p className="text-loss text-[11px] font-semibold tracking-[0.22em] uppercase">
@@ -38,10 +38,11 @@ export default function GlobalError({
                                 <a
                                     href="https://github.com/Jubstaaa/statbox/issues/new/choose"
                                     rel="noopener noreferrer"
-                                    target="_blank">
-                                    <Button variant="secondary">
-                                        Open issue
-                                    </Button>
+                                    target="_blank"
+                                    className={buttonClassName({
+                                        variant: 'secondary',
+                                    })}>
+                                    Open issue
                                 </a>
                             </div>
                         </div>
