@@ -25,6 +25,13 @@ export const sessionModeSchema = z.enum(['all-day', 'from-time'])
 
 const DATETIME_LOCAL_FORMAT = "yyyy-MM-dd'T'HH:mm"
 
+// A real payload compresses to about 150 characters and expands to about 200.
+// LZW output can grow quadratically with its input, so the segment is capped
+// before decompressing and the result before parsing: an uncapped segment of a
+// few kilobytes expands to tens of megabytes inside a 256 MB container.
+const MAX_PAYLOAD_LENGTH = 512
+const MAX_DECOMPRESSED_LENGTH = 1024
+
 function encodeWidgetRoutePayload(payload: WidgetRoutePayload) {
     return compressToEncodedURIComponent(JSON.stringify(payload))
 }
@@ -41,9 +48,11 @@ const widgetRoutePayloadSchema = z.object({
 export function decodeWidgetRoutePayload(
     payload: string
 ): WidgetRoutePayload | null {
+    if (payload.length > MAX_PAYLOAD_LENGTH) return null
+
     try {
         const decoded = decompressFromEncodedURIComponent(payload)
-        if (!decoded) return null
+        if (!decoded || decoded.length > MAX_DECOMPRESSED_LENGTH) return null
 
         const parsed = widgetRoutePayloadSchema.safeParse(JSON.parse(decoded))
         if (!parsed.success) return null

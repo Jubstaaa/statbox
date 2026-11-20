@@ -1,3 +1,4 @@
+import { compressToEncodedURIComponent } from 'lz-string'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -52,6 +53,35 @@ describe('widget route payload', () => {
         })
 
         expect(decodeWidgetRoutePayload(payloadOf(widgetUrl))).toBeNull()
+    })
+
+    it('refuses an oversized payload even when its content is valid', () => {
+        const padded = compressToEncodedURIComponent(
+            JSON.stringify({
+                padding: 'x'.repeat(4000),
+                puuid: PUUID,
+                queue: 'solo',
+                region: 'EUW',
+                style: 'classic',
+            })
+        )
+
+        expect(decodeWidgetRoutePayload(padded)).toBeNull()
+    })
+
+    it('refuses a short segment that decompresses into a large document', () => {
+        const bomb = compressToEncodedURIComponent(
+            JSON.stringify({
+                padding: 'ab'.repeat(10_000),
+                puuid: PUUID,
+                queue: 'solo',
+                region: 'EUW',
+                style: 'classic',
+            })
+        )
+
+        expect(bomb.length).toBeLessThan(512)
+        expect(decodeWidgetRoutePayload(bomb)).toBeNull()
     })
 
     it.each(['', 'not-lz', '%%%'])('returns null for garbage %j', value => {
