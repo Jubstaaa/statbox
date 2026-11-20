@@ -1,5 +1,7 @@
 'use client'
 
+import { useId } from 'react'
+
 import Badge from '@/app/(main)/_components/badge'
 import Button from '@/components/button'
 import Card from '@/components/card'
@@ -38,6 +40,10 @@ export default function CreateView() {
         tierColor,
         urls,
     } = useCreatePage()
+    const layoutLabelId = useId()
+    const queueLabelId = useId()
+    const sessionLabelId = useId()
+    const sessionTimeId = useId()
 
     if (!storageReady || !puuid || (isLoading && !summonerData)) {
         return <CreateLoader />
@@ -73,7 +79,9 @@ export default function CreateView() {
 
                 <Card className="border-border-secondary bg-bg-elevated space-y-3 rounded-4xl p-4 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
                     <div>
-                        <p className="text-text text-sm font-semibold">
+                        <p
+                            className="text-text text-sm font-semibold"
+                            id={layoutLabelId}>
                             Choose layout
                         </p>
                         <p className="text-text-muted mt-1 text-xs">
@@ -82,35 +90,34 @@ export default function CreateView() {
                         </p>
                     </div>
 
-                    <div className="space-y-2">
+                    <div
+                        aria-labelledby={layoutLabelId}
+                        className="space-y-2"
+                        role="group">
                         {STYLES.map(item => (
                             <button
                                 key={item.id}
-                                className="block w-full text-left"
+                                aria-pressed={style === item.id}
                                 type="button"
+                                className={cn(
+                                    'block w-full rounded-2xl border px-3.5 py-3 text-left transition',
+                                    style === item.id
+                                        ? 'border-accent bg-accent text-bg-base'
+                                        : 'border-border-secondary bg-bg-elevated text-text hover:border-border-hover'
+                                )}
                                 onClick={createStyleSelectHandler(item.id)}>
-                                <Card
+                                <span className="block text-xs font-semibold">
+                                    {item.label}
+                                </span>
+                                <span
                                     className={cn(
-                                        'flex items-center gap-3 rounded-2xl border px-3.5 py-3 transition',
+                                        'mt-0.5 block text-xs',
                                         style === item.id
-                                            ? 'border-accent bg-accent text-bg-base'
-                                            : 'border-border-secondary bg-bg-elevated text-text hover:border-border-hover'
+                                            ? 'text-bg-base/75'
+                                            : 'text-text-subtle'
                                     )}>
-                                    <div className="min-w-0 flex-1">
-                                        <div className="text-xs font-semibold">
-                                            {item.label}
-                                        </div>
-                                        <div
-                                            className={cn(
-                                                'mt-0.5 text-xs',
-                                                style === item.id
-                                                    ? 'text-bg-base/75'
-                                                    : 'text-text-subtle'
-                                            )}>
-                                            {item.desc}
-                                        </div>
-                                    </div>
-                                </Card>
+                                    {item.desc}
+                                </span>
                             </button>
                         ))}
                     </div>
@@ -118,21 +125,30 @@ export default function CreateView() {
 
                 <Card className="border-border-secondary bg-bg-elevated space-y-3 rounded-2xl p-4 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
                     <div>
-                        <p className="text-text text-sm font-semibold">Queue</p>
+                        <p
+                            className="text-text text-sm font-semibold"
+                            id={queueLabelId}>
+                            Queue
+                        </p>
                         <p className="text-text-muted mt-0.5 text-xs">
                             Choose whether the widget uses SoloQ or Flex ranked
                             data.
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div
+                        aria-labelledby={queueLabelId}
+                        className="flex flex-wrap gap-2"
+                        role="group">
                         <Button
+                            aria-pressed={queue === 'solo'}
                             size="sm"
                             variant={queue === 'solo' ? 'primary' : 'secondary'}
                             onClick={handleSoloQueue}>
                             SoloQ
                         </Button>
                         <Button
+                            aria-pressed={queue === 'flex'}
                             size="sm"
                             variant={queue === 'flex' ? 'primary' : 'secondary'}
                             onClick={handleFlexQueue}>
@@ -143,7 +159,9 @@ export default function CreateView() {
 
                 <Card className="border-border-secondary bg-bg-elevated space-y-3 rounded-2xl p-4 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
                     <div>
-                        <p className="text-text text-sm font-semibold">
+                        <p
+                            className="text-text text-sm font-semibold"
+                            id={sessionLabelId}>
                             Session tracking
                         </p>
                         <p className="text-text-muted mt-0.5 text-xs">
@@ -152,8 +170,12 @@ export default function CreateView() {
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div
+                        aria-labelledby={sessionLabelId}
+                        className="flex flex-wrap gap-2"
+                        role="group">
                         <Button
+                            aria-pressed={sessionMode === 'all-day'}
                             size="sm"
                             variant={
                                 sessionMode === 'all-day'
@@ -164,6 +186,7 @@ export default function CreateView() {
                             All day
                         </Button>
                         <Button
+                            aria-pressed={sessionMode === 'from-time'}
                             size="sm"
                             variant={
                                 sessionMode === 'from-time'
@@ -176,13 +199,21 @@ export default function CreateView() {
                     </div>
 
                     {sessionMode === 'from-time' ? (
-                        <input
-                            className="bg-bg-base text-text border-border-secondary h-11 w-full rounded-2xl border px-4 text-sm outline-none"
-                            max={maxSessionTime}
-                            type="datetime-local"
-                            value={sessionTime}
-                            onChange={handleSessionTimeChange}
-                        />
+                        <div className="space-y-1.5">
+                            <label
+                                className="text-text-muted block text-xs"
+                                htmlFor={sessionTimeId}>
+                                Session start
+                            </label>
+                            <input
+                                className="bg-bg-base text-text border-border-secondary focus:border-accent focus-visible:ring-accent/60 h-11 w-full rounded-2xl border px-4 text-sm outline-none focus-visible:ring-2"
+                                id={sessionTimeId}
+                                max={maxSessionTime}
+                                type="datetime-local"
+                                value={sessionTime}
+                                onChange={handleSessionTimeChange}
+                            />
+                        </div>
                     ) : null}
                 </Card>
             </div>

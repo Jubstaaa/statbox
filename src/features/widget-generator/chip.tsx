@@ -15,6 +15,7 @@ export default function Chip({
 }: ChipProps) {
     return (
         <button
+            aria-pressed={active}
             type="button"
             className={cn(
                 'min-w-14 rounded-xl border px-3 py-2 text-xs font-semibold tracking-[0.08em] transition',

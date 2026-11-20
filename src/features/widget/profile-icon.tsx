@@ -27,7 +27,7 @@ export default function ProfileIcon({
 
     return (
         <Image
-            alt="Profile"
+            alt=""
             className={cn('block shrink-0', ringClassName, className)}
             height={ICON_SIZE}
             src={buildProfileIconUrl(version, iconId)}

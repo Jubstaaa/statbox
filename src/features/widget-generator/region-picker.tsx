@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 import Chip from '@/features/widget-generator/chip'
 import type { Region } from '@/lib/riot/riot.types'
 
@@ -9,12 +11,19 @@ interface RegionPickerProps {
 }
 
 export default function RegionPicker({ value, onSelect }: RegionPickerProps) {
+    const labelId = useId()
+
     return (
         <div className="flex flex-col gap-2">
-            <span className="text-text-strong text-[11px] font-semibold tracking-[0.18em] uppercase">
+            <span
+                className="text-text-strong text-[11px] font-semibold tracking-[0.18em] uppercase"
+                id={labelId}>
                 Region
             </span>
-            <div className="flex flex-wrap gap-2">
+            <div
+                aria-labelledby={labelId}
+                className="flex flex-wrap gap-2"
+                role="group">
                 {BUILDER_REGIONS.map(region => (
                     <Chip
                         key={region}
