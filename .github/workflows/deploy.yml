@@ -18,52 +18,24 @@ env:
     IMAGE: ghcr.io/jubstaaa/statbox
 
 jobs:
+    # Builds, smoke tests and pushes the image. The check job is not re-run: the
+    # ruleset requires up-to-date branches, so this tree already passed it on
+    # the PR. A rollback skips both: that SHA passed them when it was built.
     ci:
-        # A rollback skips the gate: that SHA passed it when it was built.
         if: ${{ !inputs.image_tag }}
         uses: ./.github/workflows/ci.yml
-
-    build:
-        needs: ci
-        if: ${{ !inputs.image_tag }}
-        runs-on: ubuntu-latest
-        timeout-minutes: 20
+        with:
+            run-check: false
         permissions:
             contents: read
             packages: write
-        steps:
-            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  persist-credentials: false
-            - id: meta
-              uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-              with:
-                  images: ${{ env.IMAGE }}
-                  # Only the commit SHA: :latest moves after production reports healthy.
-                  tags: type=sha,format=long,prefix=
-            - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-            - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
-              with:
-                  registry: ghcr.io
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
-            - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-              with:
-                  context: .
-                  push: true
-                  tags: ${{ steps.meta.outputs.tags }}
-                  labels: ${{ steps.meta.outputs.labels }}
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
-                  build-args: |
-                      NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
 
     deploy:
         # Deploy secrets live in this environment, which only accepts main,
         # so a workflow on another branch cannot read them.
         environment: Production
-        needs: build
-        if: ${{ !cancelled() && (inputs.image_tag || needs.build.result == 'success') }}
+        needs: ci
+        if: ${{ !cancelled() && (inputs.image_tag || needs.ci.result == 'success') }}
         runs-on: ubuntu-latest
         timeout-minutes: 10
         # Never cancel a deploy halfway through `compose up`.
@@ -90,16 +62,24 @@ jobs:
                   registry: ghcr.io
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
-            - uses: Jubstaaa/deploy-actions/ssh@1d9b582d7547aa6f02352b655c0721dd5a88071f # v1.3.0
+            - name: Confirm the image exists
+              run: docker buildx imagetools inspect "$IMAGE:$IMAGE_TAG" > /dev/null
+            - uses: Jubstaaa/deploy-actions/ssh@233419e4b4936a17bf710cb7038f7dbc23a8a5f5 # v1.4.0
               with:
                   host: ${{ secrets.DO_HOST }}
                   user: ${{ secrets.DO_USER }}
                   key: ${{ secrets.DO_SSH_KEY }}
                   known-hosts: ${{ secrets.DO_KNOWN_HOSTS }}
-            - uses: Jubstaaa/deploy-actions/compose@1d9b582d7547aa6f02352b655c0721dd5a88071f # v1.3.0
+            # Snapshots the SQLite cache before the new tag starts and puts it back
+            # if the release is rolled back.
+            - uses: Jubstaaa/deploy-actions/compose@233419e4b4936a17bf710cb7038f7dbc23a8a5f5 # v1.4.0
               with:
                   app-dir: /opt/statbox
                   container: statbox
                   image: ${{ env.IMAGE }}
                   tag: ${{ env.IMAGE_TAG }}
-                  health-url: http://127.0.0.1:3003/
+                  health-url: http://127.0.0.1:3003/api/health
+                  sqlite-snapshot: /opt/statbox/data/statbox-cache.db
+                  # The cache is about 120 MB and rebuildable; three is enough to
+                  # step back across a bad release or two.
+                  keep-snapshots: '3'
