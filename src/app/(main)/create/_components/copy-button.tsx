@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-import { Check, Copy } from 'lucide-react'
+import { Check, Copy, X } from 'lucide-react'
 
 import Button from '@/components/button'
 
@@ -10,32 +10,59 @@ export interface CopyButtonProps {
     text: string
 }
 
+type CopyState = 'copied' | 'failed' | 'idle'
+
+const RESET_AFTER_MS = 2000
+
+const ANNOUNCEMENTS: Record<CopyState, string> = {
+    copied: 'Copied',
+    // Clipboard access can be denied (permissions, insecure context); the URL
+    // is still on screen to copy by hand.
+    failed: 'Copy failed, select the URL and copy it manually',
+    idle: '',
+}
+
 export default function CreateCopyButton({ text }: CopyButtonProps) {
-    const [copied, setCopied] = useState(false)
+    const [state, setState] = useState<CopyState>('idle')
 
-    const handleResetCopied = useCallback(() => {
-        setCopied(false)
-    }, [])
+    useEffect(() => {
+        if (state === 'idle') return
 
-    const scheduleResetCopied = useCallback(() => {
-        setTimeout(handleResetCopied, 2000)
-    }, [handleResetCopied])
+        const timer = setTimeout(() => setState('idle'), RESET_AFTER_MS)
 
-    const handleCopy = useCallback(() => {
-        void navigator.clipboard.writeText(text).then(() => {
-            setCopied(true)
-            scheduleResetCopied()
-        })
-    }, [scheduleResetCopied, text])
+        return () => clearTimeout(timer)
+    }, [state])
+
+    const handleCopy = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(text)
+            setState('copied')
+        } catch (error) {
+            console.error('[copy-button] clipboard write failed:', error)
+            setState('failed')
+        }
+    }, [text])
+
+    const Icon = { copied: Check, failed: X, idle: Copy }[state]
 
     return (
-        <Button size="sm" variant="outline" onClick={handleCopy}>
-            {copied ? (
-                <Check className="text-win h-3 w-3" />
-            ) : (
-                <Copy className="h-3 w-3" />
-            )}
-            {copied ? 'Copied' : 'Copy'}
-        </Button>
+        <>
+            <Button size="sm" variant="outline" onClick={handleCopy}>
+                <Icon
+                    aria-hidden="true"
+                    className={
+                        state === 'copied' ? 'text-win h-3 w-3' : 'h-3 w-3'
+                    }
+                />
+                {
+                    { copied: 'Copied', failed: 'Copy failed', idle: 'Copy' }[
+                        state
+                    ]
+                }
+            </Button>
+            <span className="sr-only" role="status">
+                {ANNOUNCEMENTS[state]}
+            </span>
+        </>
     )
 }
