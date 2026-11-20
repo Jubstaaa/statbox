@@ -26,7 +26,10 @@ const eslintConfig = defineConfig([
         },
         rules: {
             ...eslintConfigPrettier.rules,
-            '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+            '@typescript-eslint/consistent-type-imports': [
+                'error',
+                { prefer: 'type-imports' },
+            ],
             '@typescript-eslint/no-explicit-any': 'error',
             '@typescript-eslint/no-empty-object-type': 'off',
             '@typescript-eslint/no-unused-expressions': 'off',
@@ -37,7 +40,10 @@ const eslintConfig = defineConfig([
                 {
                     customGroups: [
                         {
-                            elementNamePattern: ['^react$', '^react-dom(/.*)?$'],
+                            elementNamePattern: [
+                                '^react$',
+                                '^react-dom(/.*)?$',
+                            ],
                             groupName: 'react',
                         },
                     ],
@@ -114,21 +120,9 @@ const eslintConfig = defineConfig([
                     type: 'alphabetical',
                 },
             ],
-            'prettier/prettier': [
-                'error',
-                {
-                    arrowParens: 'avoid',
-                    bracketSameLine: true,
-                    bracketSpacing: true,
-                    plugins: ['prettier-plugin-tailwindcss'],
-                    quoteProps: 'consistent',
-                    semi: false,
-                    singleQuote: true,
-                    tabWidth: 4,
-                    trailingComma: 'es5',
-                    useTabs: false,
-                },
-            ],
+            // Options live in prettier.config.mjs so editors and `prettier --check`
+            // format exactly as lint expects.
+            'prettier/prettier': 'error',
             'react/jsx-sort-props': [
                 'warn',
                 {
