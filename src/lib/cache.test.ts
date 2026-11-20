@@ -9,11 +9,12 @@ import type { Cache } from './cache'
 const dir = mkdtempSync(join(tmpdir(), 'statbox-cache-'))
 
 let getCache: (options: { namespace: string }) => Cache
+let checkCacheHealth: () => Promise<void>
 
 beforeAll(async () => {
     process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
     // Imported after the env var is set: the client reads it on first use.
-    ;({ getCache } = await import('./cache'))
+    ;({ checkCacheHealth, getCache } = await import('./cache'))
 })
 
 afterAll(() => {
@@ -78,6 +79,25 @@ describe('getCache', () => {
         expect(reported).toHaveBeenCalled()
 
         reported.mockRestore()
+        process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
+    })
+})
+
+describe('checkCacheHealth', () => {
+    it('resolves when the cache database answers a query', async () => {
+        await expect(checkCacheHealth()).resolves.toBeUndefined()
+    })
+
+    // Unlike reads and writes, the health check must fail loudly: it is what
+    // the deploy waits on before keeping a release.
+    it('rejects when the database cannot be opened', async () => {
+        vi.resetModules()
+        process.env.CACHE_DATABASE_URI = 'file:/nonexistent-dir/cache.db'
+
+        const { checkCacheHealth: brokenCheck } = await import('./cache')
+
+        await expect(brokenCheck()).rejects.toThrow()
+
         process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
     })
 })

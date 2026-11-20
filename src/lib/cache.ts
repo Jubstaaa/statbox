@@ -52,6 +52,13 @@ function initSchema(): Promise<void> {
     return schema
 }
 
+// Unlike get/set this throws: the deploy keeps a release only when the cache
+// database opens and answers, so a broken bind mount rolls it back.
+export async function checkCacheHealth(): Promise<void> {
+    await initSchema()
+    await getClient().execute('SELECT 1 FROM cache LIMIT 1')
+}
+
 async function prune(): Promise<void> {
     await getClient().execute({
         args: [Date.now()],
