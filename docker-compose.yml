@@ -11,6 +11,19 @@ services:
         # Measured 109MB idle for the standalone server; 256m leaves room for
         # request spikes without letting it crowd the other apps.
         mem_limit: 256m
+        pids_limit: 128
+        # The root filesystem stays writable on purpose: pages revalidate daily
+        # (the Data Dragon version), and Next writes regenerated pages under
+        # .next/server. Everything else follows the shared hardening.
+        cap_drop:
+            - ALL
+        security_opt:
+            - no-new-privileges:true
+        logging:
+            driver: json-file
+            options:
+                max-size: 10m
+                max-file: '3'
         # next-server binds the container's own address rather than loopback, so the
         # probe has to resolve $HOSTNAME: wget against 127.0.0.1 gets connection
         # refused. The name is doubled so Compose passes the variable through to the
@@ -21,12 +34,13 @@ services:
         # cannot alert per container, so this fills the Health column and nothing
         # more: it surfaces "process alive but application wedged", which the
         # restart policy alone never catches. Deploys also wait on it
-        # (`compose up --wait`) and roll back when it never passes.
+        # (`compose up --wait`) and roll back when it never passes. /api/health
+        # queries the SQLite cache, so an unreadable data mount fails it too.
         healthcheck:
             test:
                 [
                     'CMD-SHELL',
-                    'wget -q -O /dev/null -T 3 "http://$$HOSTNAME:3000/" || exit 1',
+                    'wget -q -O /dev/null -T 3 "http://$$HOSTNAME:3000/api/health" || exit 1',
                 ]
             interval: 30s
             timeout: 5s
@@ -52,11 +66,16 @@ services:
             - '127.0.0.1:3003:3000'
         environment:
             NODE_ENV: production
+            # Keep V8's heap under the container limit so it collects garbage
+            # before the cgroup OOM-kills the process.
+            NODE_OPTIONS: --max-old-space-size=160
             # Persisted deliberately: match details are cached for 90 days and the
             # Riot API is rate limited, so an empty cache after a deploy costs quota.
             CACHE_DATABASE_URI: file:/app/data/statbox-cache.db
+        # The defaults are the droplet's paths; CI's image job points both at
+        # temporary directories to run this same file.
         volumes:
-            - /opt/statbox/data:/app/data
+            - ${DATA_DIR:-/opt/statbox/data}:/app/data
             # Next's optimized output for the remote ddragon icons — without this a
             # deploy throws the whole set away and every icon is refetched.
-            - /opt/statbox/cache/images:/app/.next/cache/images
+            - ${IMAGE_CACHE_DIR:-/opt/statbox/cache/images}:/app/.next/cache/images
