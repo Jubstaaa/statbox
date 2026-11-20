@@ -114,21 +114,9 @@ const eslintConfig = defineConfig([
                     type: 'alphabetical',
                 },
             ],
-            'prettier/prettier': [
-                'error',
-                {
-                    arrowParens: 'avoid',
-                    bracketSameLine: true,
-                    bracketSpacing: true,
-                    plugins: ['prettier-plugin-tailwindcss'],
-                    quoteProps: 'consistent',
-                    semi: false,
-                    singleQuote: true,
-                    tabWidth: 4,
-                    trailingComma: 'es5',
-                    useTabs: false,
-                },
-            ],
+            // Options live in prettier.config.mjs so editors and `prettier --check`
+            // format exactly as lint expects.
+            'prettier/prettier': 'error',
             'react/jsx-sort-props': [
                 'warn',
                 {
