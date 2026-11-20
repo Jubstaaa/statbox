@@ -26,7 +26,10 @@ const eslintConfig = defineConfig([
         },
         rules: {
             ...eslintConfigPrettier.rules,
-            '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+            '@typescript-eslint/consistent-type-imports': [
+                'error',
+                { prefer: 'type-imports' },
+            ],
             '@typescript-eslint/no-explicit-any': 'error',
             '@typescript-eslint/no-empty-object-type': 'off',
             '@typescript-eslint/no-unused-expressions': 'off',
@@ -37,7 +40,10 @@ const eslintConfig = defineConfig([
                 {
                     customGroups: [
                         {
-                            elementNamePattern: ['^react$', '^react-dom(/.*)?$'],
+                            elementNamePattern: [
+                                '^react$',
+                                '^react-dom(/.*)?$',
+                            ],
                             groupName: 'react',
                         },
                     ],
