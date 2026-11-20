@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 // Data Dragon has no "latest" alias: every asset URL carries an explicit version,
 // and each version's asset set is frozen — a profile icon added after 14.24.1
 // shipped answers 403 on 14.24.1 forever. So the version is resolved on the server
@@ -6,6 +8,8 @@ const DDRAGON_CDN = 'https://ddragon.leagueoflegends.com/cdn'
 const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json'
 const VERSION_REVALIDATE_SECONDS = 86400
 const FALLBACK_DDRAGON_VERSION = '16.14.1'
+
+const versionsSchema = z.array(z.string().min(1)).min(1)
 
 // Keeps the newest version this process has actually seen, so a failed lookup
 // degrades to that rather than dropping back to a constant that ages into 403s.
@@ -21,9 +25,7 @@ export async function getDdragonVersion(): Promise<string> {
             throw new Error(`versions.json responded ${response.status}`)
         }
 
-        const [latest] = (await response.json()) as string[]
-
-        if (!latest) throw new Error('versions.json returned no versions')
+        const [latest] = versionsSchema.parse(await response.json())
 
         lastResolvedVersion = latest
 
