@@ -1,8 +1,17 @@
+import type { RiotData, WidgetStyle } from '@/lib/riot/riot.types'
+
 import WidgetContent from './widget-content'
 import WidgetError from './widget.error'
 import WidgetLoader from './widget.loader'
-import type { WidgetProps } from './widget.types'
 import { computeWidgetData } from './widget.utils'
+
+interface WidgetProps {
+    data: RiotData | null
+    isError?: boolean
+    isLoading?: boolean
+    session: number | null
+    style: WidgetStyle
+}
 
 export default function Widget({
     data,

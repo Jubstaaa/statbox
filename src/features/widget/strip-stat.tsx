@@ -1,4 +1,8 @@
-import type { StripStatProps } from './widget.types'
+interface StripStatProps {
+    color: string
+    label: string
+    value: string
+}
 
 export default function StripStat({ color, label, value }: StripStatProps) {
     return (

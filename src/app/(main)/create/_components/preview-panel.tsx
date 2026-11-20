@@ -1,6 +1,12 @@
 import Card from '@/components/card'
-import type { WidgetPreviewPanelProps } from '@/features/widget-generator/widget-generator.types'
 import Widget from '@/features/widget/widget'
+import type { RiotData, WidgetStyle } from '@/lib/riot/riot.types'
+
+interface WidgetPreviewPanelProps {
+    initialData: RiotData
+    session: number | null
+    style: WidgetStyle
+}
 
 export default function CreatePreviewPanel({
     initialData,
