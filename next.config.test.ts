@@ -1,3 +1,4 @@
+import { hasRemoteMatch } from 'next/dist/shared/lib/match-remote-pattern'
 import { describe, expect, it } from 'vitest'
 
 import nextConfig from './next.config'
@@ -66,5 +67,30 @@ describe('security headers', () => {
 describe('performance config', () => {
     it('inlines the Tailwind stylesheet so it does not block first render', () => {
         expect(nextConfig.experimental?.inlineCss).toBe(true)
+    })
+})
+
+describe('image optimizer allow-list', () => {
+    const allows = (url: string) =>
+        hasRemoteMatch(
+            [],
+            nextConfig.images?.remotePatterns ?? [],
+            new URL(url)
+        )
+
+    it.each([
+        'https://ddragon.leagueoflegends.com/cdn/16.23.1/img/profileicon/6.png',
+        'https://ddragon.leagueoflegends.com/cdn/16.23.1/img/champion/Ahri.png',
+    ])('optimizes the icons the widget renders: %s', url => {
+        expect(allows(url)).toBe(true)
+    })
+
+    it.each([
+        'https://ddragon.leagueoflegends.com/cdn/16.23.1/img/splash/Ahri_0.jpg',
+        'https://ddragon.leagueoflegends.com/cdn/dragontail-16.23.1.tgz',
+        'https://ddragon.leagueoflegends.com/cdn/16.23.1/img/champion/Ahri.png?v=1',
+        'https://evil.example/cdn/16.23.1/img/champion/Ahri.png',
+    ])('refuses anything else: %s', url => {
+        expect(allows(url)).toBe(false)
     })
 })

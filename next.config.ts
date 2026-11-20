@@ -68,12 +68,14 @@ const nextConfig: NextConfig = {
         ]
     },
     images: {
-        remotePatterns: [
-            {
-                hostname: 'ddragon.leagueoflegends.com',
-                protocol: 'https',
-            },
-        ],
+        // Only the two icon sets the widget renders, without a query string: the
+        // optimizer stores whatever it fetches on a host bind mount.
+        remotePatterns: ['profileicon', 'champion'].map(set => ({
+            hostname: 'ddragon.leagueoflegends.com',
+            pathname: `/cdn/*/img/${set}/**`,
+            protocol: 'https' as const,
+            search: '',
+        })),
     },
     // Self-hosted on a DigitalOcean droplet: standalone emits a minimal server.js
     // plus traced node_modules, which is what the runner image starts.
