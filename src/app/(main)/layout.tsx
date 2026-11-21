@@ -6,9 +6,6 @@ import Logo from '@/app/(main)/_components/logo'
 import { buttonClassName } from '@/components/button'
 
 export const metadata: Metadata = {
-    alternates: {
-        canonical: 'https://statbox.live',
-    },
     description:
         'Real-time LoL stats widget for streamers. Session-based W/L tracking, live rank, KDA, and more. Free OBS browser source.',
     metadataBase: new URL('https://statbox.live'),
@@ -29,7 +26,7 @@ export default function MainLayout({
     children: React.ReactNode
 }) {
     return (
-        <div className="text-text min-h-screen bg-[radial-gradient(circle_at_top,rgba(10,200,185,0.1),transparent_28%),radial-gradient(circle_at_20%_20%,rgba(244,201,93,0.1),transparent_22%),linear-gradient(180deg,#07111f_0%,#060e1a_45%,#07111f_100%)]">
+        <div className="text-text bg-page min-h-screen">
             <a
                 className="focus:bg-accent focus:text-bg-base sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-60 focus:rounded-xl focus:px-4 focus:py-2 focus:text-sm focus:font-semibold"
                 href="#main">

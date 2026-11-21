@@ -1,10 +1,18 @@
+import { formatDuration } from 'date-fns'
 import { BarChart3, RefreshCw, Zap } from 'lucide-react'
 
 import type { FeatureCardItemProps } from '@/app/(main)/_components/feature-card'
 import type { StepCardProps } from '@/app/(main)/_components/step-card'
-import { WIDGET_STYLE_OPTIONS } from '@/features/widget/widget.constants'
+import {
+    POLL_INTERVAL,
+    WIDGET_STYLE_OPTIONS,
+} from '@/features/widget/widget.constants'
 import type { WidgetStyleDefinition } from '@/features/widget/widget.types'
 import type { RiotData } from '@/lib/riot/riot.types'
+
+const POLL_MINUTES = POLL_INTERVAL / 60_000
+
+export const REFRESH_METRIC = `${POLL_MINUTES}m`
 
 export const EXAMPLE_SUMMONER: RiotData = {
     gameName: 'doydos enjoyer',
@@ -94,8 +102,7 @@ export const FEATURE_ITEMS: FeatureCardItemProps[] = [
     },
     {
         className: 'bg-win',
-        description:
-            'Add the browser source once and let the widget refresh automatically every 30 seconds.',
+        description: `Add the browser source once and let the widget refresh automatically every ${formatDuration({ minutes: POLL_MINUTES })}.`,
         icon: RefreshCw,
         title: 'Set and forget',
     },

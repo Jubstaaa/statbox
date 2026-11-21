@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
+    alternates: { canonical: '/privacy' },
     title: 'Privacy',
 }
 
@@ -17,8 +18,9 @@ export default function PrivacyPage() {
                     </h1>
                     <p className="text-text-muted text-sm leading-relaxed">
                         StatBox is a small Riot-powered web app. This page
-                        explains what data the product processes and what is
-                        stored locally in your browser.
+                        explains what data the product processes, what the
+                        server caches, and what is stored locally in your
+                        browser.
                     </p>
                 </header>
 
@@ -41,10 +43,40 @@ export default function PrivacyPage() {
                             What is stored in the browser
                         </h2>
                         <p>
-                            StatBox stores a connected account identifier
-                            (`puuid`) and builder preferences such as selected
-                            queue, widget style, and session settings in local
-                            storage so the builder can restore your last setup.
+                            StatBox stores a connected account identifier (the
+                            Riot <code>PUUID</code>) and builder preferences
+                            such as selected queue, widget style, and session
+                            settings in local storage so the builder can restore
+                            your last setup. Disconnecting the account in the
+                            builder removes them.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-text mb-2 text-base font-bold">
+                            What is stored on the server
+                        </h2>
+                        <p>
+                            To stay inside Riot&apos;s rate limits, the server
+                            keeps Riot API answers in a cache on the
+                            operator&apos;s server, keyed by Riot ID and PUUID:
+                            the Riot ID to PUUID lookup for a day, summoner data
+                            for six hours, ranked data for a day, and match
+                            details for up to 90 days per PUUID. Cached entries
+                            are not shared with anyone and are removed once they
+                            expire.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-text mb-2 text-base font-bold">
+                            Widget links
+                        </h2>
+                        <p>
+                            A widget link carries the account&apos;s PUUID,
+                            region, and widget settings. Anyone who has the link
+                            sees the same public ranked stats, so share it only
+                            where you would show the widget itself.
                         </p>
                     </section>
 
@@ -67,8 +99,10 @@ export default function PrivacyPage() {
                         </h2>
                         <p>
                             Match, summoner, and ranked data come from Riot API
-                            services. Deployment and request logs may also be
-                            handled by the hosting platform used to run the app.
+                            services. Cloudflare proxies every request to the
+                            site, briefly caches public API answers at its edge,
+                            and provides web analytics. The server keeps short
+                            container logs of request errors.
                         </p>
                     </section>
 

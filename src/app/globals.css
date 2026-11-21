@@ -17,3 +17,15 @@
     --color-win: #5ef2a2;
     --color-loss: #ff7a8a;
 }
+
+/* The site background behind the main layout and both error pages. */
+@utility bg-page {
+    background-image:
+        radial-gradient(circle at top, rgb(10 200 185 / 0.1), transparent 28%),
+        radial-gradient(
+            circle at 20% 20%,
+            rgb(244 201 93 / 0.1),
+            transparent 22%
+        ),
+        linear-gradient(180deg, #07111f 0%, #060e1a 45%, #07111f 100%);
+}

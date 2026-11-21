@@ -65,7 +65,14 @@ export default function PlayerSummary({
                             {data.leaguePoints} LP
                         </span>
                     )}
-                    {data.hotStreak && <span className="text-xs">🔥</span>}
+                    {data.hotStreak && (
+                        <span
+                            aria-label="On a win streak"
+                            className="text-xs"
+                            role="img">
+                            🔥
+                        </span>
+                    )}
                 </div>
             </div>
         </div>

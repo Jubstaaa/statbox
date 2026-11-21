@@ -1,4 +1,5 @@
 import { AlertTriangle, Tv } from 'lucide-react'
+import type { Metadata } from 'next'
 
 import Badge from '@/app/(main)/_components/badge'
 import FeatureCard from '@/app/(main)/_components/feature-card'
@@ -13,9 +14,16 @@ import Widget from '@/features/widget/widget'
 import {
     EXAMPLE_SUMMONER,
     FEATURE_ITEMS,
+    REFRESH_METRIC,
     STEPS,
     WIDGET_LAYOUTS,
 } from './landing.constants'
+
+// Set per page: a canonical in the shared layout would point /privacy and
+// /terms at the home page.
+export const metadata: Metadata = {
+    alternates: { canonical: '/' },
+}
 
 export default function LandingPage() {
     return (
@@ -67,7 +75,7 @@ export default function LandingPage() {
                             <MetricCard
                                 label="Refresh"
                                 note="Automatic Riot data updates"
-                                value="30s"
+                                value={REFRESH_METRIC}
                             />
                         </div>
                     </div>
