@@ -34,13 +34,18 @@ services:
         # cannot alert per container, so this fills the Health column and nothing
         # more: it surfaces "process alive but application wedged", which the
         # restart policy alone never catches. Deploys also wait on it
-        # (`compose up --wait`) and roll back when it never passes. /api/health
-        # queries the SQLite cache, so an unreadable data mount fails it too.
+        # (`compose up --wait`) and roll back when it never passes.
+        #
+        # The probe stays on / for this release: the deploy action rolls back by
+        # starting the previous image under this same file, and images built
+        # before /api/health answer it with 404, so the rollback would fail too.
+        # Once a release with /api/health is live (and so is every rollback
+        # target), the next one switches the probe to it.
         healthcheck:
             test:
                 [
                     'CMD-SHELL',
-                    'wget -q -O /dev/null -T 3 "http://$$HOSTNAME:3000/api/health" || exit 1',
+                    'wget -q -O /dev/null -T 3 "http://$$HOSTNAME:3000/" || exit 1',
                 ]
             interval: 30s
             timeout: 5s

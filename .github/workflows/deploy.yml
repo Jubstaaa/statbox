@@ -50,9 +50,13 @@ jobs:
         steps:
             - name: Validate the tag
               run: '[[ "$IMAGE_TAG" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::image_tag must be a full 40-char commit SHA"; exit 1; }'
-            # The compose file comes from the repository, so the server never drifts from git.
+            # The compose file comes from the commit being released, not from
+            # this workflow's ref: the image job tested that image with that
+            # file, and a rollback to an older SHA must run under the compose
+            # file (and healthcheck) it shipped with, not main's.
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
+                  ref: ${{ env.IMAGE_TAG }}
                   persist-credentials: false
                   sparse-checkout: docker-compose.yml
                   sparse-checkout-cone-mode: false
@@ -78,7 +82,12 @@ jobs:
                   container: statbox
                   image: ${{ env.IMAGE }}
                   tag: ${{ env.IMAGE_TAG }}
-                  health-url: http://127.0.0.1:3003/api/health
+                  # Lives in this workflow, not in the released commit, so it
+                  # must be a path every image answers: the action probes it
+                  # after starting the new tag and again after an automatic
+                  # rollback to the previous one. The cache check is the
+                  # compose healthcheck's job, which travels with each SHA.
+                  health-url: http://127.0.0.1:3003/
                   sqlite-snapshot: /opt/statbox/data/statbox-cache.db
                   # The cache is about 120 MB and rebuildable; three is enough to
                   # step back across a bad release or two.
