@@ -118,6 +118,62 @@ describe('builder account store', () => {
         ).toEqual({ puuid: PUUID, settings: SETTINGS })
     })
 
+    describe('when the browser refuses the migration write', () => {
+        function seedLegacyAccountAndRefuseWrites() {
+            window.localStorage.setItem(LEGACY_PUUID_KEY, PUUID)
+            window.localStorage.setItem(
+                LEGACY_SETTINGS_KEY,
+                JSON.stringify(SETTINGS)
+            )
+            const refusal = vi
+                .spyOn(window.localStorage, 'setItem')
+                .mockImplementation(() => {
+                    throw new DOMException('full', 'QuotaExceededError')
+                })
+            storageSpies.push(refusal)
+
+            return refusal
+        }
+
+        // The module warns about blocked storage once per page, so each test
+        // loads a fresh copy to see its own warning.
+        async function loadStore() {
+            vi.resetModules()
+            return import('./widget-generator.storage')
+        }
+
+        it('still uses the account, keeps the old keys and reports the refusal', async () => {
+            seedLegacyAccountAndRefuseWrites()
+            const warn = vi
+                .spyOn(console, 'warn')
+                .mockImplementation(() => undefined)
+            const store = await loadStore()
+
+            expect(store.getBuilderAccount()).toEqual({
+                puuid: PUUID,
+                settings: SETTINGS,
+            })
+            expect(window.localStorage.getItem(LEGACY_PUUID_KEY)).toBe(PUUID)
+            expect(
+                window.localStorage.getItem(LEGACY_SETTINGS_KEY)
+            ).not.toBeNull()
+            expect(warn).toHaveBeenCalledOnce()
+        })
+
+        it('forgets the old keys too on disconnect', async () => {
+            const refusal = seedLegacyAccountAndRefuseWrites()
+            vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+            const store = await loadStore()
+            store.getBuilderAccount()
+            refusal.mockRestore()
+
+            store.clearBuilderAccount()
+
+            expect(window.localStorage.length).toBe(0)
+            expect(store.getBuilderAccount()).toBeNull()
+        })
+    })
+
     it('has no account when the old keys hold a PUUID without settings, so no region is guessed', () => {
         window.localStorage.setItem(LEGACY_PUUID_KEY, PUUID)
 
