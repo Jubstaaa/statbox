@@ -2,10 +2,9 @@ import { checkCacheHealth } from '@/lib/cache'
 
 const NO_STORE = { 'Cache-Control': 'no-store' }
 
-// Answers 503 when the SQLite cache cannot be opened or read, so a release
-// that would serve every Riot request uncached can be told apart. The smoke
-// test checks it; the container healthcheck moves to it once every image a
-// deploy can roll back to serves it (see docker-compose.yml).
+// The container healthcheck calls this, so deploys (`compose up --wait`) wait
+// on it: a release that cannot open or read the SQLite cache, and would serve
+// every Riot request uncached, is rolled back.
 export async function GET() {
     try {
         await checkCacheHealth()

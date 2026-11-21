@@ -33,11 +33,13 @@ services:
         # (`compose up --wait`) and roll back when it never passes.
         #
         # A readiness check: /api/health reads the SQLite cache, so a release
-        # whose data mount is unreadable or empty is rolled back. The deploy
-        # action rolls back by starting the previous image under this file, so
-        # this probe needs every rollback target to serve /api/health; it went
-        # live one release before this one for that reason. Older SHAs keep
-        # their own compose file, which the deploy checks out per tag.
+        # that cannot open or read its data is rolled back. The deploy action
+        # rolls back by starting the previous image under this file, so every
+        # image this file may roll back to must serve /api/health; images built
+        # before it was added (ci/image-gate-and-hardening) answer 404. Deploy
+        # this file only once such an image is live: the PR's rollback
+        # rehearsal starts :latest under it and fails until then. Older SHAs
+        # keep their own compose file, which the deploy checks out per tag.
         healthcheck:
             test:
                 [

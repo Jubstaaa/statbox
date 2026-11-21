@@ -145,8 +145,7 @@ snapshot it just took; a manual rollback restores one only with
 ### Health probes
 
 - **Container healthcheck** (`docker-compose.yml`, travels with each SHA):
-  what `compose up --wait` waits for. It stays on `/` for this release (see
-  the upgrade note below).
+  probes `/api/health`; it is what `compose up --wait` waits for.
 - **Deploy health URL** (`deploy.yml`): `http://127.0.0.1:3003/`, probed after
   the new tag starts and after an automatic rollback. It lives in the
   workflow, so it must be a path every image answers.
@@ -173,10 +172,13 @@ user before the first deploy:
 
 - A compose change that probes a path older images do not serve ships one
   release after the image that serves it, since a rollback runs the previous
-  image under the new file. `/api/health` arrives with this release; the
-  probe switch to it (`ci/health-gate-switch`) deploys only after this
-  release is live, and its PR's rollback rehearsal fails until `:latest`
-  answers `/api/health`.
+  image under the new file.
+- The `/api/health` healthcheck (`ci/health-gate-switch`) must deploy
+  **after** `ci/image-gate-and-hardening`, as a separate release. Before
+  merging it, confirm on the droplet that
+  `curl -s 127.0.0.1:3003/api/health` answers `{"status":"ok"}`. Its PR's
+  rollback rehearsal enforces the same: it starts `:latest` under the new
+  compose file and fails until the live image serves `/api/health`.
 
 ## Riot API key and rate budget
 
