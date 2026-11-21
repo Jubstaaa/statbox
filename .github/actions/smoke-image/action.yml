@@ -37,13 +37,9 @@ runs:
               DATA_DIR: ${{ runner.temp }}/data
               IMAGE_CACHE_DIR: ${{ runner.temp }}/image-cache
           run: |
+              # Empty on purpose, like a new droplet's: the app creates the
+              # cache schema at startup (src/instrumentation.ts).
               install -d -m 777 "$DATA_DIR" "$IMAGE_CACHE_DIR"
-              # /api/health only reads, so an empty mount fails it on purpose.
-              # Production's cache already exists; the candidate gets an empty
-              # one with the table src/lib/cache.ts creates.
-              sqlite3 "$DATA_DIR/statbox-cache.db" \
-                  'CREATE TABLE cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at INTEGER NOT NULL)'
-              chmod 666 "$DATA_DIR/statbox-cache.db"
               # Route modules validate the key on import; no Riot call is made.
               printf 'RIOT_API_KEY=ci-placeholder\n' > .env
               docker compose up -d --wait --wait-timeout 120 app
