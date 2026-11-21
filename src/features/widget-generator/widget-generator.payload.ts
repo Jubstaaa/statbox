@@ -14,26 +14,36 @@ import {
 import type { RankedQueue, Region, WidgetStyle } from '@/lib/riot/riot.types'
 
 // The value of an <input type="datetime-local">, minute precision.
-export const sessionDateTimeSchema = z.iso.datetime({
+const sessionDateTimeSchema = z.iso.datetime({
     local: true,
     precision: -1,
 })
 const sessionClockTimeSchema = z.iso.time({ precision: -1 })
-export const sessionModeSchema = z.enum(['all-day', 'from-time'])
+const sessionModeSchema = z.enum(['all-day', 'from-time'])
 
 export type SessionMode = z.infer<typeof sessionModeSchema>
 
-export interface BuilderSettings {
-    queue: RankedQueue
-    region: Region
-    sessionMode: SessionMode
-    sessionTime: string | null
-    style: WidgetStyle
-}
+// The builder's choices for one account, as stored in the browser and carried
+// in the widget URL.
+export const builderSettingsSchema = z.object({
+    queue: rankedQueueSchema,
+    region: regionSchema,
+    sessionMode: sessionModeSchema,
+    sessionTime: sessionDateTimeSchema.nullable(),
+    style: widgetStyleSchema,
+})
 
-interface WidgetRoutePayload extends BuilderSettings {
-    puuid: string
-}
+export type BuilderSettings = z.infer<typeof builderSettingsSchema>
+
+// What a new account starts with; the region is the one its Riot ID resolved in.
+export const DEFAULT_BUILDER_SETTINGS = {
+    queue: 'solo',
+    sessionMode: 'all-day',
+    sessionTime: null,
+    style: 'classic',
+} as const satisfies Omit<BuilderSettings, 'region'>
+
+type WidgetRoutePayload = BuilderSettings & { puuid: string }
 
 const DATETIME_LOCAL_FORMAT = "yyyy-MM-dd'T'HH:mm"
 
@@ -48,13 +58,13 @@ function encodeWidgetRoutePayload(payload: WidgetRoutePayload) {
     return compressToEncodedURIComponent(JSON.stringify(payload))
 }
 
-const widgetRoutePayloadSchema = z.object({
+// Links made before session tracking carry no session fields.
+const widgetRoutePayloadSchema = builderSettingsSchema.extend({
     puuid: puuidSchema,
-    queue: rankedQueueSchema,
-    region: regionSchema,
-    sessionMode: sessionModeSchema.optional(),
-    sessionTime: sessionDateTimeSchema.nullable().optional(),
-    style: widgetStyleSchema,
+    sessionMode: sessionModeSchema.default(
+        DEFAULT_BUILDER_SETTINGS.sessionMode
+    ),
+    sessionTime: sessionDateTimeSchema.nullable().default(null),
 })
 
 export function decodeWidgetRoutePayload(
@@ -67,16 +77,8 @@ export function decodeWidgetRoutePayload(
         if (!decoded || decoded.length > MAX_DECOMPRESSED_LENGTH) return null
 
         const parsed = widgetRoutePayloadSchema.safeParse(JSON.parse(decoded))
-        if (!parsed.success) return null
 
-        return {
-            puuid: parsed.data.puuid,
-            queue: parsed.data.queue,
-            region: parsed.data.region,
-            sessionMode: parsed.data.sessionMode ?? 'all-day',
-            sessionTime: parsed.data.sessionTime ?? null,
-            style: parsed.data.style,
-        }
+        return parsed.success ? parsed.data : null
     } catch {
         return null
     }
@@ -96,7 +98,7 @@ export interface WidgetTarget {
 // queue and session start in the query string.
 const legacyTargetSchema = z.object({
     puuid: puuidSchema,
-    queue: rankedQueueSchema.default('solo'),
+    queue: rankedQueueSchema.default(DEFAULT_BUILDER_SETTINGS.queue),
     region: regionSchema,
     session: z.coerce.number().int().positive().optional().catch(undefined),
 })
@@ -132,7 +134,7 @@ export function parseWidgetTarget(
     return {
         ...target,
         getSession: () => session,
-        style: 'classic',
+        style: DEFAULT_BUILDER_SETTINGS.style,
     }
 }
 

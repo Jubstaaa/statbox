@@ -2,10 +2,10 @@
 
 import { useMemo } from 'react'
 
-import { skipToken, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'next/navigation'
 
-import { fetchSummonerByPuuid } from '@/features/widget-generator/widget-generator.api'
+import { summonerQueryOptions } from '@/features/widget-generator/widget-generator.api'
 import Widget from '@/features/widget/widget'
 import { POLL_INTERVAL } from '@/features/widget/widget.constants'
 import { cn } from '@/lib/cn'
@@ -21,10 +21,8 @@ export default function WidgetPage() {
     )
 
     const summonerQuery = useQuery({
-        enabled: target !== null,
+        ...summonerQueryOptions(target),
         placeholderData: previousData => previousData,
-        queryFn: target ? () => fetchSummonerByPuuid(target) : skipToken,
-        queryKey: ['summoner', target?.puuid, target?.region, target?.queue],
         refetchInterval: POLL_INTERVAL,
         refetchIntervalInBackground: true,
     })

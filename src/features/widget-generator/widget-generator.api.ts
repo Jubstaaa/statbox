@@ -1,3 +1,4 @@
+import { queryOptions, skipToken } from '@tanstack/react-query'
 import { z } from 'zod'
 
 import {
@@ -59,15 +60,17 @@ export async function resolveSummoner({
     return readBody(response, resolvedSummonerSchema)
 }
 
+interface SummonerTarget {
+    puuid: string
+    queue: RankedQueue
+    region: Region
+}
+
 export async function fetchSummonerByPuuid({
     puuid,
     queue,
     region,
-}: {
-    puuid: string
-    queue: RankedQueue
-    region: Region
-}) {
+}: SummonerTarget) {
     const params = new URLSearchParams({ queue, region })
     // Revalidate on every poll: the edge answers from its own short cache, but a
     // browser-cached copy could otherwise keep an overlay frozen for hours.
@@ -79,17 +82,11 @@ export async function fetchSummonerByPuuid({
     return readBody(response, riotDataSchema)
 }
 
-export function describeLookupError(error: unknown) {
-    const status = error instanceof SummonerRequestError ? error.status : null
-
-    switch (status) {
-        case 400:
-            return 'Check the name and tag: a Riot ID cannot contain those characters.'
-        case 404:
-            return 'Summoner not found. Check the name, tag, and region.'
-        case 503:
-            return 'Riot is busy right now. Try again in a minute.'
-        default:
-            return "Couldn't reach Riot right now. Try again shortly."
-    }
+// The one definition of a summoner query: the landing form prefetches under this
+// key so the connected card and /create read the cache instead of refetching.
+export function summonerQueryOptions(target: SummonerTarget | null) {
+    return queryOptions({
+        queryFn: target ? () => fetchSummonerByPuuid(target) : skipToken,
+        queryKey: ['summoner', target?.puuid, target?.region, target?.queue],
+    })
 }

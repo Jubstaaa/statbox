@@ -7,11 +7,12 @@ import {
 } from './widget-generator.constants'
 import type { BuilderSettings } from './widget-generator.payload'
 import {
+    BuilderStorageError,
     clearBuilderAccount,
     getBuilderAccount,
     saveBuilderAccount,
-    saveBuilderSettings,
     subscribeToBuilderAccount,
+    updateBuilderSettings,
 } from './widget-generator.storage'
 
 const PUUID = 'e'.repeat(78)
@@ -23,7 +24,12 @@ const SETTINGS: BuilderSettings = {
     style: 'classic',
 }
 
+// happy-dom's storage is not reset by restoreAllMocks, so its spies are.
+const storageSpies: { mockRestore: () => void }[] = []
+
 afterEach(() => {
+    storageSpies.splice(0).forEach(spy => spy.mockRestore())
+    vi.restoreAllMocks()
     window.localStorage.clear()
 })
 
@@ -43,7 +49,7 @@ describe('builder account store', () => {
 
         expect(getBuilderAccount()).toBe(first)
 
-        saveBuilderSettings({ ...SETTINGS, queue: 'flex' })
+        updateBuilderSettings(PUUID, { ...SETTINGS, queue: 'flex' })
 
         expect(getBuilderAccount()).not.toBe(first)
         expect(getBuilderAccount()?.settings.queue).toBe('flex')
@@ -80,11 +86,62 @@ describe('builder account store', () => {
         const unsubscribe = subscribeToBuilderAccount(listener)
 
         saveBuilderAccount({ puuid: PUUID, settings: SETTINGS })
-        saveBuilderSettings(SETTINGS)
+        updateBuilderSettings(PUUID, SETTINGS)
         clearBuilderAccount()
         unsubscribe()
-        saveBuilderSettings(SETTINGS)
+        saveBuilderAccount({ puuid: PUUID, settings: SETTINGS })
 
         expect(listener).toHaveBeenCalledTimes(3)
+    })
+
+    it('only updates the settings of the account they were made for', () => {
+        saveBuilderAccount({ puuid: PUUID, settings: SETTINGS })
+
+        expect(
+            updateBuilderSettings('h'.repeat(78), { ...SETTINGS, region: 'NA' })
+        ).toBe(false)
+        expect(getBuilderAccount()?.settings.region).toBe('KR')
+        expect(
+            updateBuilderSettings(PUUID, { ...SETTINGS, style: 'minimal' })
+        ).toBe(true)
+        expect(getBuilderAccount()?.settings.style).toBe('minimal')
+    })
+
+    it('treats blocked storage as no account instead of throwing', () => {
+        storageSpies.push(
+            vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
+                throw new DOMException('denied', 'SecurityError')
+            })
+        )
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+        expect(getBuilderAccount()).toBeNull()
+    })
+
+    it('reports a settings write the browser refuses', () => {
+        saveBuilderAccount({ puuid: PUUID, settings: SETTINGS })
+        storageSpies.push(
+            vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+                throw new DOMException('full', 'QuotaExceededError')
+            })
+        )
+        const reported = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined)
+
+        expect(updateBuilderSettings(PUUID, SETTINGS)).toBe(false)
+        expect(reported).toHaveBeenCalled()
+    })
+
+    it('fails loudly when the account itself cannot be saved', () => {
+        storageSpies.push(
+            vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+                throw new DOMException('full', 'QuotaExceededError')
+            })
+        )
+
+        expect(() =>
+            saveBuilderAccount({ puuid: PUUID, settings: SETTINGS })
+        ).toThrow(BuilderStorageError)
     })
 })

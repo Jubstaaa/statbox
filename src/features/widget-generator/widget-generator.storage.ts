@@ -2,12 +2,7 @@ import { useSyncExternalStore } from 'react'
 
 import { z } from 'zod'
 
-import {
-    puuidSchema,
-    rankedQueueSchema,
-    regionSchema,
-    widgetStyleSchema,
-} from '@/lib/riot/riot.schemas'
+import { puuidSchema } from '@/lib/riot/riot.schemas'
 
 import {
     BUILDER_PUUID_STORAGE_KEY,
@@ -15,22 +10,13 @@ import {
 } from './widget-generator.constants'
 import {
     type BuilderSettings,
-    sessionDateTimeSchema,
-    sessionModeSchema,
+    builderSettingsSchema,
 } from './widget-generator.payload'
 
 interface BuilderAccount {
     puuid: string
     settings: BuilderSettings
 }
-
-const builderSettingsSchema = z.object({
-    queue: rankedQueueSchema,
-    region: regionSchema,
-    sessionMode: sessionModeSchema,
-    sessionTime: sessionDateTimeSchema.nullable(),
-    style: widgetStyleSchema,
-})
 
 // The PUUID and its settings are one record: a PUUID without settings has no
 // region, and guessing one sends every Riot call to the wrong platform.
@@ -49,11 +35,37 @@ const builderAccountSchema = z.object({
         .pipe(builderSettingsSchema),
 })
 
+export class BuilderStorageError extends Error {
+    constructor(cause: unknown) {
+        super('The browser refused to store the builder account', { cause })
+        this.name = 'BuilderStorageError'
+    }
+}
+
 const listeners = new Set<() => void>()
 let snapshot: { account: BuilderAccount | null; key: string } | undefined
+let reportedBlockedStorage = false
 
 function notify() {
     for (const listener of listeners) listener()
+}
+
+// Storage can be blocked outright (site data disabled, some private modes);
+// the builder then simply has no saved account. Warned once, not per render.
+function readStorage() {
+    try {
+        return [
+            window.localStorage.getItem(BUILDER_PUUID_STORAGE_KEY),
+            window.localStorage.getItem(BUILDER_SETTINGS_STORAGE_KEY),
+        ] as const
+    } catch (error) {
+        if (!reportedBlockedStorage) {
+            reportedBlockedStorage = true
+            console.warn('[builder] browser storage is unavailable:', error)
+        }
+
+        return [null, null] as const
+    }
 }
 
 export function subscribeToBuilderAccount(listener: () => void) {
@@ -70,8 +82,7 @@ export function subscribeToBuilderAccount(listener: () => void) {
 export function getBuilderAccount(): BuilderAccount | null {
     if (typeof window === 'undefined') return null
 
-    const puuid = window.localStorage.getItem(BUILDER_PUUID_STORAGE_KEY)
-    const settings = window.localStorage.getItem(BUILDER_SETTINGS_STORAGE_KEY)
+    const [puuid, settings] = readStorage()
     const key = JSON.stringify([puuid, settings])
 
     // useSyncExternalStore needs the same object back while storage is unchanged.
@@ -91,25 +102,52 @@ export function useBuilderAccount() {
     )
 }
 
+// Throws BuilderStorageError: connecting an account that cannot be kept would
+// look like success and then lose it on the next page.
 export function saveBuilderAccount({ puuid, settings }: BuilderAccount) {
-    window.localStorage.setItem(
-        BUILDER_SETTINGS_STORAGE_KEY,
-        JSON.stringify(settings)
-    )
-    window.localStorage.setItem(BUILDER_PUUID_STORAGE_KEY, puuid)
-    notify()
+    try {
+        window.localStorage.setItem(
+            BUILDER_SETTINGS_STORAGE_KEY,
+            JSON.stringify(settings)
+        )
+        window.localStorage.setItem(BUILDER_PUUID_STORAGE_KEY, puuid)
+    } catch (error) {
+        throw new BuilderStorageError(error)
+    } finally {
+        notify()
+    }
 }
 
-export function saveBuilderSettings(settings: BuilderSettings) {
-    window.localStorage.setItem(
-        BUILDER_SETTINGS_STORAGE_KEY,
-        JSON.stringify(settings)
-    )
+// Writes only when `puuid` is still the stored account, so a page opened for
+// one account never overwrites the settings of one another tab connected.
+// Returns whether the settings were stored.
+export function updateBuilderSettings(
+    puuid: string,
+    settings: BuilderSettings
+): boolean {
+    if (getBuilderAccount()?.puuid !== puuid) return false
+
+    try {
+        window.localStorage.setItem(
+            BUILDER_SETTINGS_STORAGE_KEY,
+            JSON.stringify(settings)
+        )
+    } catch (error) {
+        console.error('[builder] could not store the settings:', error)
+        return false
+    }
+
     notify()
+    return true
 }
 
 export function clearBuilderAccount() {
-    window.localStorage.removeItem(BUILDER_PUUID_STORAGE_KEY)
-    window.localStorage.removeItem(BUILDER_SETTINGS_STORAGE_KEY)
-    notify()
+    try {
+        window.localStorage.removeItem(BUILDER_PUUID_STORAGE_KEY)
+        window.localStorage.removeItem(BUILDER_SETTINGS_STORAGE_KEY)
+    } catch (error) {
+        console.error('[builder] could not clear the saved account:', error)
+    } finally {
+        notify()
+    }
 }

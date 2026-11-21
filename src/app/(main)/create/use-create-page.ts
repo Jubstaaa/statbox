@@ -1,11 +1,12 @@
 import type { ChangeEvent } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { skipToken, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 
-import { fetchSummonerByPuuid } from '@/features/widget-generator/widget-generator.api'
+import { summonerQueryOptions } from '@/features/widget-generator/widget-generator.api'
 import {
+    type BuilderSettings,
     buildSessionTimestampFromTime,
     buildWidgetUrls,
     getCurrentDateTimeInputValue,
@@ -14,8 +15,8 @@ import {
 } from '@/features/widget-generator/widget-generator.payload'
 import {
     clearBuilderAccount,
-    getBuilderAccount,
-    saveBuilderSettings,
+    updateBuilderSettings,
+    useBuilderAccount,
 } from '@/features/widget-generator/widget-generator.storage'
 import { TIER_COLORS } from '@/features/widget/widget.constants'
 import { useHydrationReady } from '@/hooks/use-hydration-ready'
@@ -41,124 +42,104 @@ interface CreatePageState {
     style: WidgetStyle
     summonerData: RiotData | null
     tierColor: string
-    urls: ReturnType<typeof buildWidgetUrls> | null
+    urls: null | ReturnType<typeof buildWidgetUrls>
 }
 
+// The saved account is the single source of truth: every change is written
+// to it and read back through the store, so another tab connecting or
+// disconnecting an account shows up here too.
 export function useCreatePage(): CreatePageState {
     const router = useRouter()
-
-    const [maxSessionTime] = useState(() => getCurrentDateTimeInputValue())
-    // Read once: from here on this page owns the settings and writes them back.
-    // Without a saved account there is no region to ask Riot with, so the page
-    // sends the visitor home instead of guessing one.
-    const [account] = useState(getBuilderAccount)
-    const puuid = account?.puuid ?? null
-    const region = account?.settings.region ?? 'EUW'
-    const [style, setStyle] = useState<WidgetStyle>(
-        account?.settings.style ?? 'classic'
-    )
-    const [queue, setQueue] = useState<RankedQueue>(
-        account?.settings.queue ?? 'solo'
-    )
-    const [sessionMode, setSessionMode] = useState<SessionMode>(
-        account?.settings.sessionMode ?? 'all-day'
-    )
-    const [sessionTime, setSessionTime] = useState<string>(
-        () => account?.settings.sessionTime ?? getCurrentDateTimeInputValue()
-    )
     const storageReady = useHydrationReady()
+    const account = useBuilderAccount()
+    const [maxSessionTime] = useState(getCurrentDateTimeInputValue)
+
+    const puuid = account?.puuid ?? null
+    const settings = account?.settings ?? null
+    // What the start-time input shows while a session has no start yet.
+    const sessionTime = settings?.sessionTime ?? maxSessionTime
 
     useEffect(() => {
-        if (!storageReady || !puuid) return
+        if (storageReady && !account) router.replace('/')
+    }, [account, router, storageReady])
 
-        saveBuilderSettings({
-            queue,
-            region,
-            sessionMode,
-            sessionTime,
-            style,
-        })
-    }, [puuid, queue, region, sessionMode, sessionTime, storageReady, style])
-
-    useEffect(() => {
-        if (storageReady && !puuid) router.replace('/')
-    }, [puuid, router, storageReady])
+    const update = useCallback(
+        (change: Partial<BuilderSettings>) => {
+            if (account) {
+                updateBuilderSettings(account.puuid, {
+                    ...account.settings,
+                    ...change,
+                })
+            }
+        },
+        [account]
+    )
 
     const summonerQuery = useQuery({
+        ...summonerQueryOptions(
+            account && { puuid: account.puuid, ...account.settings }
+        ),
         placeholderData: previousData => previousData,
-        queryFn: puuid
-            ? () => fetchSummonerByPuuid({ puuid, queue, region })
-            : skipToken,
-        queryKey: ['summoner', puuid, region, queue],
     })
 
-    const urls = useMemo(() => {
-        if (!puuid) return null
-
-        return buildWidgetUrls({
-            puuid,
-            queue,
-            region,
-            sessionMode,
-            sessionTime,
-            style,
-        })
-    }, [puuid, queue, region, sessionMode, sessionTime, style])
-
-    const previewSession = useMemo(
-        () => resolveSessionTimestamp({ sessionMode, sessionTime }),
-        [sessionMode, sessionTime]
-    )
-
-    const tierColor = useMemo(
+    const urls = useMemo(
         () =>
-            summonerQuery.data
-                ? (TIER_COLORS[summonerQuery.data.tier] ?? TIER_COLORS.UNRANKED)
-                : TIER_COLORS.UNRANKED,
-        [summonerQuery.data]
+            account
+                ? buildWidgetUrls({ puuid: account.puuid, ...account.settings })
+                : null,
+        [account]
     )
 
-    const handleAllDaySession = useCallback(() => {
-        setSessionMode('all-day')
-    }, [])
+    const previewSession = settings ? resolveSessionTimestamp(settings) : null
 
-    const handleFromTimeSession = useCallback(() => {
-        setSessionMode('from-time')
-        setSessionTime(currentValue =>
-            buildSessionTimestampFromTime(currentValue) === null
-                ? getCurrentDateTimeInputValue()
-                : currentValue
-        )
-    }, [])
+    const tierColor = summonerQuery.data
+        ? (TIER_COLORS[summonerQuery.data.tier] ?? TIER_COLORS.UNRANKED)
+        : TIER_COLORS.UNRANKED
+
+    const handleAllDaySession = useCallback(
+        () => update({ sessionMode: 'all-day' }),
+        [update]
+    )
+
+    const handleFromTimeSession = useCallback(
+        () =>
+            update({
+                sessionMode: 'from-time',
+                sessionTime:
+                    buildSessionTimestampFromTime(sessionTime) === null
+                        ? getCurrentDateTimeInputValue()
+                        : sessionTime,
+            }),
+        [sessionTime, update]
+    )
 
     const handleSessionTimeChange = useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
             if (buildSessionTimestampFromTime(event.target.value) === null)
                 return
 
-            setSessionTime(event.target.value)
+            update({ sessionTime: event.target.value })
         },
-        []
+        [update]
     )
 
     const handleChangeAccount = useCallback(() => {
         clearBuilderAccount()
-        router.push('/')
-    }, [router])
+    }, [])
 
     const createStyleSelectHandler = useCallback(
-        (value: WidgetStyle) => () => {
-            setStyle(value)
-        },
-        []
+        (value: WidgetStyle) => () => update({ style: value }),
+        [update]
     )
 
-    const handleSoloQueue = useCallback(() => {
-        setQueue('solo')
-    }, [])
-    const handleFlexQueue = useCallback(() => {
-        setQueue('flex')
-    }, [])
+    const handleSoloQueue = useCallback(
+        () => update({ queue: 'solo' }),
+        [update]
+    )
+    const handleFlexQueue = useCallback(
+        () => update({ queue: 'flex' }),
+        [update]
+    )
 
     return {
         createStyleSelectHandler,
@@ -173,11 +154,11 @@ export function useCreatePage(): CreatePageState {
         maxSessionTime,
         previewSession,
         puuid,
-        queue,
-        sessionMode,
+        queue: settings?.queue ?? 'solo',
+        sessionMode: settings?.sessionMode ?? 'all-day',
         sessionTime,
         storageReady,
-        style,
+        style: settings?.style ?? 'classic',
         summonerData: summonerQuery.data ?? null,
         tierColor,
         urls,

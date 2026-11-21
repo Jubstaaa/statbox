@@ -1,9 +1,10 @@
+import { skipToken } from '@tanstack/react-query'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
-    describeLookupError,
     fetchSummonerByPuuid,
     resolveSummoner,
+    summonerQueryOptions,
     SummonerRequestError,
 } from './widget-generator.api'
 
@@ -108,14 +109,15 @@ describe('resolveSummoner', () => {
     })
 })
 
-describe('describeLookupError', () => {
-    it.each([
-        [new SummonerRequestError(404, 'x'), /not found/i],
-        [new SummonerRequestError(503, 'x'), /busy/i],
-        [new SummonerRequestError(400, 'x'), /name and tag/i],
-        [new SummonerRequestError(502, 'x'), /couldn.t reach riot/i],
-        [new TypeError('Failed to fetch'), /couldn.t reach riot/i],
-    ])('explains %o', (error, message) => {
-        expect(describeLookupError(error)).toMatch(message)
+describe('summonerQueryOptions', () => {
+    it('keys a summoner by player, region and queue', () => {
+        expect(
+            summonerQueryOptions({ puuid: PUUID, queue: 'flex', region: 'KR' })
+                .queryKey
+        ).toEqual(['summoner', PUUID, 'KR', 'flex'])
+    })
+
+    it('does not fetch without a target', () => {
+        expect(summonerQueryOptions(null).queryFn).toBe(skipToken)
     })
 })

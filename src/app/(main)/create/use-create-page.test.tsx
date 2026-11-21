@@ -6,6 +6,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
+    clearBuilderAccount,
     getBuilderAccount,
     saveBuilderAccount,
 } from '@/features/widget-generator/widget-generator.storage'
@@ -27,9 +28,9 @@ function wrapper({ children }: { children: ReactNode }) {
     return <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 
-function saveKoreanAccount() {
+function saveKoreanAccount(puuid = PUUID) {
     saveBuilderAccount({
-        puuid: PUUID,
+        puuid,
         settings: {
             queue: 'flex',
             region: 'KR',
@@ -102,6 +103,62 @@ describe('useCreatePage', () => {
         act(() => result.current.handleChangeAccount())
 
         expect(window.localStorage.length).toBe(0)
-        expect(push).toHaveBeenCalledWith('/')
+        expect(replace).toHaveBeenCalledWith('/')
+    })
+
+    it('keeps an all-day session without inventing a start time', () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => Response.json({}))
+        )
+        saveKoreanAccount()
+
+        renderHook(useCreatePage, { wrapper })
+
+        expect(getBuilderAccount()?.settings.sessionTime).toBeNull()
+    })
+
+    it('follows an account another tab connects and never writes over it', () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => Response.json({}))
+        )
+        saveKoreanAccount()
+        const { result } = renderHook(useCreatePage, { wrapper })
+        const other = 'h'.repeat(78)
+
+        act(() =>
+            saveBuilderAccount({
+                puuid: other,
+                settings: {
+                    queue: 'solo',
+                    region: 'NA',
+                    sessionMode: 'all-day',
+                    sessionTime: null,
+                    style: 'minimal',
+                },
+            })
+        )
+        act(() => result.current.handleFlexQueue())
+
+        expect(result.current.puuid).toBe(other)
+        expect(result.current.style).toBe('minimal')
+        expect(getBuilderAccount()).toMatchObject({
+            puuid: other,
+            settings: { queue: 'flex', region: 'NA' },
+        })
+    })
+
+    it('goes home when another tab disconnects the account', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => Response.json({}))
+        )
+        saveKoreanAccount()
+        renderHook(useCreatePage, { wrapper })
+
+        act(() => clearBuilderAccount())
+
+        await waitFor(() => expect(replace).toHaveBeenCalledWith('/'))
     })
 })

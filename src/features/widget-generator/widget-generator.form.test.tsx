@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { QUERY_CLIENT_DEFAULT_OPTIONS } from '@/app/_components/query-provider'
 import DdragonProvider from '@/features/widget/ddragon-provider'
+import { createQueryClient } from '@/lib/query-client'
 
 import WidgetGeneratorForm from './widget-generator.form'
 import {
@@ -56,11 +56,7 @@ function stubApi(resolveStatus = 200) {
 }
 
 function renderForm() {
-    const client = new QueryClient({
-        defaultOptions: {
-            queries: { ...QUERY_CLIENT_DEFAULT_OPTIONS.queries, retry: false },
-        },
-    })
+    const client = createQueryClient()
 
     return render(
         <QueryClientProvider client={client}>
@@ -86,7 +82,11 @@ beforeEach(() => {
     stubApi()
 })
 
+// happy-dom's storage is not reset by restoreAllMocks, so its spies are.
+const storageSpies: { mockRestore: () => void }[] = []
+
 afterEach(() => {
+    storageSpies.splice(0).forEach(spy => spy.mockRestore())
     cleanup()
     vi.unstubAllGlobals()
     window.localStorage.clear()
@@ -130,6 +130,29 @@ describe('WidgetGeneratorForm', () => {
             expect(push).not.toHaveBeenCalled()
         }
     )
+
+    it('says so when the browser refuses to save the account', async () => {
+        renderForm()
+        storageSpies.push(
+            vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
+                throw new DOMException('full', 'QuotaExceededError')
+            })
+        )
+
+        const reported = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined)
+
+        submitRiotId()
+
+        expect(await screen.findByRole('alert')).toHaveProperty(
+            'textContent',
+            expect.stringMatching(/browser/i)
+        )
+        expect(push).not.toHaveBeenCalled()
+        expect(reported).toHaveBeenCalled()
+        reported.mockRestore()
+    })
 
     it('forgets the settings too when the account is changed', async () => {
         saveBuilderAccount({
