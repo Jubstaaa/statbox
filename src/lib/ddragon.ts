@@ -9,7 +9,12 @@ const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json'
 const VERSION_REVALIDATE_SECONDS = 86400
 const FALLBACK_DDRAGON_VERSION = '16.14.1'
 
-const versionsSchema = z.array(z.string().min(1)).min(1)
+// Newest first. Only the head is checked strictly: it is interpolated into the
+// icon URLs, while the tail holds legacy entries such as lolpatch_7.20.
+const versionsSchema = z.tuple(
+    [z.string().regex(/^\d+\.\d+\.\d+$/)],
+    z.string()
+)
 
 // Keeps the newest version this process has actually seen, so a failed lookup
 // degrades to that rather than dropping back to a constant that ages into 403s.

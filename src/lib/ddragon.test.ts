@@ -19,11 +19,22 @@ describe('getDdragonVersion', () => {
         expect(await getDdragonVersion()).toBe('16.23.1')
     })
 
+    // The real list ends in decade-old entries such as lolpatch_7.20; only the
+    // newest one ends up in asset URLs.
+    it('accepts the legacy entries at the end of the real list', async () => {
+        respondWith(['16.23.1', '0.151.2', 'lolpatch_7.20'])
+
+        expect(await getDdragonVersion()).toBe('16.23.1')
+    })
+
     it.each([
         ['a non-array body', { latest: '16.24.1' }],
         ['an empty list', []],
         ['a non-string version', [1624]],
         ['an empty version string', ['']],
+        // It is interpolated into image URLs the optimizer fetches.
+        ['a version that is a path', ['../../16.24.1']],
+        ['a version with a query', ['16.24.1?x=1']],
     ])('keeps the last good version on %s', async (_, body) => {
         respondWith(['16.23.1'])
         await getDdragonVersion()
