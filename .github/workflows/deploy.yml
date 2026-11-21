@@ -102,3 +102,36 @@ jobs:
                   keep-snapshots: '3'
                   # Push deploys never restore; a manual rollback may ask to.
                   restore-snapshot: ${{ inputs.restore_snapshot && 'true' || 'false' }}
+
+    # GitHub emails only the actor, and Dependabot's dispatched deploys run as
+    # github-actions[bot], so a failed or rolled-back release would go unseen.
+    alert:
+        needs: [ci, deploy]
+        if: ${{ failure() && github.ref == 'refs/heads/main' }}
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        permissions:
+            issues: write
+        steps:
+            - name: Open or update the deploy-failure issue
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  GH_REPO: ${{ github.repository }}
+                  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+                  TITLE: Production deploy failed
+              run: |
+                  body="Run: $RUN_URL (commit $GITHUB_SHA). Production may be on the previous release or down; check the deploy log."
+                  # Anyone can open an issue on this public repository, so only
+                  # an issue this workflow created counts; gh reports the bot's
+                  # login as app/github-actions.
+                  gh label create deploy-failure --force --color B60205 \
+                      --description 'Opened by the deploy workflow'
+                  existing=$(gh issue list --state open --author app/github-actions \
+                      --label deploy-failure --search "\"$TITLE\" in:title" \
+                      --json number,author \
+                      --jq '[.[] | select(.author.is_bot and .author.login == "app/github-actions")][0].number // empty')
+                  if [ -n "$existing" ]; then
+                      gh issue comment "$existing" --body "$body"
+                  else
+                      gh issue create --title "$TITLE" --body "$body" --label deploy-failure
+                  fi
