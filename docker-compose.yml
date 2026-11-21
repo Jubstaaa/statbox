@@ -32,16 +32,17 @@ services:
         # restart policy alone never catches. Deploys also wait on it
         # (`compose up --wait`) and roll back when it never passes.
         #
-        # The probe stays on / for this release: the deploy action rolls back by
-        # starting the previous image under this same file, and images built
-        # before /api/health answer it with 404, so the rollback would fail too.
-        # Once a release with /api/health is live (and so is every rollback
-        # target), the next one switches the probe to it.
+        # A readiness check: /api/health reads the SQLite cache, so a release
+        # whose data mount is unreadable or empty is rolled back. The deploy
+        # action rolls back by starting the previous image under this file, so
+        # this probe needs every rollback target to serve /api/health; it went
+        # live one release before this one for that reason. Older SHAs keep
+        # their own compose file, which the deploy checks out per tag.
         healthcheck:
             test:
                 [
                     'CMD-SHELL',
-                    'wget -q -O /dev/null -T 3 http://127.0.0.1:3000/ || exit 1',
+                    'wget -q -O /dev/null -T 3 http://127.0.0.1:3000/api/health || exit 1',
                 ]
             interval: 30s
             timeout: 5s
