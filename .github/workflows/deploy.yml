@@ -10,6 +10,11 @@ on:
                 required: false
                 default: ''
                 type: string
+            restore_snapshot:
+                description: 'Rollback only: also put back the newest cache snapshot taken while image_tag was running, discarding every cache write since.'
+                required: false
+                default: false
+                type: boolean
 
 permissions:
     contents: read
@@ -50,6 +55,9 @@ jobs:
         steps:
             - name: Validate the tag
               run: '[[ "$IMAGE_TAG" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::image_tag must be a full 40-char commit SHA"; exit 1; }'
+            - name: Refuse a snapshot restore without a rollback tag
+              if: ${{ inputs.restore_snapshot && !inputs.image_tag }}
+              run: '{ echo "::error::restore_snapshot needs image_tag: it restores the snapshot taken while that tag was running"; exit 1; }'
             # The compose file comes from the commit being released, not from
             # this workflow's ref: the image job tested that image with that
             # file, and a rollback to an older SHA must run under the compose
@@ -92,3 +100,5 @@ jobs:
                   # The cache is about 120 MB and rebuildable; three is enough to
                   # step back across a bad release or two.
                   keep-snapshots: '3'
+                  # Push deploys never restore; a manual rollback may ask to.
+                  restore-snapshot: ${{ inputs.restore_snapshot && 'true' || 'false' }}
