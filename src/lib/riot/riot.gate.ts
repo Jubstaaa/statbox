@@ -35,7 +35,7 @@ export async function callRiot<T>(
         if (!(error instanceof RateLimitError)) throw error
 
         const retryAfter =
-            error.rateLimits.RetryAfter || DEFAULT_RETRY_AFTER_SECONDS
+            (error.rateLimits.RetryAfter ?? 0) || DEFAULT_RETRY_AFTER_SECONDS
         blockedUntil.set(
             routing,
             Math.max(

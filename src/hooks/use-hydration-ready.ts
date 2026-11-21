@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-const subscribe = () => () => {}
+const subscribe = () => () => undefined
 const getSnapshot = () => true
 const getServerSnapshot = () => false
 

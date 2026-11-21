@@ -41,8 +41,8 @@ const nextConfig: NextConfig = {
         // ~7 kB of Tailwind is cheaper inline than as a render-blocking request.
         inlineCss: true,
     },
-    async headers() {
-        return [
+    headers() {
+        return Promise.resolve([
             { headers: baseHeaders, source: '/:path*' },
             {
                 headers: [
@@ -65,7 +65,7 @@ const nextConfig: NextConfig = {
                 ],
                 source: '/widget/:path*',
             },
-        ]
+        ])
     },
     images: {
         // The only optimized images are the 48 px icons (src/features/widget),
