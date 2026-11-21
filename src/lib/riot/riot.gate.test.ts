@@ -84,4 +84,54 @@ describe('callRiot', () => {
         ).rejects.toBe(notFound)
         await expect(callRiot('tr1', async () => 'ok')).resolves.toBe('ok')
     })
+
+    // Each test below uses routing values no other test touches, since the
+    // module keeps its windows for the life of the process.
+    //
+    // The deployed key is a personal one: 20 calls per second and 100 per
+    // two minutes, counted per routing value.
+    describe('personal key budget', () => {
+        function callMany(routing: string, count: number) {
+            const request = vi.fn(async () => 'ok')
+            const results = Array.from({ length: count }, () =>
+                callRiot(routing, request).catch((caught: unknown) => caught)
+            )
+
+            return { request, results }
+        }
+
+        it('holds the 21st call within one second until the window moves', async () => {
+            const { request, results } = callMany('jp1', 21)
+
+            await vi.advanceTimersByTimeAsync(0)
+            expect(request).toHaveBeenCalledTimes(20)
+
+            await vi.advanceTimersByTimeAsync(1000)
+            expect(request).toHaveBeenCalledTimes(21)
+            expect(await Promise.all(results)).toEqual(Array(21).fill('ok'))
+        })
+
+        it('does not send the 101st call within two minutes', async () => {
+            const { request, results } = callMany('sea', 100)
+            await vi.advanceTimersByTimeAsync(10_000)
+            expect(request).toHaveBeenCalledTimes(100)
+            expect(await Promise.all(results)).toEqual(Array(100).fill('ok'))
+
+            const late = callRiot('sea', request).catch(
+                (caught: unknown) => caught
+            )
+            await vi.advanceTimersByTimeAsync(60_000)
+
+            expect(request).toHaveBeenCalledTimes(100)
+            expect(await late).toBeInstanceOf(RiotRateLimitedError)
+        })
+
+        it('keeps the budgets of routing values apart', async () => {
+            callMany('ph2', 25)
+            const { request } = callMany('oc1', 20)
+
+            await vi.advanceTimersByTimeAsync(0)
+            expect(request).toHaveBeenCalledTimes(20)
+        })
+    })
 })
