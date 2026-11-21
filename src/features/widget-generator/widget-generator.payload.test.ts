@@ -1,4 +1,7 @@
-import { compressToEncodedURIComponent } from 'lz-string'
+import {
+    compressToEncodedURIComponent,
+    decompressFromEncodedURIComponent,
+} from 'lz-string'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -9,6 +12,7 @@ import {
     parseWidgetTarget,
     resolveSessionTimestamp,
 } from './widget-generator.payload'
+import { buildOverlongValidSegment } from './widget-generator.payload.fixtures'
 
 const PUUID = 'd'.repeat(78)
 const NOW = new Date(2026, 10, 19, 18, 45, 30)
@@ -68,6 +72,17 @@ describe('widget route payload', () => {
         )
 
         expect(decodeWidgetRoutePayload(padded)).toBeNull()
+    })
+
+    it('refuses a segment over the wire cap before decompressing it', () => {
+        const segment = buildOverlongValidSegment(PUUID)
+
+        expect(segment.length).toBeGreaterThan(512)
+        expect(decompressFromEncodedURIComponent(segment).length).toBeLessThan(
+            1024
+        )
+        expect(decodeWidgetRoutePayload(segment)).toBeNull()
+        expect(parseWidgetTarget(segment, new URLSearchParams())).toBeNull()
     })
 
     it('refuses a short segment that decompresses into a large document', () => {

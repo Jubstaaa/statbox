@@ -4,6 +4,7 @@ import { GenericError } from 'twisted'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { buildWidgetUrls } from '@/features/widget-generator/widget-generator.payload'
+import { buildOverlongValidSegment } from '@/features/widget-generator/widget-generator.payload.fixtures'
 import { RiotRateLimitedError } from '@/lib/riot/riot.errors'
 
 import { GET } from './route'
@@ -83,6 +84,11 @@ describe('GET /api/summoner/[payload]', () => {
                     style: 'classic',
                 })
             ),
+            '',
+        ],
+        [
+            'a valid payload over the wire cap',
+            buildOverlongValidSegment(PUUID),
             '',
         ],
     ])('rejects %s without calling Riot', async (_, segment, query) => {
