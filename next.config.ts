@@ -68,6 +68,14 @@ const nextConfig: NextConfig = {
         ]
     },
     images: {
+        // The only optimized images are the 48 px icons (src/features/widget),
+        // requested at 1x and 2x; every other width would be another cached
+        // variant. The logo is an SVG and bypasses the optimizer.
+        deviceSizes: [96],
+        imageSizes: [48],
+        // Without a cap Next takes half the free disk at startup, and the
+        // droplet's disk is shared with the other apps. Icons are a few kB each.
+        maximumDiskCacheSize: 100_000_000,
         // Only the two icon sets the widget renders, without a query string: the
         // optimizer stores whatever it fetches on a host bind mount.
         remotePatterns: ['profileicon', 'champion'].map(set => ({

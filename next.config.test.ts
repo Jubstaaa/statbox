@@ -94,3 +94,23 @@ describe('image optimizer allow-list', () => {
         expect(allows(url)).toBe(false)
     })
 })
+
+// The optimizer writes every width, quality and format it is asked for to a
+// host bind mount, so both the key space and the total size are bounded.
+describe('image optimizer disk use', () => {
+    it('caps the disk cache', () => {
+        const cap = nextConfig.images?.maximumDiskCacheSize
+
+        expect(cap).toBeGreaterThan(0)
+        expect(cap).toBeLessThanOrEqual(200_000_000)
+    })
+
+    it('offers only the widths the 48 px icons request at 1x and 2x', () => {
+        const widths = [
+            ...(nextConfig.images?.deviceSizes ?? []),
+            ...(nextConfig.images?.imageSizes ?? []),
+        ].sort((a, b) => a - b)
+
+        expect(widths).toEqual([48, 96])
+    })
+})
