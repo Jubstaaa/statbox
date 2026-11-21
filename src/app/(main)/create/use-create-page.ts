@@ -103,22 +103,19 @@ export function useCreatePage(): CreatePageState {
         ? (TIER_COLORS[summonerQuery.data.tier] ?? TIER_COLORS.UNRANKED)
         : TIER_COLORS.UNRANKED
 
-    const handleAllDaySession = useCallback(
-        () => update({ sessionMode: 'all-day' }),
-        [update]
-    )
+    const handleAllDaySession = useCallback(() => {
+        update({ sessionMode: 'all-day' })
+    }, [update])
 
-    const handleFromTimeSession = useCallback(
-        () =>
-            update({
-                sessionMode: 'from-time',
-                sessionTime:
-                    buildSessionTimestampFromTime(sessionTime) === null
-                        ? getCurrentDateTimeInputValue()
-                        : sessionTime,
-            }),
-        [sessionTime, update]
-    )
+    const handleFromTimeSession = useCallback(() => {
+        update({
+            sessionMode: 'from-time',
+            sessionTime:
+                buildSessionTimestampFromTime(sessionTime) === null
+                    ? getCurrentDateTimeInputValue()
+                    : sessionTime,
+        })
+    }, [sessionTime, update])
 
     const handleSessionTimeChange = useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
@@ -135,18 +132,18 @@ export function useCreatePage(): CreatePageState {
     }, [])
 
     const createStyleSelectHandler = useCallback(
-        (value: WidgetStyle) => () => update({ style: value }),
+        (value: WidgetStyle) => () => {
+            update({ style: value })
+        },
         [update]
     )
 
-    const handleSoloQueue = useCallback(
-        () => update({ queue: 'solo' }),
-        [update]
-    )
-    const handleFlexQueue = useCallback(
-        () => update({ queue: 'flex' }),
-        [update]
-    )
+    const handleSoloQueue = useCallback(() => {
+        update({ queue: 'solo' })
+    }, [update])
+    const handleFlexQueue = useCallback(() => {
+        update({ queue: 'flex' })
+    }, [update])
 
     return {
         createStyleSelectHandler,

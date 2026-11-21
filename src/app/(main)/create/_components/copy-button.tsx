@@ -28,19 +28,25 @@ export default function CreateCopyButton({ text }: CopyButtonProps) {
     useEffect(() => {
         if (state === 'idle') return
 
-        const timer = setTimeout(() => setState('idle'), RESET_AFTER_MS)
+        const timer = setTimeout(() => {
+            setState('idle')
+        }, RESET_AFTER_MS)
 
-        return () => clearTimeout(timer)
+        return () => {
+            clearTimeout(timer)
+        }
     }, [state])
 
-    const handleCopy = useCallback(async () => {
-        try {
-            await navigator.clipboard.writeText(text)
-            setState('copied')
-        } catch (error) {
-            console.error('[copy-button] clipboard write failed:', error)
-            setState('failed')
-        }
+    const handleCopy = useCallback(() => {
+        navigator.clipboard.writeText(text).then(
+            () => {
+                setState('copied')
+            },
+            (error: unknown) => {
+                console.error('[copy-button] clipboard write failed:', error)
+                setState('failed')
+            }
+        )
     }, [text])
 
     const Icon = { copied: Check, failed: X, idle: Copy }[state]

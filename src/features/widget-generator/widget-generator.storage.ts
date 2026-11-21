@@ -112,7 +112,7 @@ export function getBuilderAccount(): BuilderAccount | null {
     const key = readStorage()
 
     // useSyncExternalStore needs the same object back while storage is unchanged.
-    if (snapshot === undefined || snapshot.key !== key) {
+    if (snapshot?.key !== key) {
         const parsed = builderAccountSchema.safeParse(parseJson(key))
         snapshot = { account: parsed.success ? parsed.data : null, key }
     }

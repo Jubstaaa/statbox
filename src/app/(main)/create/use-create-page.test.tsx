@@ -57,12 +57,12 @@ describe('useCreatePage', () => {
         const { result } = renderHook(useCreatePage, { wrapper })
 
         expect(result.current.style).toBe('topbar')
-        await waitFor(() =>
+        await waitFor(() => {
             expect(fetchMock).toHaveBeenCalledWith(
                 `/api/summoner/${PUUID}?queue=flex&region=KR`,
                 { cache: 'no-cache' }
             )
-        )
+        })
     })
 
     it('saves a changed setting back to the account', () => {
@@ -73,7 +73,9 @@ describe('useCreatePage', () => {
         saveKoreanAccount()
         const { result } = renderHook(useCreatePage, { wrapper })
 
-        act(() => result.current.handleSoloQueue())
+        act(() => {
+            result.current.handleSoloQueue()
+        })
 
         expect(getBuilderAccount()?.settings).toMatchObject({
             queue: 'solo',
@@ -96,7 +98,9 @@ describe('useCreatePage', () => {
         vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
         try {
-            act(() => result.current.handleSoloQueue())
+            act(() => {
+                result.current.handleSoloQueue()
+            })
 
             expect(result.current.settingsNotSaved).toBe(true)
             expect(result.current.queue).toBe('flex')
@@ -104,7 +108,9 @@ describe('useCreatePage', () => {
             // happy-dom's storage is not reset by restoreAllMocks.
             setItem.mockRestore()
         }
-        act(() => result.current.handleSoloQueue())
+        act(() => {
+            result.current.handleSoloQueue()
+        })
 
         expect(result.current.settingsNotSaved).toBe(false)
         expect(result.current.queue).toBe('solo')
@@ -116,7 +122,9 @@ describe('useCreatePage', () => {
 
         renderHook(useCreatePage, { wrapper })
 
-        await waitFor(() => expect(replace).toHaveBeenCalledWith('/'))
+        await waitFor(() => {
+            expect(replace).toHaveBeenCalledWith('/')
+        })
         expect(fetchMock).not.toHaveBeenCalled()
         expect(window.localStorage.length).toBe(0)
     })
@@ -129,7 +137,9 @@ describe('useCreatePage', () => {
         saveKoreanAccount()
         const { result } = renderHook(useCreatePage, { wrapper })
 
-        act(() => result.current.handleChangeAccount())
+        act(() => {
+            result.current.handleChangeAccount()
+        })
 
         expect(window.localStorage.length).toBe(0)
         expect(replace).toHaveBeenCalledWith('/')
@@ -156,7 +166,7 @@ describe('useCreatePage', () => {
         const { result } = renderHook(useCreatePage, { wrapper })
         const other = 'h'.repeat(78)
 
-        act(() =>
+        act(() => {
             saveBuilderAccount({
                 puuid: other,
                 settings: {
@@ -167,8 +177,10 @@ describe('useCreatePage', () => {
                     style: 'minimal',
                 },
             })
-        )
-        act(() => result.current.handleFlexQueue())
+        })
+        act(() => {
+            result.current.handleFlexQueue()
+        })
 
         expect(result.current.puuid).toBe(other)
         expect(result.current.style).toBe('minimal')
@@ -186,8 +198,12 @@ describe('useCreatePage', () => {
         saveKoreanAccount()
         renderHook(useCreatePage, { wrapper })
 
-        act(() => clearBuilderAccount())
+        act(() => {
+            clearBuilderAccount()
+        })
 
-        await waitFor(() => expect(replace).toHaveBeenCalledWith('/'))
+        await waitFor(() => {
+            expect(replace).toHaveBeenCalledWith('/')
+        })
     })
 })

@@ -30,7 +30,9 @@ const SETTINGS: BuilderSettings = {
 const storageSpies: { mockRestore: () => void }[] = []
 
 afterEach(() => {
-    storageSpies.splice(0).forEach(spy => spy.mockRestore())
+    storageSpies.splice(0).forEach(spy => {
+        spy.mockRestore()
+    })
     vi.restoreAllMocks()
     window.localStorage.clear()
 })
@@ -75,7 +77,7 @@ describe('builder account store', () => {
             settings: { ...SETTINGS, region: 'NA' as const },
         }
         saveBuilderAccount({ puuid: PUUID, settings: SETTINGS })
-        const setItem = Storage.prototype.setItem
+        const setItem = window.localStorage.setItem.bind(window.localStorage)
         let writes = 0
         storageSpies.push(
             vi
@@ -85,7 +87,7 @@ describe('builder account store', () => {
                     if (writes > 1) {
                         throw new DOMException('full', 'QuotaExceededError')
                     }
-                    setItem.call(window.localStorage, key, value)
+                    setItem(key, value)
                 })
         )
 
@@ -267,8 +269,8 @@ describe('builder account store', () => {
             })
         )
 
-        expect(() =>
+        expect(() => {
             saveBuilderAccount({ puuid: PUUID, settings: SETTINGS })
-        ).toThrow(BuilderStorageError)
+        }).toThrow(BuilderStorageError)
     })
 })

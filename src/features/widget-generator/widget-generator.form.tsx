@@ -1,5 +1,6 @@
 'use client'
 
+import type { ChangeEvent, SubmitEvent } from 'react'
 import { useCallback, useState } from 'react'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -59,7 +60,7 @@ export default function WidgetGeneratorForm() {
                 region: resolvedRegion,
             }
 
-            await queryClient.fetchQuery(
+            await queryClient.query(
                 summonerQueryOptions({ puuid, ...settings })
             )
             saveBuilderAccount({ puuid, settings })
@@ -85,14 +86,14 @@ export default function WidgetGeneratorForm() {
         : ''
 
     const handleNameChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
+        (event: ChangeEvent<HTMLInputElement>) => {
             setName(event.target.value)
         },
         []
     )
 
     const handleTagChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
+        (event: ChangeEvent<HTMLInputElement>) => {
             setTag(event.target.value)
         },
         []
@@ -106,7 +107,7 @@ export default function WidgetGeneratorForm() {
     )
 
     const handleSubmit = useCallback(
-        (event: React.FormEvent<HTMLFormElement>) => {
+        (event: SubmitEvent<HTMLFormElement>) => {
             event.preventDefault()
 
             resetLookup()

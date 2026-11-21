@@ -37,7 +37,9 @@ describe('CreateCopyButton', () => {
 
         expect(writeText).toHaveBeenCalledWith('https://statbox.live/widget/x')
         expect(screen.getByRole('status').textContent).toBe('Copied')
-        act(() => vi.advanceTimersByTime(2000))
+        act(() => {
+            vi.advanceTimersByTime(2000)
+        })
         expect(screen.getByRole('status').textContent).toBe('')
     })
 

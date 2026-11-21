@@ -86,7 +86,9 @@ beforeEach(() => {
 const storageSpies: { mockRestore: () => void }[] = []
 
 afterEach(() => {
-    storageSpies.splice(0).forEach(spy => spy.mockRestore())
+    storageSpies.splice(0).forEach(spy => {
+        spy.mockRestore()
+    })
     cleanup()
     vi.unstubAllGlobals()
     window.localStorage.clear()
@@ -99,10 +101,12 @@ describe('WidgetGeneratorForm', () => {
 
         submitRiotId()
 
-        await vi.waitFor(() => expect(push).toHaveBeenCalledWith('/create'))
-        expect(getBuilderAccount()).toEqual({
+        await vi.waitFor(() => {
+            expect(push).toHaveBeenCalledWith('/create')
+        })
+        expect(getBuilderAccount()).toMatchObject({
             puuid: PUUID,
-            settings: expect.objectContaining({ region: 'KR' }),
+            settings: { region: 'KR' },
         })
         expect(requested.filter(url => url.includes('region=EUW'))).toEqual([])
         expect(
