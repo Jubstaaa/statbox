@@ -59,6 +59,9 @@ jobs:
                       NEXT_PUBLIC_GA_MEASUREMENT_ID=${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
 
     deploy:
+        # Deploy secrets live in this environment, which only accepts main,
+        # so a workflow on another branch cannot read them.
+        environment: Production
         needs: build
         if: ${{ !cancelled() && (inputs.image_tag || needs.build.result == 'success') }}
         runs-on: ubuntu-latest
