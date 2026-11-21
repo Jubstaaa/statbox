@@ -102,12 +102,35 @@ describe('builder account store', () => {
         )
     })
 
-    it('moves an account saved under the two old keys into one record', () => {
+    // useSyncExternalStore calls getBuilderAccount during render, which
+    // React requires to be a pure read.
+    it('reads an account saved under the two old keys without writing', () => {
         window.localStorage.setItem(LEGACY_PUUID_KEY, PUUID)
         window.localStorage.setItem(
             LEGACY_SETTINGS_KEY,
             JSON.stringify(SETTINGS)
         )
+        const setItem = vi.spyOn(window.localStorage, 'setItem')
+        const removeItem = vi.spyOn(window.localStorage, 'removeItem')
+        storageSpies.push(setItem, removeItem)
+
+        expect(getBuilderAccount()).toEqual({
+            puuid: PUUID,
+            settings: SETTINGS,
+        })
+        expect(setItem).not.toHaveBeenCalled()
+        expect(removeItem).not.toHaveBeenCalled()
+    })
+
+    it('moves an account saved under the two old keys into one record once subscribed', () => {
+        window.localStorage.setItem(LEGACY_PUUID_KEY, PUUID)
+        window.localStorage.setItem(
+            LEGACY_SETTINGS_KEY,
+            JSON.stringify(SETTINGS)
+        )
+
+        const unsubscribe = subscribeToBuilderAccount(() => undefined)
+        unsubscribe()
 
         expect(getBuilderAccount()).toEqual({
             puuid: PUUID,
@@ -150,6 +173,7 @@ describe('builder account store', () => {
                 .spyOn(console, 'warn')
                 .mockImplementation(() => undefined)
             const store = await loadStore()
+            store.subscribeToBuilderAccount(() => undefined)()
 
             expect(store.getBuilderAccount()).toEqual({
                 puuid: PUUID,

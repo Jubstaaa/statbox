@@ -57,25 +57,14 @@ function reportBlockedStorage(error: unknown) {
     console.warn('[builder] browser storage is unavailable:', error)
 }
 
-// Moves an account saved under the two old keys into the single record. If
-// the browser refuses the write, the account is still used and the old keys
-// stay, to be migrated on a later read.
-function migrateLegacyAccount(storage: Storage): null | string {
+// Builds before the single record kept the account under two keys. Reading
+// them is pure, so getBuilderAccount stays safe to call during render.
+function readLegacyRecord(storage: Storage): null | string {
     const puuid = storage.getItem(LEGACY_PUUID_STORAGE_KEY)
     const settings = parseJson(storage.getItem(LEGACY_SETTINGS_STORAGE_KEY))
     const parsed = builderAccountSchema.safeParse({ puuid, settings })
-    if (!parsed.success) return null
 
-    const record = JSON.stringify(parsed.data)
-    try {
-        storage.setItem(ACCOUNT_STORAGE_KEY, record)
-        storage.removeItem(LEGACY_PUUID_STORAGE_KEY)
-        storage.removeItem(LEGACY_SETTINGS_STORAGE_KEY)
-    } catch (error) {
-        reportBlockedStorage(error)
-    }
-
-    return record
+    return parsed.success ? JSON.stringify(parsed.data) : null
 }
 
 // Storage can be blocked outright (site data disabled, some private modes);
@@ -84,10 +73,7 @@ function readStorage(): null | string {
     try {
         const storage = window.localStorage
 
-        return (
-            storage.getItem(ACCOUNT_STORAGE_KEY) ??
-            migrateLegacyAccount(storage)
-        )
+        return storage.getItem(ACCOUNT_STORAGE_KEY) ?? readLegacyRecord(storage)
     } catch (error) {
         reportBlockedStorage(error)
 
@@ -95,7 +81,27 @@ function readStorage(): null | string {
     }
 }
 
+// Moves a legacy account into the single record. Runs on subscribe, which
+// React calls after render. If the browser refuses the write, the account
+// is still read from the old keys and the move is tried again next time.
+function migrateLegacyAccount() {
+    try {
+        const storage = window.localStorage
+        if (storage.getItem(ACCOUNT_STORAGE_KEY) !== null) return
+
+        const record = readLegacyRecord(storage)
+        if (record === null) return
+
+        storage.setItem(ACCOUNT_STORAGE_KEY, record)
+        storage.removeItem(LEGACY_PUUID_STORAGE_KEY)
+        storage.removeItem(LEGACY_SETTINGS_STORAGE_KEY)
+    } catch (error) {
+        reportBlockedStorage(error)
+    }
+}
+
 export function subscribeToBuilderAccount(listener: () => void) {
+    migrateLegacyAccount()
     listeners.add(listener)
     // Another tab connecting or changing the account.
     window.addEventListener('storage', listener)
