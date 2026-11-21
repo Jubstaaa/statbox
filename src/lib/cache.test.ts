@@ -85,7 +85,24 @@ describe('getCache', () => {
 
 describe('checkCacheHealth', () => {
     it('resolves when the cache database answers a query', async () => {
+        await getCache({ namespace: 'test' }).set('seed', 1, { ttl: 60 })
+
         await expect(checkCacheHealth()).resolves.toBeUndefined()
+    })
+
+    // A bind mount pointing at an empty directory (wrong DATA_DIR, a rebuilt
+    // host) must fail the gate: the check reads, it never creates the table.
+    it('rejects a database that has no cache table, and leaves it without one', async () => {
+        vi.resetModules()
+        const emptyPath = join(dir, 'empty.db')
+        process.env.CACHE_DATABASE_URI = `file:${emptyPath}`
+
+        const { checkCacheHealth: checkEmpty } = await import('./cache')
+
+        await expect(checkEmpty()).rejects.toThrow()
+        await expect(checkEmpty()).rejects.toThrow()
+
+        process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
     })
 
     // Unlike reads and writes, the health check must fail loudly: it is what

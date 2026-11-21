@@ -53,9 +53,10 @@ function initSchema(): Promise<void> {
 }
 
 // Unlike get/set this throws: the deploy keeps a release only when the cache
-// database opens and answers, so a broken bind mount rolls it back.
+// database opens and answers, so a broken bind mount rolls it back. It is a
+// readiness check and only reads: creating the table here would let a mount
+// of an empty directory pass in place of the persisted cache.
 export async function checkCacheHealth(): Promise<void> {
-    await initSchema()
     await getClient().execute('SELECT 1 FROM cache LIMIT 1')
 }
 
