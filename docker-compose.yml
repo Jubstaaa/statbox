@@ -66,9 +66,12 @@ services:
             - '127.0.0.1:3003:3000'
         environment:
             NODE_ENV: production
-            # Keep V8's heap under the container limit so it collects garbage
-            # before the cgroup OOM-kills the process.
-            NODE_OPTIONS: --max-old-space-size=160
+            # Half the container limit for V8's old space: the other half is
+            # for what lives outside it (young generation, code, the libsql
+            # page cache and sharp/libvips decode buffers for /_next/image),
+            # so a heap near its cap still collects garbage before the cgroup
+            # OOM-kills the process. 160 left only ~96 MB for all of that.
+            NODE_OPTIONS: --max-old-space-size=128
             # Persisted deliberately: match details are cached for 90 days and the
             # Riot API is rate limited, so an empty cache after a deploy costs quota.
             CACHE_DATABASE_URI: file:/app/data/statbox-cache.db
