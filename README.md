@@ -17,8 +17,9 @@ recent games, and session-based performance for League of Legends streams.
 ## Setup
 
 Prerequisites: [Bun](https://bun.sh) 1.4.4 (the `packageManager` version) and
-Node.js 26 (`engines.node`; `next dev`, `next build` and `next start` run on
-Node).
+Node.js 26 (`engines.node`). Bun installs the dependencies; `bun run` then
+starts `next`, `vitest` and `tsc` through their `node` shebangs, so they run
+on the Node on your `PATH`. CI installs the version `engines.node` names.
 
 1. Install dependencies:
 
