@@ -1,0 +1,62 @@
+name: Build and smoke test the image
+description: >-
+    Builds the production image into the local Docker daemon as :candidate and
+    :<commit-sha>, starts it with the production docker-compose.yml (hardening,
+    limits, healthcheck) and runs scripts/smoke.ts against it. Pushes nothing.
+inputs:
+    image:
+        description: Image name without tag, e.g. ghcr.io/owner/app.
+        required: true
+runs:
+    using: composite
+    steps:
+        - id: meta
+          uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+          with:
+              images: ${{ inputs.image }}
+              # `candidate` is what docker-compose.yml runs below (IMAGE_TAG);
+              # the full commit SHA is what deploy and rollback address.
+              tags: |
+                  type=raw,value=candidate
+                  type=sha,format=long,prefix=
+        - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        - name: Build candidate
+          uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+          with:
+              context: .
+              load: true
+              push: false
+              tags: ${{ steps.meta.outputs.tags }}
+              labels: ${{ steps.meta.outputs.labels }}
+              cache-from: type=gha
+              cache-to: type=gha,mode=max
+        - name: Start candidate
+          shell: bash
+          env:
+              IMAGE_TAG: candidate
+              DATA_DIR: ${{ runner.temp }}/data
+              IMAGE_CACHE_DIR: ${{ runner.temp }}/image-cache
+          run: |
+              install -d -m 777 "$DATA_DIR" "$IMAGE_CACHE_DIR"
+              # /api/health only reads, so an empty mount fails it on purpose.
+              # Production's cache already exists; the candidate gets an empty
+              # one with the table src/lib/cache.ts creates.
+              sqlite3 "$DATA_DIR/statbox-cache.db" \
+                  'CREATE TABLE cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at INTEGER NOT NULL)'
+              chmod 666 "$DATA_DIR/statbox-cache.db"
+              # Route modules validate the key on import; no Riot call is made.
+              printf 'RIOT_API_KEY=ci-placeholder\n' > .env
+              docker compose up -d --wait --wait-timeout 120 app
+        # Also installs lz-string, which the smoke test uses to build a payload.
+        - uses: ./.github/actions/setup-bun
+        - name: Smoke test
+          shell: bash
+          env:
+              SMOKE_BASE_URL: http://127.0.0.1:3003
+          run: bun run smoke
+        - name: Candidate logs
+          if: failure()
+          shell: bash
+          env:
+              IMAGE_TAG: candidate
+          run: docker compose logs app

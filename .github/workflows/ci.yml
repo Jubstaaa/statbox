@@ -66,12 +66,26 @@ jobs:
             - name: actionlint
               run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
 
-    # Required on PRs next to check: builds the production image, starts it with
-    # the production compose file (hardening, limits, healthcheck) and smoke tests
-    # it. On main the exact image that passed is pushed as :<commit-sha>.
+    # Required on PRs next to check, and runs beside it: builds the production
+    # image, starts it with the production compose file and smoke tests it.
+    # Read-only, so a PR can never publish an image.
     image:
-        needs: check
-        if: ${{ !cancelled() && (needs.check.result == 'success' || needs.check.result == 'skipped') }}
+        if: ${{ github.event_name == 'pull_request' }}
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: ./.github/actions/smoke-image
+              with:
+                  image: ${{ env.IMAGE }}
+
+    # The same gate on main, which then pushes exactly the image that passed
+    # as :<commit-sha>. A separate job because job permissions cannot depend
+    # on the event, and only this one may write packages.
+    release-image:
+        if: ${{ github.event_name != 'pull_request' }}
         runs-on: ubuntu-latest
         timeout-minutes: 20
         permissions:
@@ -81,56 +95,14 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
-            - id: meta
-              uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+            - uses: ./.github/actions/smoke-image
               with:
-                  images: ${{ env.IMAGE }}
-                  # `candidate` is what docker-compose.yml runs below (IMAGE_TAG);
-                  # the full commit SHA is what deploy and rollback address.
-                  tags: |
-                      type=raw,value=candidate
-                      type=sha,format=long,prefix=
-            - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-            - name: Build candidate
-              uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-              with:
-                  context: .
-                  load: true
-                  push: false
-                  tags: ${{ steps.meta.outputs.tags }}
-                  labels: ${{ steps.meta.outputs.labels }}
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
-            - name: Start candidate
-              env:
-                  IMAGE_TAG: candidate
-                  DATA_DIR: ${{ runner.temp }}/data
-                  IMAGE_CACHE_DIR: ${{ runner.temp }}/image-cache
-              run: |
-                  install -d -m 777 "$DATA_DIR" "$IMAGE_CACHE_DIR"
-                  # Route modules validate the key on import; no Riot call is made.
-                  printf 'RIOT_API_KEY=ci-placeholder\n' > .env
-                  docker compose up -d --wait --wait-timeout 120 app
-            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-              with:
-                  bun-version-file: package.json
-            - name: Smoke test
-              env:
-                  SMOKE_BASE_URL: http://127.0.0.1:3003
-              run: bun run smoke
-            - name: Candidate logs
-              if: failure()
-              env:
-                  IMAGE_TAG: candidate
-              run: docker compose logs app
+                  image: ${{ env.IMAGE }}
             - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
-              if: github.ref == 'refs/heads/main'
               with:
                   registry: ghcr.io
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
-            # Push the exact image that passed the smoke test, by SHA only: :latest
-            # moves in deploy.yml after production reports healthy.
+            # By SHA only: :latest moves in deploy.yml after production reports healthy.
             - name: Push the SHA tag
-              if: github.ref == 'refs/heads/main'
               run: docker push "$IMAGE:$GITHUB_SHA"
