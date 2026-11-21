@@ -100,6 +100,17 @@ describe('callRiot', () => {
             return { request, results }
         }
 
+        function callLate(routing: string, request: () => Promise<string>) {
+            let settled = false
+            const result = callRiot(routing, request)
+                .catch((caught: unknown) => caught)
+                .finally(() => {
+                    settled = true
+                })
+
+            return { isSettled: () => settled, result }
+        }
+
         it('holds the 21st call within one second until the window moves', async () => {
             const { request, results } = callMany('jp1', 21)
 
@@ -124,6 +135,75 @@ describe('callRiot', () => {
 
             expect(request).toHaveBeenCalledTimes(100)
             expect(await late).toBeInstanceOf(RiotRateLimitedError)
+        })
+
+        // Fixed windows would let 19 calls at 999 ms and 20 more at 1000 ms
+        // through, twice what Riot allows in its own unaligned second.
+        it('never sends more than 20 calls inside any one-second span', async () => {
+            const sentAt: number[] = []
+            const request = vi.fn(async () => {
+                sentAt.push(Date.now())
+                return 'ok'
+            })
+            const start = Date.now()
+
+            const first = callRiot('la1', request)
+            await vi.advanceTimersByTimeAsync(999)
+            const burst = Array.from({ length: 39 }, () =>
+                callRiot('la1', request)
+            )
+            await vi.advanceTimersByTimeAsync(1)
+
+            const busiestSecond = Math.max(
+                ...sentAt.map(
+                    from =>
+                        sentAt.filter(at => at >= from && at < from + 1000)
+                            .length
+                )
+            )
+            expect(sentAt.at(-1)).toBe(start + 1000)
+            expect(busiestSecond).toBe(20)
+
+            await vi.advanceTimersByTimeAsync(2000)
+            await Promise.all([first, ...burst])
+        })
+
+        it('frees long-window slots only two minutes after they were used', async () => {
+            const { results } = callMany('la2', 100)
+            await vi.advanceTimersByTimeAsync(10_000)
+            await Promise.all(results)
+            const request = vi.fn(async () => 'ok')
+
+            await vi.advanceTimersByTimeAsync(95_000)
+            const late = callLate('la2', request)
+            await vi.advanceTimersByTimeAsync(10_100)
+
+            expect(request).not.toHaveBeenCalled()
+            expect(late.isSettled()).toBe(true)
+            expect(await late.result).toBeInstanceOf(RiotRateLimitedError)
+
+            await vi.advanceTimersByTimeAsync(10_000)
+            const freed = callLate('la2', request)
+            await vi.advanceTimersByTimeAsync(0)
+            expect(freed.isSettled()).toBe(true)
+            expect(await freed.result).toBe('ok')
+        })
+
+        it('answers a call the budget cannot start within 10 s as rate limited for 30 s', async () => {
+            const { results } = callMany('ru', 100)
+            await vi.advanceTimersByTimeAsync(10_000)
+            await Promise.all(results)
+
+            const late = callLate('ru', async () => 'ok')
+
+            await vi.advanceTimersByTimeAsync(9900)
+            expect(late.isSettled()).toBe(false)
+
+            await vi.advanceTimersByTimeAsync(200)
+            expect(late.isSettled()).toBe(true)
+            const error = await late.result
+            expect(error).toBeInstanceOf(RiotRateLimitedError)
+            expect((error as RiotRateLimitedError).retryAfterSeconds).toBe(30)
         })
 
         it('keeps the budgets of routing values apart', async () => {
