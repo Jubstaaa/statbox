@@ -42,6 +42,7 @@
         "p-memoize": "^9.0.0",
         "react": "19.3.1",
         "react-dom": "19.3.1",
+        "server-only": "^0.0.1",
         "sharp": "^0.35.5",
         "simple-icons": "^16.38.0",
         "tailwind-merge": "^3.7.0",

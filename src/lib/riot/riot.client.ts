@@ -1,6 +1,8 @@
 import { LolApi, RiotApi } from 'twisted'
 import { z } from 'zod'
 
+import 'server-only'
+
 const { RIOT_API_KEY } = z
     .object({ RIOT_API_KEY: z.string().min(1) })
     .parse(process.env)
