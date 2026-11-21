@@ -30,6 +30,7 @@ export default function CreateView() {
         queue,
         sessionMode,
         sessionTime,
+        settingsNotSaved,
         storageReady,
         style,
         summonerData,
@@ -184,6 +185,16 @@ export default function CreateView() {
                     ) : null}
                 </Card>
             </div>
+
+            {settingsNotSaved ? (
+                <p
+                    className="border-loss/25 bg-loss/10 text-loss rounded-xl border px-3 py-2.5 text-xs"
+                    role="alert">
+                    Your browser did not save that change, so the widget URL
+                    below still uses your previous settings. Check that this
+                    site may store data, then try again.
+                </p>
+            ) : null}
 
             <CreateUrlBlock
                 description="Use this single URL as an OBS Browser Source."

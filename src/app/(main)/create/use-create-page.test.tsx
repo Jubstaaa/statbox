@@ -81,6 +81,35 @@ describe('useCreatePage', () => {
         })
     })
 
+    it('tells the visitor when the browser refuses a changed setting', () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => Response.json({}))
+        )
+        saveKoreanAccount()
+        const { result } = renderHook(useCreatePage, { wrapper })
+        const setItem = vi
+            .spyOn(window.localStorage, 'setItem')
+            .mockImplementation(() => {
+                throw new DOMException('full', 'QuotaExceededError')
+            })
+        vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+        try {
+            act(() => result.current.handleSoloQueue())
+
+            expect(result.current.settingsNotSaved).toBe(true)
+            expect(result.current.queue).toBe('flex')
+        } finally {
+            // happy-dom's storage is not reset by restoreAllMocks.
+            setItem.mockRestore()
+        }
+        act(() => result.current.handleSoloQueue())
+
+        expect(result.current.settingsNotSaved).toBe(false)
+        expect(result.current.queue).toBe('solo')
+    })
+
     it('sends the visitor home when no account is saved', async () => {
         const fetchMock = vi.fn()
         vi.stubGlobal('fetch', fetchMock)

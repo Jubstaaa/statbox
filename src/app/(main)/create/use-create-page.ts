@@ -38,6 +38,9 @@ interface CreatePageState {
     queue: RankedQueue
     sessionMode: SessionMode
     sessionTime: string
+    // The browser refused the last change, so the widget URL still holds
+    // the previous settings.
+    settingsNotSaved: boolean
     storageReady: boolean
     style: WidgetStyle
     summonerData: RiotData | null
@@ -53,6 +56,7 @@ export function useCreatePage(): CreatePageState {
     const storageReady = useHydrationReady()
     const account = useBuilderAccount()
     const [maxSessionTime] = useState(getCurrentDateTimeInputValue)
+    const [settingsNotSaved, setSettingsNotSaved] = useState(false)
 
     const puuid = account?.puuid ?? null
     const settings = account?.settings ?? null
@@ -65,12 +69,13 @@ export function useCreatePage(): CreatePageState {
 
     const update = useCallback(
         (change: Partial<BuilderSettings>) => {
-            if (account) {
-                updateBuilderSettings(account.puuid, {
-                    ...account.settings,
-                    ...change,
-                })
-            }
+            if (!account) return
+
+            const saved = updateBuilderSettings(account.puuid, {
+                ...account.settings,
+                ...change,
+            })
+            setSettingsNotSaved(!saved)
         },
         [account]
     )
@@ -157,6 +162,7 @@ export function useCreatePage(): CreatePageState {
         queue: settings?.queue ?? 'solo',
         sessionMode: settings?.sessionMode ?? 'all-day',
         sessionTime,
+        settingsNotSaved,
         storageReady,
         style: settings?.style ?? 'classic',
         summonerData: summonerQuery.data ?? null,
