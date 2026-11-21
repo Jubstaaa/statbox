@@ -1,7 +1,7 @@
 import type { ChangeEvent } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { useQuery } from '@tanstack/react-query'
+import { skipToken, useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 
 import { fetchSummonerByPuuid } from '@/features/widget-generator/widget-generator.api'
@@ -88,9 +88,10 @@ export function useCreatePage(): CreatePageState {
     }, [puuid, router, storageReady])
 
     const summonerQuery = useQuery({
-        enabled: !!puuid,
         placeholderData: previousData => previousData,
-        queryFn: () => fetchSummonerByPuuid({ puuid: puuid!, queue, region }),
+        queryFn: puuid
+            ? () => fetchSummonerByPuuid({ puuid, queue, region })
+            : skipToken,
         queryKey: ['summoner', puuid, region, queue],
     })
 
@@ -156,8 +157,12 @@ export function useCreatePage(): CreatePageState {
         []
     )
 
-    const handleSoloQueue = useCallback(() => setQueue('solo'), [])
-    const handleFlexQueue = useCallback(() => setQueue('flex'), [])
+    const handleSoloQueue = useCallback(() => {
+        setQueue('solo')
+    }, [])
+    const handleFlexQueue = useCallback(() => {
+        setQueue('flex')
+    }, [])
 
     return {
         createStyleSelectHandler,

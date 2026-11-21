@@ -1,3 +1,7 @@
+import {
+    compressToEncodedURIComponent,
+    decompressFromEncodedURIComponent,
+} from 'lz-string'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -5,8 +9,10 @@ import {
     buildWidgetUrls,
     decodeWidgetRoutePayload,
     getCurrentDateTimeInputValue,
+    parseWidgetTarget,
     resolveSessionTimestamp,
 } from './widget-generator.payload'
+import { buildOverlongValidSegment } from './widget-generator.payload.fixtures'
 
 const PUUID = 'd'.repeat(78)
 const NOW = new Date(2026, 10, 19, 18, 45, 30)
@@ -54,8 +60,127 @@ describe('widget route payload', () => {
         expect(decodeWidgetRoutePayload(payloadOf(widgetUrl))).toBeNull()
     })
 
+    it('refuses an oversized payload even when its content is valid', () => {
+        const padded = compressToEncodedURIComponent(
+            JSON.stringify({
+                padding: 'x'.repeat(4000),
+                puuid: PUUID,
+                queue: 'solo',
+                region: 'EUW',
+                style: 'classic',
+            })
+        )
+
+        expect(decodeWidgetRoutePayload(padded)).toBeNull()
+    })
+
+    it('refuses a segment over the wire cap before decompressing it', () => {
+        const segment = buildOverlongValidSegment(PUUID)
+
+        expect(segment.length).toBeGreaterThan(512)
+        expect(decompressFromEncodedURIComponent(segment).length).toBeLessThan(
+            1024
+        )
+        expect(decodeWidgetRoutePayload(segment)).toBeNull()
+        expect(parseWidgetTarget(segment, new URLSearchParams())).toBeNull()
+    })
+
+    it('refuses a short segment that decompresses into a large document', () => {
+        const bomb = compressToEncodedURIComponent(
+            JSON.stringify({
+                padding: 'ab'.repeat(10_000),
+                puuid: PUUID,
+                queue: 'solo',
+                region: 'EUW',
+                style: 'classic',
+            })
+        )
+
+        expect(bomb.length).toBeLessThan(512)
+        expect(decodeWidgetRoutePayload(bomb)).toBeNull()
+    })
+
     it.each(['', 'not-lz', '%%%'])('returns null for garbage %j', value => {
         expect(decodeWidgetRoutePayload(value)).toBeNull()
+    })
+})
+
+// The widget page and /api/summoner/[payload] read the same URLs through this
+// one parser, so a link either works on both or fails on both.
+describe('parseWidgetTarget', () => {
+    function parse(segment: string, query = '') {
+        const target = parseWidgetTarget(segment, new URLSearchParams(query))
+        if (!target) return null
+        const { getSession, ...rest } = target
+
+        return { ...rest, session: getSession() }
+    }
+
+    it('reads every setting from a widget payload', () => {
+        const { widgetUrl } = buildWidgetUrls({
+            puuid: PUUID,
+            queue: 'flex',
+            region: 'KR',
+            sessionMode: 'from-time',
+            sessionTime: '2026-11-19T09:30',
+            style: 'topbar',
+        })
+
+        expect(parse(payloadOf(widgetUrl))).toEqual({
+            puuid: PUUID,
+            queue: 'flex',
+            region: 'KR',
+            session: new Date(2026, 10, 19, 9, 30).getTime(),
+            style: 'topbar',
+        })
+    })
+
+    it('rolls an all-day session over at midnight', () => {
+        const { widgetUrl } = buildWidgetUrls({
+            puuid: PUUID,
+            queue: 'solo',
+            region: 'EUW',
+            sessionMode: 'all-day',
+            sessionTime: null,
+            style: 'classic',
+        })
+        const target = parseWidgetTarget(
+            payloadOf(widgetUrl),
+            new URLSearchParams()
+        )
+
+        expect(target?.getSession()).toBe(new Date(2026, 10, 19).getTime())
+        vi.setSystemTime(new Date(2026, 10, 20, 0, 5))
+        expect(target?.getSession()).toBe(new Date(2026, 10, 20).getTime())
+    })
+
+    it('reads a legacy link with the PUUID bare and the rest in the query', () => {
+        expect(
+            parse(PUUID, '?region=EUW&queue=flex&session=1700000000000')
+        ).toEqual({
+            puuid: PUUID,
+            queue: 'flex',
+            region: 'EUW',
+            session: 1_700_000_000_000,
+            style: 'classic',
+        })
+    })
+
+    it('defaults a legacy link to the solo queue and no session', () => {
+        expect(parse(PUUID, '?region=EUW')).toMatchObject({
+            queue: 'solo',
+            session: null,
+        })
+    })
+
+    it.each([
+        ['a legacy segment that is not a PUUID', 'x/../../riot', '?region=EUW'],
+        ['a legacy link without a region', PUUID, ''],
+        ['an unknown region', PUUID, '?region=MARS'],
+        ['an unknown queue', PUUID, '?region=EUW&queue=aram'],
+        ['an oversized segment', 'A'.repeat(600), '?region=EUW'],
+    ])('has no target for %s', (_, segment, query) => {
+        expect(parse(segment, query)).toBeNull()
     })
 })
 

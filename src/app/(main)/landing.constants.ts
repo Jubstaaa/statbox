@@ -120,9 +120,8 @@ export const STEPS: StepCardProps[] = [
     },
 ]
 
-export const WIDGET_LAYOUTS: WidgetStyleDefinition[] = [
-    WIDGET_STYLE_OPTIONS.find(option => option.style === 'topbar')!,
-    WIDGET_STYLE_OPTIONS.find(option => option.style === 'minimal')!,
-    WIDGET_STYLE_OPTIONS.find(option => option.style === 'classic')!,
-    WIDGET_STYLE_OPTIONS.find(option => option.style === 'compact')!,
-]
+const LAYOUT_ORDER = ['topbar', 'minimal', 'classic', 'compact'] as const
+
+export const WIDGET_LAYOUTS: WidgetStyleDefinition[] = LAYOUT_ORDER.flatMap(
+    style => WIDGET_STYLE_OPTIONS.filter(option => option.style === style)
+)

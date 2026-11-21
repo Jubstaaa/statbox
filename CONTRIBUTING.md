@@ -17,18 +17,37 @@ bun run dev
 
 ## Before opening a PR
 
-Please make sure these pass:
+CI runs these on every PR; please make sure they pass locally:
 
 ```bash
+bun run format:check
 bun run lint
+bun run typecheck
+bun run test
 bun run build
+bun run audit
+bun run knip
+bun run jscpd
+bun run depcruise
 ```
 
 ## Scope
 
 - Keep changes focused.
 - Avoid unrelated refactors in the same PR.
-- Follow the existing project structure: routes in `app`, view composition in `views`, shared UI in `components`, shared providers in `providers`, and domain utilities in `lib`.
+- Follow the existing project structure: code lives next to the only place that uses it and moves to a shared folder once a second user appears.
+
+```
+src/
+  app/                 routes; `_components/` beside a route holds parts only it uses
+    (main)/            landing, builder (`create/`), privacy and terms pages
+    api/               route handlers (summoner lookups)
+    widget/[payload]/  the OBS widget page
+  features/            self-contained features shared by routes (widget, widget-generator)
+  components/          small UI parts used by more than one route or feature
+  hooks/               generic hooks shared across features
+  lib/                 cross-cutting infrastructure (Riot client, cache, Data Dragon, query client)
+```
 
 ## UI and product notes
 

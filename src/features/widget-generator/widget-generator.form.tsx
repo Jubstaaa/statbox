@@ -1,10 +1,17 @@
 'use client'
 
+import type { ChangeEvent, SubmitEvent } from 'react'
 import { useCallback, useState } from 'react'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+    skipToken,
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { z } from 'zod'
 
 import Button from '@/components/button'
 import Input from '@/features/widget-generator/input'
@@ -39,13 +46,14 @@ export default function WidgetGeneratorForm() {
     const storedPuuid = storageReady ? getStoredBuilderPuuid() : null
 
     const connectedAccountQuery = useQuery({
-        enabled: storageReady && !!storedPuuid,
-        queryFn: () =>
-            fetchSummonerByPuuid({
-                puuid: storedPuuid!,
-                queue: getStoredBuilderSettings()?.queue ?? 'solo',
-                region: getStoredBuilderSettings()?.region ?? 'EUW',
-            }),
+        queryFn: storedPuuid
+            ? () =>
+                  fetchSummonerByPuuid({
+                      puuid: storedPuuid,
+                      queue: getStoredBuilderSettings()?.queue ?? 'solo',
+                      region: getStoredBuilderSettings()?.region ?? 'EUW',
+                  })
+            : skipToken,
         queryKey: [
             'summoner',
             storedPuuid,
@@ -65,7 +73,7 @@ export default function WidgetGeneratorForm() {
             setStoredBuilderPuuid(puuid)
             setStorageVersion(currentValue => currentValue + 1)
 
-            await queryClient.fetchQuery({
+            await queryClient.query({
                 queryFn: () =>
                     fetchSummonerByPuuid({
                         puuid,
@@ -88,14 +96,14 @@ export default function WidgetGeneratorForm() {
     })
 
     const handleNameChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
+        (event: ChangeEvent<HTMLInputElement>) => {
             setName(event.target.value)
         },
         []
     )
 
     const handleTagChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
+        (event: ChangeEvent<HTMLInputElement>) => {
             setTag(event.target.value)
         },
         []
@@ -109,14 +117,14 @@ export default function WidgetGeneratorForm() {
     )
 
     const handleSubmit = useCallback(
-        async (event: React.FormEvent<HTMLFormElement>) => {
+        (event: SubmitEvent<HTMLFormElement>) => {
             event.preventDefault()
 
             setSubmitError('')
             const parsed = widgetGeneratorFormSchema.safeParse({ name, tag })
 
             if (!parsed.success) {
-                const fieldErrors = parsed.error.flatten().fieldErrors
+                const fieldErrors = z.flattenError(parsed.error).fieldErrors
 
                 setFormErrors({
                     name: fieldErrors.name?.[0],
@@ -127,7 +135,7 @@ export default function WidgetGeneratorForm() {
 
             setFormErrors({})
 
-            await resolveSummonerMutation.mutateAsync({
+            resolveSummonerMutation.mutate({
                 name: parsed.data.name,
                 region,
                 tag: parsed.data.tag,

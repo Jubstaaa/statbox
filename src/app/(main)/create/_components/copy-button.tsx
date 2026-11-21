@@ -21,10 +21,11 @@ export default function CreateCopyButton({ text }: CopyButtonProps) {
         setTimeout(handleResetCopied, 2000)
     }, [handleResetCopied])
 
-    const handleCopy = useCallback(async () => {
-        await navigator.clipboard.writeText(text)
-        setCopied(true)
-        scheduleResetCopied()
+    const handleCopy = useCallback(() => {
+        void navigator.clipboard.writeText(text).then(() => {
+            setCopied(true)
+            scheduleResetCopied()
+        })
     }, [scheduleResetCopied, text])
 
     return (

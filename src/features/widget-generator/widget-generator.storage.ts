@@ -27,9 +27,10 @@ const builderSettingsSchema = z.object({
 export function getStoredBuilderPuuid() {
     if (typeof window === 'undefined') return null
 
-    return (
-        window.localStorage.getItem(BUILDER_PUUID_STORAGE_KEY)?.trim() || null
-    )
+    const puuid = window.localStorage.getItem(BUILDER_PUUID_STORAGE_KEY)?.trim()
+    if (!puuid) return null
+
+    return puuid
 }
 
 export function setStoredBuilderPuuid(puuid: string) {

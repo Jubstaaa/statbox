@@ -70,6 +70,9 @@ describe('GET /api/summoner/resolve', () => {
         ],
         ['a tag with URL syntax', { name: 'abc', region: 'NA', tag: 'a?b' }],
         ['an unknown region', { name: 'abc', region: 'MARS', tag: 'NA1' }],
+        ['a dot-segment name', { name: '..', region: 'NA', tag: 'NA1' }],
+        ['a dot-segment tag', { name: 'abc', region: 'NA', tag: '.' }],
+        ['a padded dot-segment', { name: ' .. ', region: 'NA', tag: '..' }],
     ])('rejects %s without calling Riot', async (_, params) => {
         const response = await call(params)
 

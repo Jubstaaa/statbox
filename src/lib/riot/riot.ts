@@ -176,7 +176,7 @@ function toMatchEntry(
     puuid: string,
     queue: RankedQueue
 ): MatchEntry[] {
-    if (!match || match.queueId !== QUEUE[queue].id) return []
+    if (match?.queueId !== QUEUE[queue].id) return []
 
     const participant = match.participants.find(p => p.puuid === puuid)
     if (!participant) return []

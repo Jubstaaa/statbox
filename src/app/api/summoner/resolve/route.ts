@@ -15,8 +15,10 @@ const CACHE_CONTROL = 'public, max-age=3600, s-maxage=86400'
 
 // Riot game names are at most 16 characters and tags at most 5. Characters that
 // carry URL structure are refused outright: twisted puts both into the request
-// path with encodeURI, which leaves them intact.
-const noUrlSyntax = (value: string) => !/[/?#%\\]/.test(value)
+// path with encodeURI, which leaves them intact. A segment of only dots is
+// refused too, since URL normalisation turns it into a different Riot path.
+const noUrlSyntax = (value: string) =>
+    !/[/?#%\\]/.test(value) && !/^\.+$/.test(value)
 
 const querySchema = z.object({
     name: z.string().trim().min(1).max(16).refine(noUrlSyntax),

@@ -6,11 +6,26 @@ import globals from 'globals'
 import perfectionistPlugin from 'eslint-plugin-perfectionist'
 import prettierPlugin from 'eslint-plugin-prettier'
 import reactPlugin from 'eslint-plugin-react'
+import tseslint from 'typescript-eslint'
 
 const eslintConfig = defineConfig([
     ...nextVitals,
     ...nextTs,
     globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
+    tseslint.configs.strictTypeChecked,
+    tseslint.configs.stylisticTypeChecked,
+    {
+        languageOptions: {
+            parserOptions: {
+                projectService: true,
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
+    },
+    {
+        files: ['**/*.{js,mjs,cjs}'],
+        extends: [tseslint.configs.disableTypeChecked],
+    },
     {
         files: ['**/*.{ts,tsx,js,jsx}'],
         languageOptions: {
@@ -31,6 +46,15 @@ const eslintConfig = defineConfig([
                 { prefer: 'type-imports' },
             ],
             '@typescript-eslint/no-explicit-any': 'error',
+            // twisted declares its query and rate-limit DTOs as classes with
+            // no behaviour, and its own examples pass object literals.
+            '@typescript-eslint/no-unsafe-class-instance-assignment': 'off',
+            // Numbers render predictably in strings; the rule still catches
+            // objects, nullish values and unions that would print badly.
+            '@typescript-eslint/restrict-template-expressions': [
+                'error',
+                { allowNumber: true },
+            ],
             '@typescript-eslint/no-empty-object-type': 'off',
             '@typescript-eslint/no-unused-expressions': 'off',
             // Replaces import/order: eslint-plugin-import 2.x crashes under
@@ -145,6 +169,15 @@ const eslintConfig = defineConfig([
                 },
             ],
             'react/no-unstable-nested-components': 'off',
+        },
+    },
+    {
+        // Test doubles implement async interfaces without awaiting anything,
+        // and no-op callbacks are the point of a stub.
+        files: ['**/*.test.{ts,tsx}'],
+        rules: {
+            '@typescript-eslint/no-empty-function': 'off',
+            '@typescript-eslint/require-await': 'off',
         },
     },
     {

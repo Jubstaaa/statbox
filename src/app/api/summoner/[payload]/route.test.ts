@@ -1,8 +1,10 @@
+import { compressToEncodedURIComponent } from 'lz-string'
 import { NextRequest } from 'next/server'
 import { GenericError } from 'twisted'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { buildWidgetUrls } from '@/features/widget-generator/widget-generator.payload'
+import { buildOverlongValidSegment } from '@/features/widget-generator/widget-generator.payload.fixtures'
 import { RiotRateLimitedError } from '@/lib/riot/riot.errors'
 
 import { GET } from './route'
@@ -70,6 +72,25 @@ describe('GET /api/summoner/[payload]', () => {
         ['a malformed PUUID', 'x/../../riot/account', '?region=KR'],
         ['a missing region', PUUID, ''],
         ['an unknown region', PUUID, '?region=MARS'],
+        ['an unknown queue', PUUID, '?region=KR&queue=aram'],
+        [
+            'an oversized payload',
+            compressToEncodedURIComponent(
+                JSON.stringify({
+                    padding: 'x'.repeat(4000),
+                    puuid: PUUID,
+                    queue: 'solo',
+                    region: 'EUW',
+                    style: 'classic',
+                })
+            ),
+            '',
+        ],
+        [
+            'a valid payload over the wire cap',
+            buildOverlongValidSegment(PUUID),
+            '',
+        ],
     ])('rejects %s without calling Riot', async (_, segment, query) => {
         const response = await call(segment, query)
 
