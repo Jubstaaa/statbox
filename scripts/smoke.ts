@@ -1,6 +1,4 @@
-import { createHash } from 'node:crypto'
-
-import { compressToEncodedURIComponent } from 'lz-string'
+import { buildOverlongValidSegment } from '../src/features/widget-generator/widget-generator.payload.fixtures'
 
 // Runs against a started production container (CI's image job) and fails the
 // job when a page, the health gate, a security header or the payload cap is
@@ -47,21 +45,11 @@ const REQUEST_TIMEOUT_MS = 10_000
 const get = (path: string) =>
     fetch(base + path, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
 
-// A valid widget payload padded with incompressible text: about 890
-// characters on the wire, under 700 once decompressed. Only the length cap on
-// the segment refuses it; without that cap it decodes to a real target and the
-// route calls Riot (and answers 502 with the placeholder key) instead of 400.
-const oversizedPayload = compressToEncodedURIComponent(
-    JSON.stringify({
-        padding: Array.from({ length: 12 }, (_, index) =>
-            createHash('sha256').update(String(index)).digest('base64url')
-        ).join(''),
-        puuid: 'a'.repeat(78),
-        queue: 'solo',
-        region: 'EUW',
-        style: 'classic',
-    })
-)
+// The unit tests' probe: a valid widget payload over the 512-character wire
+// cap that decompresses to under 1024. Only the wire cap refuses it; without
+// that cap it decodes to a real target and the route calls Riot (and answers
+// 502 with the placeholder key) instead of 400.
+const oversizedPayload = buildOverlongValidSegment('a'.repeat(78))
 const oversized = `/api/summoner/${oversizedPayload}`
 
 async function run() {
