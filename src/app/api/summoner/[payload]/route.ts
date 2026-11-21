@@ -14,9 +14,9 @@ const CACHE_CONTROL = 'public, max-age=60, s-maxage=60'
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ payload: string }> }
+    ctx: RouteContext<'/api/summoner/[payload]'>
 ) {
-    const { payload } = await params
+    const { payload } = await ctx.params
     const target = parseWidgetTarget(payload, request.nextUrl.searchParams)
 
     if (!target) return errorResponse(400, 'Invalid parameters')
