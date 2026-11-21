@@ -37,22 +37,20 @@ function getClient(): Client {
 // (src/instrumentation.ts); reads and writes run it too, so a startup that
 // could not open the database is retried on first use.
 export function initCacheSchema(): Promise<void> {
-    if (!schema) {
-        schema = (async () => {
-            const db = getClient()
-            await db.execute(
-                'CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at INTEGER NOT NULL)'
-            )
-            await db.execute(
-                'CREATE INDEX IF NOT EXISTS cache_expires_at ON cache (expires_at)'
-            )
-        })().catch((error: unknown) => {
-            // Never memoise a failure: a transient error would otherwise leave
-            // the cache dead for the lifetime of the process.
-            schema = undefined
-            throw error
-        })
-    }
+    schema ??= (async () => {
+        const db = getClient()
+        await db.execute(
+            'CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at INTEGER NOT NULL)'
+        )
+        await db.execute(
+            'CREATE INDEX IF NOT EXISTS cache_expires_at ON cache (expires_at)'
+        )
+    })().catch((error: unknown) => {
+        // Never memoise a failure: a transient error would otherwise leave
+        // the cache dead for the lifetime of the process.
+        schema = undefined
+        throw error
+    })
 
     return schema
 }
@@ -94,7 +92,7 @@ export function getCache({ namespace }: { namespace: string }): Cache {
 
                 if (typeof value !== 'string') return undefined
 
-                return JSON.parse(value)
+                return JSON.parse(value) as unknown
             } catch (error) {
                 report(`get ${scoped(key)}`, error)
 
