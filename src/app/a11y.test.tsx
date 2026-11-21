@@ -22,7 +22,7 @@ describe('accessible markup', () => {
     })
 
     it('renders the create error as a section heading under the page h1', () => {
-        const html = render(<CreateError />)
+        const html = render(<CreateError error={null} />)
 
         expect(html).not.toMatch(NESTED_CONTROL)
         expect(html).not.toContain('<h1')

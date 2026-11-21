@@ -137,6 +137,13 @@ export default function WidgetGeneratorForm() {
         router.push('/create')
     }, [router])
 
+    const { refetch: refetchConnectedAccount } = connectedAccountQuery
+    // refetch resolves with the failed result rather than rejecting, so the
+    // card's error state is what reports a retry that failed again.
+    const handleRetryAccount = useCallback(() => {
+        void refetchConnectedAccount()
+    }, [refetchConnectedAccount])
+
     const handleChangeAccount = useCallback(() => {
         clearBuilderAccount()
         resetLookup()
@@ -148,6 +155,7 @@ export default function WidgetGeneratorForm() {
                 query={connectedAccountQuery}
                 onChangeAccount={handleChangeAccount}
                 onOpenBuilder={handleOpenBuilder}
+                onRetry={handleRetryAccount}
             />
         )
     }

@@ -24,6 +24,8 @@ import type { RankedQueue, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
 interface CreatePageState {
     createStyleSelectHandler: (value: WidgetStyle) => () => void
+    // The failed lookup, so the error state can say why.
+    error: unknown
     handleAllDaySession: () => void
     handleChangeAccount: () => void
     handleFlexQueue: () => void
@@ -148,6 +150,7 @@ export function useCreatePage(): CreatePageState {
 
     return {
         createStyleSelectHandler,
+        error: summonerQuery.error,
         handleAllDaySession,
         handleChangeAccount,
         handleFlexQueue,

@@ -3,7 +3,11 @@ import { cn } from '@/lib/cn'
 import type { WidgetFrameProps } from './widget.types'
 import { getWidgetHeight, getWidgetWidth } from './widget.utils'
 
-export default function WidgetError({ style }: WidgetFrameProps) {
+interface WidgetErrorProps extends WidgetFrameProps {
+    message: string
+}
+
+export default function WidgetError({ message, style }: WidgetErrorProps) {
     const width = getWidgetWidth(style)
     const height = getWidgetHeight(style)
     return (
@@ -16,11 +20,12 @@ export default function WidgetError({ style }: WidgetFrameProps) {
                     : 'rounded-[18px] p-3.5 text-center'
             )}>
             <div
+                role="alert"
                 className={cn(
                     'text-loss font-bold',
                     style === 'topbar' ? 'text-[10px]' : 'text-[11px]'
                 )}>
-                Failed to load summoner data.
+                {message}
             </div>
         </div>
     )

@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'next/navigation'
 
 import { summonerQueryOptions } from '@/features/widget-generator/widget-generator.api'
+import { describeWidgetError } from '@/features/widget-generator/widget-generator.messages'
 import Widget from '@/features/widget/widget'
 import { POLL_INTERVAL } from '@/features/widget/widget.constants'
 import { cn } from '@/lib/cn'
@@ -45,6 +46,9 @@ export default function WidgetPage() {
                 isLoading={isLoading}
                 session={getSession()}
                 style={style}
+                errorMessage={describeWidgetError(
+                    target === null ? null : summonerQuery.error
+                )}
             />
         </main>
     )

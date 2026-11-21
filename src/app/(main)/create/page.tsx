@@ -16,6 +16,7 @@ import { useCreatePage } from './use-create-page'
 export default function CreateView() {
     const {
         createStyleSelectHandler,
+        error,
         handleAllDaySession,
         handleChangeAccount,
         handleFlexQueue,
@@ -43,7 +44,7 @@ export default function CreateView() {
     }
 
     if (isError || !summonerData || !urls) {
-        return <CreateError />
+        return <CreateError error={error} />
     }
 
     return (
