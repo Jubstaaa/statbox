@@ -60,6 +60,7 @@ bun run audit         # bun audit --audit-level=high
 bun run knip          # unused files, exports and dependencies
 bun run jscpd         # duplicated code in src
 bun run depcruise     # dependency rules (cycles, orphans, layering)
+bun run smoke         # smoke test a running server (SMOKE_BASE_URL)
 ```
 
 ## Environment
@@ -71,6 +72,9 @@ bun run depcruise     # dependency rules (cycles, orphans, layering)
 | `RIOT_API_KEY`       | yes      | none                      | Riot API key, server-side only   |
 | `CACHE_DATABASE_URI` | no       | `file:./statbox-cache.db` | libsql URL of the response cache |
 
+`bun run smoke` reads `SMOKE_BASE_URL` (default `http://127.0.0.1:3003`, the
+port `docker-compose.yml` publishes); the app itself does not.
+
 ## Routes
 
 - `/` landing page and account entry
@@ -78,6 +82,7 @@ bun run depcruise     # dependency rules (cycles, orphans, layering)
 - `/widget/[payload]` final widget route for OBS
 - `/api/summoner/resolve` Riot ID to PUUID resolution
 - `/api/summoner/[payload]` widget data fetch route
+- `/api/health` readiness check: `200` when the SQLite cache answers, `503` otherwise
 
 ## Production notes
 
@@ -85,6 +90,92 @@ bun run depcruise     # dependency rules (cycles, orphans, layering)
 - `/create` and `/widget` are excluded from indexing
 - The app stores builder preferences in browser local storage
 - The deployed key is a personal key; a production key is optional (see below)
+
+## Deploy and rollback
+
+Production is one container on a DigitalOcean droplet in `/opt/statbox`,
+published on `127.0.0.1:3003` behind the droplet's shared Caddy, and released
+by GitHub Actions only.
+
+### Release path
+
+1. **PR**: `ci.yml` runs `check` (format, lint, typecheck, test, build, audit,
+   knip, jscpd, depcruise, actionlint, Trivy) and `image`. `image` builds the
+   production image, starts it with `docker-compose.yml` on an empty data
+   directory, runs `bun run smoke` against it, then rehearses a rollback: it
+   starts the image now in production (`:latest`) under the PR's compose file
+   and waits for it to be healthy.
+2. **Merge to `main`**: `deploy.yml` runs the same image gate, pushes exactly
+   that image as `ghcr.io/jubstaaa/statbox:<commit-sha>`, then deploys it with
+   [`Jubstaaa/deploy-actions/compose`](https://github.com/Jubstaaa/deploy-actions)
+   using the `docker-compose.yml` of the released commit. The action
+   snapshots the cache, runs `docker compose up --wait`, probes the health URL
+   and, if the release never becomes healthy, starts the previous tag again
+   on the restored snapshot. `:latest` moves to the new SHA only after a
+   healthy release.
+
+### Rolling back by hand
+
+```bash
+gh workflow run deploy.yml --ref main -f image_tag=<full-40-char-sha>
+# also put back the cache as it was while that SHA was running:
+gh workflow run deploy.yml --ref main -f image_tag=<sha> -f restore_snapshot=true
+```
+
+- `image_tag` must be the full 40-character SHA of a `main` commit whose
+  image is in GHCR (every commit `deploy.yml` released). Check one with
+  `docker buildx imagetools inspect ghcr.io/jubstaaa/statbox:<sha>`.
+- A rollback skips CI (that image passed it when built) and runs under that
+  SHA's own `docker-compose.yml`, healthcheck included.
+- `restore_snapshot` is only valid with `image_tag`; it discards every cache
+  write since that snapshot and keeps the replaced file as
+  `statbox-cache.db.failed-<UTC>`.
+
+### Cache snapshots
+
+Before each release the action copies `/opt/statbox/data/statbox-cache.db`
+with SQLite's backup API to
+`/opt/statbox/snapshots/statbox-cache-<running tag>-<UTC>.sqlite` and
+integrity-checks it; a failed snapshot stops the deploy before anything
+changes. The newest **3** are kept. The automatic rollback restores the
+snapshot it just took; a manual rollback restores one only with
+`restore_snapshot=true`.
+
+### Health probes
+
+- **Container healthcheck** (`docker-compose.yml`, travels with each SHA):
+  what `compose up --wait` waits for. It stays on `/` for this release (see
+  the upgrade note below).
+- **Deploy health URL** (`deploy.yml`): `http://127.0.0.1:3003/`, probed after
+  the new tag starts and after an automatic rollback. It lives in the
+  workflow, so it must be a path every image answers.
+- **`/api/health`**: `503` means the cache database cannot be opened or read
+  (bad bind mount, corrupt file). The app creates the cache schema at
+  startup, so a new, empty data directory is healthy.
+
+A failed release shows the rollback in the deploy job log; if the log says
+`ROLLBACK TO … FAILED`, the container is down: SSH in, read
+`docker compose logs app` in `/opt/statbox` and roll back by hand as above.
+
+### Environment on the droplet
+
+`/opt/statbox/.env` is rendered by Infisical, not edited by hand: a new or
+changed variable goes into Infisical first. Compose-only variables
+(`IMAGE_TAG`, `DATA_DIR`, `IMAGE_CACHE_DIR`, `PORTAINER_TEAMS`) are explained
+in `docker-compose.yml`.
+
+A rebuilt droplet needs the bind-mount directories owned by the container
+user before the first deploy:
+`install -d -o 1001 -g 1001 /opt/statbox/data /opt/statbox/cache/images`.
+
+### Upgrade notes
+
+- A compose change that probes a path older images do not serve ships one
+  release after the image that serves it, since a rollback runs the previous
+  image under the new file. `/api/health` arrives with this release; the
+  probe switch to it (`ci/health-gate-switch`) deploys only after this
+  release is live, and its PR's rollback rehearsal fails until `:latest`
+  answers `/api/health`.
 
 ## Riot API key and rate budget
 

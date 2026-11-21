@@ -31,6 +31,9 @@ bun run jscpd
 bun run depcruise
 ```
 
+CI also builds the Docker image, smoke tests it (`bun run smoke`) and rehearses
+a rollback to the production image; see "Deploy and rollback" in the README.
+
 ## Scope
 
 - Keep changes focused.
@@ -41,12 +44,14 @@ bun run depcruise
 src/
   app/                 routes; `_components/` beside a route holds parts only it uses
     (main)/            landing, builder (`create/`), privacy and terms pages
-    api/               route handlers (summoner lookups)
+    api/               route handlers (summoner lookups, health)
     widget/[payload]/  the OBS widget page
   features/            self-contained features shared by routes (widget, widget-generator)
   components/          small UI parts used by more than one route or feature
   hooks/               generic hooks shared across features
   lib/                 cross-cutting infrastructure (Riot client, cache, Data Dragon, query client)
+  instrumentation.ts   server startup (creates the cache schema)
+scripts/               smoke test run against a built container
 ```
 
 ## UI and product notes
