@@ -24,11 +24,7 @@ services:
             options:
                 max-size: 10m
                 max-file: '3'
-        # next-server binds the container's own address rather than loopback, so the
-        # probe has to resolve $HOSTNAME: wget against 127.0.0.1 gets connection
-        # refused. The name is doubled so Compose passes the variable through to the
-        # shell inside the container instead of substituting the host's value. wget
-        # here is BusyBox — -T is the timeout, the GNU long options do not exist.
+        # wget here is BusyBox: -T is the timeout, the GNU long options do not exist.
         #
         # Docker does not restart an unhealthy container, and Beszel
         # cannot alert per container, so this fills the Health column and nothing
@@ -45,7 +41,7 @@ services:
             test:
                 [
                     'CMD-SHELL',
-                    'wget -q -O /dev/null -T 3 "http://$$HOSTNAME:3000/" || exit 1',
+                    'wget -q -O /dev/null -T 3 http://127.0.0.1:3000/ || exit 1',
                 ]
             interval: 30s
             timeout: 5s
@@ -71,6 +67,10 @@ services:
             - '127.0.0.1:3003:3000'
         environment:
             NODE_ENV: production
+            # Also set by the image; repeated here because a rollback starts the
+            # previous image under this file, and images built before that bind
+            # the container ID instead of loopback.
+            HOSTNAME: 0.0.0.0
             # Half the container limit for V8's old space: the other half is
             # for what lives outside it (young generation, code, the libsql
             # page cache and sharp/libvips decode buffers for /_next/image),

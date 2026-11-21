@@ -19,7 +19,8 @@ recent games, and session-based performance for League of Legends streams.
 Prerequisites: [Bun](https://bun.sh) 1.4.4 (the `packageManager` version) and
 Node.js 26 (`engines.node`). Bun installs the dependencies; `bun run` then
 starts `next`, `vitest` and `tsc` through their `node` shebangs, so they run
-on the Node on your `PATH`. CI installs the version `engines.node` names.
+on the Node on your `PATH`. CI installs the version `engines.node` names, and
+the Docker image builds and runs on `node:26-alpine` (Bun only installs).
 
 1. Install dependencies:
 
