@@ -9,11 +9,12 @@ import type { Cache } from './cache'
 const dir = mkdtempSync(join(tmpdir(), 'statbox-cache-'))
 
 let getCache: (options: { namespace: string }) => Cache
+let checkCacheHealth: () => Promise<void>
 
 beforeAll(async () => {
     process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
     // Imported after the env var is set: the client reads it on first use.
-    ;({ getCache } = await import('./cache'))
+    ;({ checkCacheHealth, getCache } = await import('./cache'))
 })
 
 afterAll(() => {
@@ -78,6 +79,42 @@ describe('getCache', () => {
         expect(reported).toHaveBeenCalled()
 
         reported.mockRestore()
+        process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
+    })
+})
+
+describe('checkCacheHealth', () => {
+    it('resolves when the cache database answers a query', async () => {
+        await getCache({ namespace: 'test' }).set('seed', 1, { ttl: 60 })
+
+        await expect(checkCacheHealth()).resolves.toBeUndefined()
+    })
+
+    // A bind mount pointing at an empty directory (wrong DATA_DIR, a rebuilt
+    // host) must fail the gate: the check reads, it never creates the table.
+    it('rejects a database that has no cache table, and leaves it without one', async () => {
+        vi.resetModules()
+        const emptyPath = join(dir, 'empty.db')
+        process.env.CACHE_DATABASE_URI = `file:${emptyPath}`
+
+        const { checkCacheHealth: checkEmpty } = await import('./cache')
+
+        await expect(checkEmpty()).rejects.toThrow()
+        await expect(checkEmpty()).rejects.toThrow()
+
+        process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
+    })
+
+    // Unlike reads and writes, the health check must fail loudly: it is what
+    // the deploy waits on before keeping a release.
+    it('rejects when the database cannot be opened', async () => {
+        vi.resetModules()
+        process.env.CACHE_DATABASE_URI = 'file:/nonexistent-dir/cache.db'
+
+        const { checkCacheHealth: brokenCheck } = await import('./cache')
+
+        await expect(brokenCheck()).rejects.toThrow()
+
         process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
     })
 })

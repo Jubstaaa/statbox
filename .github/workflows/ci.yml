@@ -2,7 +2,16 @@ name: CI
 
 on:
     pull_request:
+    # deploy.yml calls this on every push to main.
     workflow_call:
+        inputs:
+            run-check:
+                description: >-
+                    Run the check job. The deploy turns it off: protect-main requires
+                    branches to be up to date, so the merge commit has the tree the
+                    PR's check already passed.
+                type: boolean
+                default: true
 
 permissions:
     contents: read
@@ -12,8 +21,12 @@ concurrency:
     # Only superseded PR runs are cancelled; a release gate on main always finishes.
     cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+    IMAGE: ghcr.io/jubstaaa/statbox
+
 jobs:
     check:
+        if: ${{ github.event_name == 'pull_request' || inputs.run-check }}
         runs-on: ubuntu-latest
         timeout-minutes: 15
         steps:
@@ -52,3 +65,74 @@ jobs:
               run: bun run depcruise
             - name: actionlint
               run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
+
+    # Runs on PRs beside check (protect-main does not list it as a required
+    # check yet): builds the production image, starts it with the production
+    # compose file and smoke tests it. Read-only, so a PR can never publish an
+    # image.
+    image:
+        if: ${{ github.event_name == 'pull_request' }}
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: read
+            packages: read
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: ./.github/actions/smoke-image
+              with:
+                  image: ${{ env.IMAGE }}
+            - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+            # What the deploy does when this PR's release turns out unhealthy:
+            # start the image now in production (:latest) under this PR's
+            # compose file, on the data the candidate just used, and wait for
+            # its healthcheck and the deploy's health URL. A compose change
+            # the live image cannot satisfy fails here, not mid-rollback.
+            - name: Rollback rehearsal
+              env:
+                  IMAGE_TAG: latest
+                  DATA_DIR: ${{ runner.temp }}/data
+                  IMAGE_CACHE_DIR: ${{ runner.temp }}/image-cache
+                  # deploy.yml's health-url.
+                  HEALTH_URL: http://127.0.0.1:3003/
+              run: |
+                  docker pull --quiet "$IMAGE:$IMAGE_TAG"
+                  docker compose up -d --wait --wait-timeout 120 app
+                  curl --fail --silent --show-error --max-time 10 "$HEALTH_URL" > /dev/null
+            - name: Rollback logs
+              if: failure()
+              env:
+                  IMAGE_TAG: latest
+              run: docker compose logs app
+
+    # The same gate on main, which then pushes exactly the image that passed
+    # as :<commit-sha>. A separate job because job permissions cannot depend
+    # on the event, and only this one may write packages.
+    release-image:
+        if: ${{ github.event_name != 'pull_request' }}
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: read
+            packages: write
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+            - uses: ./.github/actions/smoke-image
+              with:
+                  image: ${{ env.IMAGE }}
+            - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+            # By SHA only: :latest moves in deploy.yml after production reports healthy.
+            - name: Push the SHA tag
+              run: docker push "$IMAGE:$GITHUB_SHA"

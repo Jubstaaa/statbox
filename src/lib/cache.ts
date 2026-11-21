@@ -33,7 +33,10 @@ function getClient(): Client {
     return client
 }
 
-function initSchema(): Promise<void> {
+// The one definition of the cache schema. Server startup runs it
+// (src/instrumentation.ts); reads and writes run it too, so a startup that
+// could not open the database is retried on first use.
+export function initCacheSchema(): Promise<void> {
     schema ??= (async () => {
         const db = getClient()
         await db.execute(
@@ -50,6 +53,13 @@ function initSchema(): Promise<void> {
     })
 
     return schema
+}
+
+// Unlike get/set this throws: a database that cannot be opened or read makes
+// /api/health answer 503. It only reads; the schema is created at startup, so
+// this fails on a file it cannot open, not on a data directory that is new.
+export async function checkCacheHealth(): Promise<void> {
+    await getClient().execute('SELECT 1 FROM cache LIMIT 1')
 }
 
 async function prune(): Promise<void> {
@@ -72,7 +82,7 @@ export function getCache({ namespace }: { namespace: string }): Cache {
     return {
         async get(key) {
             try {
-                await initSchema()
+                await initCacheSchema()
 
                 const result = await getClient().execute({
                     args: [scoped(key), Date.now()],
@@ -92,7 +102,7 @@ export function getCache({ namespace }: { namespace: string }): Cache {
 
         async set(key, value, options) {
             try {
-                await initSchema()
+                await initCacheSchema()
 
                 const ttl = options?.ttl ?? DEFAULT_TTL_SECONDS
 

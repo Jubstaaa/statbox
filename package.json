@@ -24,7 +24,8 @@
         "format:check": "prettier --check .",
         "knip": "knip",
         "jscpd": "jscpd src",
-        "depcruise": "depcruise src next.config.ts"
+        "depcruise": "depcruise src next.config.ts",
+        "smoke": "bun scripts/smoke.ts"
     },
     "knip": {
         "ignoreDependencies": [

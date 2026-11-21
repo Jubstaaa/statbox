@@ -21,6 +21,8 @@
 /build
 
 # misc
+# local SQLite response cache (CACHE_DATABASE_URI default), created at startup
+statbox-cache.db*
 .DS_Store
 *.pem
 

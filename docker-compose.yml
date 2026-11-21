@@ -11,22 +11,37 @@ services:
         # Measured 109MB idle for the standalone server; 256m leaves room for
         # request spikes without letting it crowd the other apps.
         mem_limit: 256m
-        # next-server binds the container's own address rather than loopback, so the
-        # probe has to resolve $HOSTNAME: wget against 127.0.0.1 gets connection
-        # refused. The name is doubled so Compose passes the variable through to the
-        # shell inside the container instead of substituting the host's value. wget
-        # here is BusyBox — -T is the timeout, the GNU long options do not exist.
+        pids_limit: 128
+        # The root filesystem stays writable on purpose: pages revalidate daily
+        # (the Data Dragon version), and Next writes regenerated pages under
+        # .next/server. Everything else follows the shared hardening.
+        cap_drop:
+            - ALL
+        security_opt:
+            - no-new-privileges:true
+        logging:
+            driver: json-file
+            options:
+                max-size: 10m
+                max-file: '3'
+        # wget here is BusyBox: -T is the timeout, the GNU long options do not exist.
         #
         # Docker does not restart an unhealthy container, and Beszel
         # cannot alert per container, so this fills the Health column and nothing
         # more: it surfaces "process alive but application wedged", which the
         # restart policy alone never catches. Deploys also wait on it
         # (`compose up --wait`) and roll back when it never passes.
+        #
+        # The probe stays on / for this release: the deploy action rolls back by
+        # starting the previous image under this same file, and images built
+        # before /api/health answer it with 404, so the rollback would fail too.
+        # Once a release with /api/health is live (and so is every rollback
+        # target), the next one switches the probe to it.
         healthcheck:
             test:
                 [
                     'CMD-SHELL',
-                    'wget -q -O /dev/null -T 3 "http://$$HOSTNAME:3000/" || exit 1',
+                    'wget -q -O /dev/null -T 3 http://127.0.0.1:3000/ || exit 1',
                 ]
             interval: 30s
             timeout: 5s
@@ -52,11 +67,23 @@ services:
             - '127.0.0.1:3003:3000'
         environment:
             NODE_ENV: production
+            # Also set by the image; repeated here because a rollback starts the
+            # previous image under this file, and images built before that bind
+            # the container ID instead of loopback.
+            HOSTNAME: 0.0.0.0
+            # Half the container limit for V8's old space: the other half is
+            # for what lives outside it (young generation, code, the libsql
+            # page cache and sharp/libvips decode buffers for /_next/image),
+            # so a heap near its cap still collects garbage before the cgroup
+            # OOM-kills the process. 160 left only ~96 MB for all of that.
+            NODE_OPTIONS: --max-old-space-size=128
             # Persisted deliberately: match details are cached for 90 days and the
             # Riot API is rate limited, so an empty cache after a deploy costs quota.
             CACHE_DATABASE_URI: file:/app/data/statbox-cache.db
+        # The defaults are the droplet's paths; CI's image job points both at
+        # temporary directories to run this same file.
         volumes:
-            - /opt/statbox/data:/app/data
+            - ${DATA_DIR:-/opt/statbox/data}:/app/data
             # Next's optimized output for the remote ddragon icons — without this a
             # deploy throws the whole set away and every icon is refetched.
-            - /opt/statbox/cache/images:/app/.next/cache/images
+            - ${IMAGE_CACHE_DIR:-/opt/statbox/cache/images}:/app/.next/cache/images
