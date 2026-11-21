@@ -5,10 +5,6 @@ import { z } from 'zod'
 import { puuidSchema } from '@/lib/riot/riot.schemas'
 
 import {
-    BUILDER_PUUID_STORAGE_KEY,
-    BUILDER_SETTINGS_STORAGE_KEY,
-} from './widget-generator.constants'
-import {
     type BuilderSettings,
     builderSettingsSchema,
 } from './widget-generator.payload'
@@ -18,22 +14,27 @@ interface BuilderAccount {
     settings: BuilderSettings
 }
 
-// The PUUID and its settings are one record: a PUUID without settings has no
-// region, and guessing one sends every Riot call to the wrong platform.
+// The PUUID and its settings are one record under one key: a PUUID without
+// its settings has no region, and guessing one sends every Riot call to the
+// wrong platform. A single setItem either stores the whole record or nothing.
+const ACCOUNT_STORAGE_KEY = 'statbox.builder.account'
+// Where builds before the single record kept the two halves.
+const LEGACY_PUUID_STORAGE_KEY = 'statbox.builder.puuid'
+const LEGACY_SETTINGS_STORAGE_KEY = 'statbox.builder.settings'
+
 const builderAccountSchema = z.object({
     puuid: z.string().trim().pipe(puuidSchema),
-    settings: z
-        .string()
-        .transform((raw, context) => {
-            try {
-                return JSON.parse(raw) as unknown
-            } catch {
-                context.addIssue({ code: 'custom', message: 'Invalid JSON' })
-                return z.NEVER
-            }
-        })
-        .pipe(builderSettingsSchema),
+    settings: builderSettingsSchema,
 })
+
+function parseJson(raw: null | string): unknown {
+    if (raw === null) return null
+    try {
+        return JSON.parse(raw) as unknown
+    } catch {
+        return null
+    }
+}
 
 export class BuilderStorageError extends Error {
     constructor(cause: unknown) {
@@ -43,28 +44,54 @@ export class BuilderStorageError extends Error {
 }
 
 const listeners = new Set<() => void>()
-let snapshot: { account: BuilderAccount | null; key: string } | undefined
+let snapshot: undefined | { account: BuilderAccount | null; key: null | string }
 let reportedBlockedStorage = false
 
 function notify() {
     for (const listener of listeners) listener()
 }
 
+function reportBlockedStorage(error: unknown) {
+    if (reportedBlockedStorage) return
+    reportedBlockedStorage = true
+    console.warn('[builder] browser storage is unavailable:', error)
+}
+
+// Moves an account saved under the two old keys into the single record. If
+// the browser refuses the write, the account is still used and the old keys
+// stay, to be migrated on a later read.
+function migrateLegacyAccount(storage: Storage): null | string {
+    const puuid = storage.getItem(LEGACY_PUUID_STORAGE_KEY)
+    const settings = parseJson(storage.getItem(LEGACY_SETTINGS_STORAGE_KEY))
+    const parsed = builderAccountSchema.safeParse({ puuid, settings })
+    if (!parsed.success) return null
+
+    const record = JSON.stringify(parsed.data)
+    try {
+        storage.setItem(ACCOUNT_STORAGE_KEY, record)
+        storage.removeItem(LEGACY_PUUID_STORAGE_KEY)
+        storage.removeItem(LEGACY_SETTINGS_STORAGE_KEY)
+    } catch (error) {
+        reportBlockedStorage(error)
+    }
+
+    return record
+}
+
 // Storage can be blocked outright (site data disabled, some private modes);
 // the builder then simply has no saved account. Warned once, not per render.
-function readStorage() {
+function readStorage(): null | string {
     try {
-        return [
-            window.localStorage.getItem(BUILDER_PUUID_STORAGE_KEY),
-            window.localStorage.getItem(BUILDER_SETTINGS_STORAGE_KEY),
-        ] as const
-    } catch (error) {
-        if (!reportedBlockedStorage) {
-            reportedBlockedStorage = true
-            console.warn('[builder] browser storage is unavailable:', error)
-        }
+        const storage = window.localStorage
 
-        return [null, null] as const
+        return (
+            storage.getItem(ACCOUNT_STORAGE_KEY) ??
+            migrateLegacyAccount(storage)
+        )
+    } catch (error) {
+        reportBlockedStorage(error)
+
+        return null
     }
 }
 
@@ -82,12 +109,11 @@ export function subscribeToBuilderAccount(listener: () => void) {
 export function getBuilderAccount(): BuilderAccount | null {
     if (typeof window === 'undefined') return null
 
-    const [puuid, settings] = readStorage()
-    const key = JSON.stringify([puuid, settings])
+    const key = readStorage()
 
     // useSyncExternalStore needs the same object back while storage is unchanged.
-    if (snapshot?.key !== key) {
-        const parsed = builderAccountSchema.safeParse({ puuid, settings })
+    if (snapshot === undefined || snapshot.key !== key) {
+        const parsed = builderAccountSchema.safeParse(parseJson(key))
         snapshot = { account: parsed.success ? parsed.data : null, key }
     }
 
@@ -107,10 +133,9 @@ export function useBuilderAccount() {
 export function saveBuilderAccount({ puuid, settings }: BuilderAccount) {
     try {
         window.localStorage.setItem(
-            BUILDER_SETTINGS_STORAGE_KEY,
-            JSON.stringify(settings)
+            ACCOUNT_STORAGE_KEY,
+            JSON.stringify({ puuid, settings })
         )
-        window.localStorage.setItem(BUILDER_PUUID_STORAGE_KEY, puuid)
     } catch (error) {
         throw new BuilderStorageError(error)
     } finally {
@@ -129,8 +154,8 @@ export function updateBuilderSettings(
 
     try {
         window.localStorage.setItem(
-            BUILDER_SETTINGS_STORAGE_KEY,
-            JSON.stringify(settings)
+            ACCOUNT_STORAGE_KEY,
+            JSON.stringify({ puuid, settings })
         )
     } catch (error) {
         console.error('[builder] could not store the settings:', error)
@@ -143,8 +168,9 @@ export function updateBuilderSettings(
 
 export function clearBuilderAccount() {
     try {
-        window.localStorage.removeItem(BUILDER_PUUID_STORAGE_KEY)
-        window.localStorage.removeItem(BUILDER_SETTINGS_STORAGE_KEY)
+        window.localStorage.removeItem(ACCOUNT_STORAGE_KEY)
+        window.localStorage.removeItem(LEGACY_PUUID_STORAGE_KEY)
+        window.localStorage.removeItem(LEGACY_SETTINGS_STORAGE_KEY)
     } catch (error) {
         console.error('[builder] could not clear the saved account:', error)
     } finally {

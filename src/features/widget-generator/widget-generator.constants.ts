@@ -11,6 +11,3 @@ export const STYLES = WIDGET_STYLE_OPTIONS.map(
         label,
     })
 )
-
-export const BUILDER_PUUID_STORAGE_KEY = 'statbox.builder.puuid'
-export const BUILDER_SETTINGS_STORAGE_KEY = 'statbox.builder.settings'

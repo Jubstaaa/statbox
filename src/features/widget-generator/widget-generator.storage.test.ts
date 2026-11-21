@@ -1,10 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import {
-    BUILDER_PUUID_STORAGE_KEY,
-    BUILDER_SETTINGS_STORAGE_KEY,
-} from './widget-generator.constants'
 import type { BuilderSettings } from './widget-generator.payload'
 import {
     BuilderStorageError,
@@ -14,6 +10,12 @@ import {
     subscribeToBuilderAccount,
     updateBuilderSettings,
 } from './widget-generator.storage'
+
+// The keys are the on-disk contract with browsers that already saved an
+// account, so they are spelled out rather than imported.
+const ACCOUNT_KEY = 'statbox.builder.account'
+const LEGACY_PUUID_KEY = 'statbox.builder.puuid'
+const LEGACY_SETTINGS_KEY = 'statbox.builder.settings'
 
 const PUUID = 'e'.repeat(78)
 const SETTINGS: BuilderSettings = {
@@ -55,19 +57,88 @@ describe('builder account store', () => {
         expect(getBuilderAccount()?.settings.queue).toBe('flex')
     })
 
-    it('has no account when the settings are missing, so no region is guessed', () => {
-        window.localStorage.setItem(BUILDER_PUUID_STORAGE_KEY, PUUID)
+    it('stores the account and its settings as one record', () => {
+        saveBuilderAccount({ puuid: PUUID, settings: SETTINGS })
+
+        expect(window.localStorage.length).toBe(1)
+        expect(
+            JSON.parse(window.localStorage.getItem(ACCOUNT_KEY) ?? '')
+        ).toEqual({ puuid: PUUID, settings: SETTINGS })
+    })
+
+    // Two keys written one after the other could pair the old PUUID with the
+    // new region when the second write failed. Whatever write fails, the
+    // stored account must be the old one or the new one, never a mix.
+    it('never pairs one account with the settings of another', () => {
+        const next = {
+            puuid: 'h'.repeat(78),
+            settings: { ...SETTINGS, region: 'NA' as const },
+        }
+        saveBuilderAccount({ puuid: PUUID, settings: SETTINGS })
+        const setItem = Storage.prototype.setItem
+        let writes = 0
+        storageSpies.push(
+            vi
+                .spyOn(window.localStorage, 'setItem')
+                .mockImplementation((key: string, value: string) => {
+                    writes += 1
+                    if (writes > 1) {
+                        throw new DOMException('full', 'QuotaExceededError')
+                    }
+                    setItem.call(window.localStorage, key, value)
+                })
+        )
+
+        try {
+            saveBuilderAccount(next)
+        } catch (error) {
+            expect(error).toBeInstanceOf(BuilderStorageError)
+        }
+
+        expect([{ puuid: PUUID, settings: SETTINGS }, next]).toContainEqual(
+            getBuilderAccount()
+        )
+    })
+
+    it('moves an account saved under the two old keys into one record', () => {
+        window.localStorage.setItem(LEGACY_PUUID_KEY, PUUID)
+        window.localStorage.setItem(
+            LEGACY_SETTINGS_KEY,
+            JSON.stringify(SETTINGS)
+        )
+
+        expect(getBuilderAccount()).toEqual({
+            puuid: PUUID,
+            settings: SETTINGS,
+        })
+        expect(window.localStorage.getItem(LEGACY_PUUID_KEY)).toBeNull()
+        expect(window.localStorage.getItem(LEGACY_SETTINGS_KEY)).toBeNull()
+        expect(
+            JSON.parse(window.localStorage.getItem(ACCOUNT_KEY) ?? '')
+        ).toEqual({ puuid: PUUID, settings: SETTINGS })
+    })
+
+    it('has no account when the old keys hold a PUUID without settings, so no region is guessed', () => {
+        window.localStorage.setItem(LEGACY_PUUID_KEY, PUUID)
 
         expect(getBuilderAccount()).toBeNull()
     })
 
     it.each([
-        ['a malformed PUUID', 'not-a-puuid', JSON.stringify(SETTINGS)],
-        ['unparseable settings', PUUID, '{'],
-        ['settings for an unknown region', PUUID, '{"region":"MARS"}'],
-    ])('has no account for %s', (_, puuid, settings) => {
-        window.localStorage.setItem(BUILDER_PUUID_STORAGE_KEY, puuid)
-        window.localStorage.setItem(BUILDER_SETTINGS_STORAGE_KEY, settings)
+        ['a malformed PUUID', { puuid: 'not-a-puuid', settings: SETTINGS }],
+        ['missing settings', { puuid: PUUID }],
+        [
+            'settings for an unknown region',
+            { puuid: PUUID, settings: { ...SETTINGS, region: 'MARS' } },
+        ],
+    ])('has no account for %s', (_, record) => {
+        window.localStorage.setItem(ACCOUNT_KEY, JSON.stringify(record))
+
+        expect(getBuilderAccount()).toBeNull()
+    })
+
+    it('has no account for an unparseable record', () => {
+        window.localStorage.setItem(ACCOUNT_KEY, '{')
 
         expect(getBuilderAccount()).toBeNull()
     })
