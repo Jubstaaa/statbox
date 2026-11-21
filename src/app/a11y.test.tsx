@@ -65,11 +65,28 @@ describe('accessible markup', () => {
 
     it('does not nest buttons in links on the global error page', () => {
         const html = render(
-            <GlobalError error={new Error('boom')} reset={noop} />
+            <GlobalError error={new Error('boom')} retry={noop} />
         )
 
         expect(html).not.toMatch(NESTED_CONTROL)
         expect(html).toMatch(/<a[^>]*href="https:\/\/github.com[^"]*issues/)
+    })
+
+    it('shows the error digest on the global error page, never the raw message', () => {
+        const error = Object.assign(new Error('db password is hunter2'), {
+            digest: '4242',
+        })
+        const html = render(<GlobalError error={error} retry={noop} />)
+
+        expect(html).not.toContain('hunter2')
+        expect(html).toContain('4242')
+        expect(html).toMatch(/<title>[^<]+<\/title>/)
+    })
+
+    it('renders the global error page for a thrown non-Error value', () => {
+        expect(render(<GlobalError error="boom" retry={noop} />)).toContain(
+            'Something broke.'
+        )
     })
 
     it('exposes the selected state of a chip', () => {

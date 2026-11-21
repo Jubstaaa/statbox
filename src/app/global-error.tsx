@@ -2,15 +2,26 @@
 
 import Button, { buttonClassName } from '@/components/button'
 
+// A value thrown in a Client Component arrives as-is, so it may not be an
+// Error; only a server error carries a digest that matches the server logs.
+function digestOf(error: unknown): string | undefined {
+    if (!(error instanceof Error) || !('digest' in error)) return undefined
+
+    return typeof error.digest === 'string' ? error.digest : undefined
+}
+
 export default function GlobalError({
     error,
-    reset,
+    retry,
 }: {
-    error: Error & { digest?: string }
-    reset: () => void
+    error: unknown
+    retry: () => void
 }) {
+    const digest = digestOf(error)
+
     return (
         <html className="dark" lang="en">
+            <title>Something broke · StatBox</title>
             <body className="bg-background text-foreground">
                 <main className="text-text bg-page min-h-screen">
                     <div className="mx-auto flex min-h-screen max-w-3xl items-center px-6 py-16">
@@ -27,14 +38,14 @@ export default function GlobalError({
                                     and if it keeps happening, open an issue on
                                     GitHub.
                                 </p>
-                                {error.message ? (
+                                {digest ? (
                                     <p className="text-text-subtle text-xs">
-                                        {error.message}
+                                        Error reference: {digest}
                                     </p>
                                 ) : null}
                             </div>
                             <div className="flex flex-wrap gap-3">
-                                <Button onClick={reset}>Try again</Button>
+                                <Button onClick={retry}>Try again</Button>
                                 <a
                                     href="https://github.com/Jubstaaa/statbox/issues/new/choose"
                                     rel="noopener noreferrer"
