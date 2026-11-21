@@ -71,6 +71,7 @@ describe('GET /api/summoner/[payload]', () => {
         ['a malformed PUUID', 'x/../../riot/account', '?region=KR'],
         ['a missing region', PUUID, ''],
         ['an unknown region', PUUID, '?region=MARS'],
+        ['an unknown queue', PUUID, '?region=KR&queue=aram'],
         [
             'an oversized payload',
             compressToEncodedURIComponent(

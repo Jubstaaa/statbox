@@ -6,6 +6,7 @@ import {
     buildWidgetUrls,
     decodeWidgetRoutePayload,
     getCurrentDateTimeInputValue,
+    parseWidgetTarget,
     resolveSessionTimestamp,
 } from './widget-generator.payload'
 
@@ -86,6 +87,85 @@ describe('widget route payload', () => {
 
     it.each(['', 'not-lz', '%%%'])('returns null for garbage %j', value => {
         expect(decodeWidgetRoutePayload(value)).toBeNull()
+    })
+})
+
+// The widget page and /api/summoner/[payload] read the same URLs through this
+// one parser, so a link either works on both or fails on both.
+describe('parseWidgetTarget', () => {
+    function parse(segment: string, query = '') {
+        const target = parseWidgetTarget(segment, new URLSearchParams(query))
+        if (!target) return null
+        const { getSession, ...rest } = target
+
+        return { ...rest, session: getSession() }
+    }
+
+    it('reads every setting from a widget payload', () => {
+        const { widgetUrl } = buildWidgetUrls({
+            puuid: PUUID,
+            queue: 'flex',
+            region: 'KR',
+            sessionMode: 'from-time',
+            sessionTime: '2026-11-19T09:30',
+            style: 'topbar',
+        })
+
+        expect(parse(payloadOf(widgetUrl))).toEqual({
+            puuid: PUUID,
+            queue: 'flex',
+            region: 'KR',
+            session: new Date(2026, 10, 19, 9, 30).getTime(),
+            style: 'topbar',
+        })
+    })
+
+    it('rolls an all-day session over at midnight', () => {
+        const { widgetUrl } = buildWidgetUrls({
+            puuid: PUUID,
+            queue: 'solo',
+            region: 'EUW',
+            sessionMode: 'all-day',
+            sessionTime: null,
+            style: 'classic',
+        })
+        const target = parseWidgetTarget(
+            payloadOf(widgetUrl),
+            new URLSearchParams()
+        )
+
+        expect(target?.getSession()).toBe(new Date(2026, 10, 19).getTime())
+        vi.setSystemTime(new Date(2026, 10, 20, 0, 5))
+        expect(target?.getSession()).toBe(new Date(2026, 10, 20).getTime())
+    })
+
+    it('reads a legacy link with the PUUID bare and the rest in the query', () => {
+        expect(
+            parse(PUUID, '?region=EUW&queue=flex&session=1700000000000')
+        ).toEqual({
+            puuid: PUUID,
+            queue: 'flex',
+            region: 'EUW',
+            session: 1_700_000_000_000,
+            style: 'classic',
+        })
+    })
+
+    it('defaults a legacy link to the solo queue and no session', () => {
+        expect(parse(PUUID, '?region=EUW')).toMatchObject({
+            queue: 'solo',
+            session: null,
+        })
+    })
+
+    it.each([
+        ['a legacy segment that is not a PUUID', 'x/../../riot', '?region=EUW'],
+        ['a legacy link without a region', PUUID, ''],
+        ['an unknown region', PUUID, '?region=MARS'],
+        ['an unknown queue', PUUID, '?region=EUW&queue=aram'],
+        ['an oversized segment', 'A'.repeat(600), '?region=EUW'],
+    ])('has no target for %s', (_, segment, query) => {
+        expect(parse(segment, query)).toBeNull()
     })
 })
 

@@ -70,6 +70,60 @@ export function decodeWidgetRoutePayload(
     }
 }
 
+export interface WidgetTarget {
+    // A function, not a value: an all-day session has to roll over at midnight
+    // for an overlay that stays open across it.
+    getSession: () => null | number
+    puuid: string
+    queue: RankedQueue
+    region: Region
+    style: WidgetStyle
+}
+
+// Links from before the payload format carry the PUUID bare, with region,
+// queue and session start in the query string.
+const legacyTargetSchema = z.object({
+    puuid: puuidSchema,
+    queue: rankedQueueSchema.default('solo'),
+    region: regionSchema,
+    session: z.coerce.number().int().positive().optional().catch(undefined),
+})
+
+// The one reader of widget URLs, shared by the widget page and the summoner
+// API so both accept and refuse exactly the same links.
+export function parseWidgetTarget(
+    segment: string,
+    searchParams: URLSearchParams
+): null | WidgetTarget {
+    const decoded = decodeWidgetRoutePayload(segment)
+
+    if (decoded) {
+        return {
+            getSession: () => resolveSessionTimestamp(decoded),
+            puuid: decoded.puuid,
+            queue: decoded.queue,
+            region: decoded.region,
+            style: decoded.style,
+        }
+    }
+
+    const legacy = legacyTargetSchema.safeParse({
+        puuid: segment,
+        queue: searchParams.get('queue') ?? undefined,
+        region: searchParams.get('region'),
+        session: searchParams.get('session') ?? undefined,
+    })
+    if (!legacy.success) return null
+
+    const { session = null, ...target } = legacy.data
+
+    return {
+        ...target,
+        getSession: () => session,
+        style: 'classic',
+    }
+}
+
 export function buildWidgetUrls({
     puuid,
     queue,
