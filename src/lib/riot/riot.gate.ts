@@ -29,20 +29,43 @@ const LONG_WINDOW = { interval: 120_000, limit: 100 }
 const MAX_QUEUE_WAIT_MS = 10_000
 const BUDGET_RETRY_AFTER_SECONDS = 30
 
-// Strict mode is a sliding window, so no alignment with Riot's own windows
-// can let two of ours fit inside one of theirs.
-function createBudget() {
-    const longWindow = pThrottle({ ...LONG_WINDOW, strict: true })
-    const shortWindow = pThrottle({ ...SHORT_WINDOW, strict: true })
+// More calls than this waiting on the short window cannot all start within
+// MAX_QUEUE_WAIT_MS, so the next one is refused before it reserves a slot.
+const SHORT_QUEUE_CAP =
+    (SHORT_WINDOW.limit * MAX_QUEUE_WAIT_MS) / SHORT_WINDOW.interval
 
-    return shortWindow(longWindow(async () => undefined))
+function budgetExhausted() {
+    return new RiotRateLimitedError(BUDGET_RETRY_AFTER_SECONDS)
+}
+
+// Strict mode is a sliding window, so no alignment with Riot's own windows
+// can let two of ours fit inside one of theirs. The long window sits inside
+// the short one, so its slots are taken when the call is actually sent.
+//
+// p-throttle reserves a slot when a call is queued and cannot give it back,
+// so a slot reserved for a caller that then gave up is spent on nothing.
+// Hence: a caller that timed out never reaches the long window, and nobody
+// queues behind a long-window reservation, which is two minutes away at
+// worst. At most one reservation per region can go unused.
+function createBudget() {
+    const longWindow = pThrottle({ ...LONG_WINDOW, strict: true })(() =>
+        Promise.resolve()
+    )
+    const shortWindow = pThrottle({ ...SHORT_WINDOW, strict: true })((
+        signal: AbortSignal
+    ) => {
+        signal.throwIfAborted()
+        if (longWindow.queueSize > 0) throw budgetExhausted()
+
+        return longWindow()
+    })
+
+    return { longWindow, shortWindow }
 }
 
 const budgets = new Map<string, ReturnType<typeof createBudget>>()
 
 // Resolves once both windows have room for one more call on `routing`.
-// A caller that gave up still uses the slot it reserved, so the local
-// count only ever overestimates what Riot has seen.
 async function waitForBudget(routing: string) {
     let budget = budgets.get(routing)
     if (!budget) {
@@ -50,10 +73,23 @@ async function waitForBudget(routing: string) {
         budgets.set(routing, budget)
     }
 
-    await pTimeout(budget(), {
-        message: new RiotRateLimitedError(BUDGET_RETRY_AFTER_SECONDS),
-        milliseconds: MAX_QUEUE_WAIT_MS,
-    })
+    if (
+        budget.longWindow.queueSize > 0 ||
+        budget.shortWindow.queueSize >= SHORT_QUEUE_CAP
+    ) {
+        throw budgetExhausted()
+    }
+
+    const gaveUp = new AbortController()
+    try {
+        await pTimeout(budget.shortWindow(gaveUp.signal), {
+            message: budgetExhausted(),
+            milliseconds: MAX_QUEUE_WAIT_MS,
+        })
+    } catch (error) {
+        gaveUp.abort()
+        throw error
+    }
 }
 
 function remainingSeconds(routing: string, now: number): number {

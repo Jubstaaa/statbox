@@ -206,6 +206,28 @@ describe('callRiot', () => {
             expect((error as RiotRateLimitedError).retryAfterSeconds).toBe(30)
         })
 
+        // Ten cold widgets on one regional value ask for about 220 calls at
+        // once. Callers that give up must not leave slots reserved for later,
+        // or the region answers 503 for minutes while Riot's quota sits idle.
+        it('serves a call as soon as the window has room after a burst', async () => {
+            const { request, results } = callMany('vn2', 220)
+            await vi.advanceTimersByTimeAsync(20_000)
+            const outcomes = await Promise.all(results)
+            expect(request).toHaveBeenCalledTimes(100)
+            expect(
+                outcomes.filter(
+                    outcome => outcome instanceof RiotRateLimitedError
+                )
+            ).toHaveLength(120)
+
+            await vi.advanceTimersByTimeAsync(105_000)
+            const next = callLate('vn2', request)
+            await vi.advanceTimersByTimeAsync(2000)
+
+            expect(next.isSettled()).toBe(true)
+            expect(await next.result).toBe('ok')
+        })
+
         it('keeps the budgets of routing values apart', async () => {
             callMany('ph2', 25)
             const { request } = callMany('oc1', 20)
