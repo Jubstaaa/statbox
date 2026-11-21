@@ -64,7 +64,10 @@ export default function PrivacyPage() {
                             for six hours, ranked data for a day, and match
                             details for up to 90 days per PUUID. Cached entries
                             are not shared with anyone and are removed once they
-                            expire.
+                            expire. Each deploy first copies the cache to a
+                            dated snapshot on the same server so a bad release
+                            can be rolled back; the newest three snapshots are
+                            kept and older ones are deleted.
                         </p>
                     </section>
 

@@ -17,6 +17,10 @@ describe('privacy page', () => {
         expect(text).toContain('PUUID')
     })
 
+    it('discloses the cache snapshots each deploy keeps', () => {
+        expect(pageText()).toMatch(/three[^.]*snapshots/i)
+    })
+
     it('names Cloudflare among the services that see requests', () => {
         expect(pageText()).toContain('Cloudflare')
     })
