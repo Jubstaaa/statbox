@@ -1,8 +1,14 @@
 import ProfileIcon from '@/features/widget/profile-icon'
 import { cn } from '@/lib/cn'
+import type { RiotData } from '@/lib/riot/riot.types'
 
-import type { PlayerSummaryProps } from './widget.types'
 import { formatTierRank } from './widget.utils'
+
+interface PlayerSummaryProps {
+    data: RiotData
+    size?: 'sm' | 'md'
+    tierColor: string
+}
 
 export default function PlayerSummary({
     data,

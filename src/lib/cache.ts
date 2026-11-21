@@ -9,11 +9,6 @@ import { type Client, createClient } from '@libsql/client'
 // costs quota, not just latency.
 
 interface CacheSetOptions {
-    // Accepted so call sites read the same as they did on Vercel, and then
-    // ignored: nothing in this app invalidates by tag, so persisting them would
-    // be dead weight. If tag invalidation is ever needed, that is the moment to
-    // add a tags table — not before.
-    tags?: string[]
     ttl?: number
 }
 

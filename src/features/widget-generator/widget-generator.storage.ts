@@ -1,77 +1,185 @@
+import { useSyncExternalStore } from 'react'
+
 import { z } from 'zod'
 
-import {
-    rankedQueueSchema,
-    regionSchema,
-    widgetStyleSchema,
-} from '@/lib/riot/riot.schemas'
+import { puuidSchema } from '@/lib/riot/riot.schemas'
 
 import {
-    BUILDER_PUUID_STORAGE_KEY,
-    BUILDER_SETTINGS_STORAGE_KEY,
-} from './widget-generator.constants'
-import {
-    sessionDateTimeSchema,
-    sessionModeSchema,
+    type BuilderSettings,
+    builderSettingsSchema,
 } from './widget-generator.payload'
-import type { BuilderSettings } from './widget-generator.types'
 
-const builderSettingsSchema = z.object({
-    queue: rankedQueueSchema,
-    region: regionSchema,
-    sessionMode: sessionModeSchema,
-    sessionTime: sessionDateTimeSchema.nullable(),
-    style: widgetStyleSchema,
+interface BuilderAccount {
+    puuid: string
+    settings: BuilderSettings
+}
+
+// The PUUID and its settings are one record under one key: a PUUID without
+// its settings has no region, and guessing one sends every Riot call to the
+// wrong platform. A single setItem either stores the whole record or nothing.
+const ACCOUNT_STORAGE_KEY = 'statbox.builder.account'
+// Where builds before the single record kept the two halves.
+const LEGACY_PUUID_STORAGE_KEY = 'statbox.builder.puuid'
+const LEGACY_SETTINGS_STORAGE_KEY = 'statbox.builder.settings'
+
+const builderAccountSchema = z.object({
+    puuid: z.string().trim().pipe(puuidSchema),
+    settings: builderSettingsSchema,
 })
 
-export function getStoredBuilderPuuid() {
-    if (typeof window === 'undefined') return null
-
-    const puuid = window.localStorage.getItem(BUILDER_PUUID_STORAGE_KEY)?.trim()
-    if (!puuid) return null
-
-    return puuid
-}
-
-export function setStoredBuilderPuuid(puuid: string) {
-    if (typeof window === 'undefined') return
-
-    window.localStorage.setItem(BUILDER_PUUID_STORAGE_KEY, puuid)
-}
-
-export function clearStoredBuilderPuuid() {
-    if (typeof window === 'undefined') return
-
-    window.localStorage.removeItem(BUILDER_PUUID_STORAGE_KEY)
-}
-
-export function getStoredBuilderSettings(): BuilderSettings | null {
-    if (typeof window === 'undefined') return null
-
+function parseJson(raw: null | string): unknown {
+    if (raw === null) return null
     try {
-        const raw = window.localStorage.getItem(BUILDER_SETTINGS_STORAGE_KEY)
-        if (!raw) return null
-
-        const parsed = builderSettingsSchema.safeParse(JSON.parse(raw))
-        if (!parsed.success) return null
-
-        return parsed.data
+        return JSON.parse(raw) as unknown
     } catch {
         return null
     }
 }
 
-export function setStoredBuilderSettings(settings: BuilderSettings) {
-    if (typeof window === 'undefined') return
+export class BuilderStorageError extends Error {
+    constructor(cause: unknown) {
+        super('The browser refused to store the builder account', { cause })
+        this.name = 'BuilderStorageError'
+    }
+}
 
-    window.localStorage.setItem(
-        BUILDER_SETTINGS_STORAGE_KEY,
-        JSON.stringify(settings)
+const listeners = new Set<() => void>()
+let snapshot: undefined | { account: BuilderAccount | null; key: null | string }
+let reportedBlockedStorage = false
+
+function notify() {
+    for (const listener of listeners) listener()
+}
+
+function reportBlockedStorage(error: unknown) {
+    if (reportedBlockedStorage) return
+    reportedBlockedStorage = true
+    console.warn('[builder] browser storage is unavailable:', error)
+}
+
+// Builds before the single record kept the account under two keys. Reading
+// them is pure, so getBuilderAccount stays safe to call during render.
+function readLegacyRecord(storage: Storage): null | string {
+    const puuid = storage.getItem(LEGACY_PUUID_STORAGE_KEY)
+    const settings = parseJson(storage.getItem(LEGACY_SETTINGS_STORAGE_KEY))
+    const parsed = builderAccountSchema.safeParse({ puuid, settings })
+
+    return parsed.success ? JSON.stringify(parsed.data) : null
+}
+
+// Storage can be blocked outright (site data disabled, some private modes);
+// the builder then simply has no saved account. Warned once, not per render.
+function readStorage(): null | string {
+    try {
+        const storage = window.localStorage
+
+        return storage.getItem(ACCOUNT_STORAGE_KEY) ?? readLegacyRecord(storage)
+    } catch (error) {
+        reportBlockedStorage(error)
+
+        return null
+    }
+}
+
+// Moves a legacy account into the single record. Runs on subscribe, which
+// React calls after render. If the browser refuses the write, the account
+// is still read from the old keys and the move is tried again next time.
+function migrateLegacyAccount() {
+    try {
+        const storage = window.localStorage
+        if (storage.getItem(ACCOUNT_STORAGE_KEY) !== null) return
+
+        const record = readLegacyRecord(storage)
+        if (record === null) return
+
+        storage.setItem(ACCOUNT_STORAGE_KEY, record)
+        storage.removeItem(LEGACY_PUUID_STORAGE_KEY)
+        storage.removeItem(LEGACY_SETTINGS_STORAGE_KEY)
+    } catch (error) {
+        reportBlockedStorage(error)
+    }
+}
+
+export function subscribeToBuilderAccount(listener: () => void) {
+    migrateLegacyAccount()
+    listeners.add(listener)
+    // Another tab connecting or changing the account.
+    window.addEventListener('storage', listener)
+
+    return () => {
+        listeners.delete(listener)
+        window.removeEventListener('storage', listener)
+    }
+}
+
+export function getBuilderAccount(): BuilderAccount | null {
+    if (typeof window === 'undefined') return null
+
+    const key = readStorage()
+
+    // useSyncExternalStore needs the same object back while storage is unchanged.
+    if (snapshot?.key !== key) {
+        const parsed = builderAccountSchema.safeParse(parseJson(key))
+        snapshot = { account: parsed.success ? parsed.data : null, key }
+    }
+
+    return snapshot.account
+}
+
+export function useBuilderAccount() {
+    return useSyncExternalStore(
+        subscribeToBuilderAccount,
+        getBuilderAccount,
+        () => null
     )
 }
 
-export function clearStoredBuilderSettings() {
-    if (typeof window === 'undefined') return
+// Throws BuilderStorageError: connecting an account that cannot be kept would
+// look like success and then lose it on the next page.
+export function saveBuilderAccount({ puuid, settings }: BuilderAccount) {
+    try {
+        window.localStorage.setItem(
+            ACCOUNT_STORAGE_KEY,
+            JSON.stringify({ puuid, settings })
+        )
+    } catch (error) {
+        throw new BuilderStorageError(error)
+    } finally {
+        notify()
+    }
+}
 
-    window.localStorage.removeItem(BUILDER_SETTINGS_STORAGE_KEY)
+// Writes only when `puuid` is still the stored account, so a page opened for
+// one account never overwrites the settings of one another tab connected.
+// Returns whether the settings were stored.
+export function updateBuilderSettings(
+    puuid: string,
+    settings: BuilderSettings
+): boolean {
+    if (getBuilderAccount()?.puuid !== puuid) return false
+
+    try {
+        window.localStorage.setItem(
+            ACCOUNT_STORAGE_KEY,
+            JSON.stringify({ puuid, settings })
+        )
+    } catch (error) {
+        console.error('[builder] could not store the settings:', error)
+        return false
+    }
+
+    notify()
+    return true
+}
+
+export function clearBuilderAccount() {
+    try {
+        window.localStorage.removeItem(ACCOUNT_STORAGE_KEY)
+        window.localStorage.removeItem(LEGACY_PUUID_STORAGE_KEY)
+        window.localStorage.removeItem(LEGACY_SETTINGS_STORAGE_KEY)
+    } catch (error) {
+        console.error('[builder] could not clear the saved account:', error)
+    } finally {
+        notify()
+    }
 }

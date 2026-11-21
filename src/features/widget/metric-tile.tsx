@@ -1,7 +1,6 @@
 import { cn } from '@/lib/cn'
 
 import { GAME_COLORS } from './widget.constants'
-import type { MetricTileProps } from './widget.types'
 
 const TONE_STYLES = {
     blue: {
@@ -11,6 +10,12 @@ const TONE_STYLES = {
     loss: { bg: 'bg-loss/8 border-loss/25', text: 'text-loss' },
     win: { bg: 'bg-win/8 border-win/25', text: 'text-win' },
 } as const
+
+interface MetricTileProps {
+    label: string
+    tone: 'win' | 'loss' | 'blue'
+    value: string
+}
 
 export default function MetricTile({ label, tone, value }: MetricTileProps) {
     const { bg: bgClass, text: textClass } = TONE_STYLES[tone]

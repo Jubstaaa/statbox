@@ -8,8 +8,9 @@ const { RIOT_API_KEY } = z
     .parse(process.env)
 
 const options = {
-    // A cold widget fans out into about two dozen calls; capping the in-flight
-    // ones keeps a burst of new widgets from tripping Riot's per-second limit.
+    // Bounds the open sockets a cold widget's two dozen calls can hold at once.
+    // It does not bound calls per second: the per-routing budget is in
+    // riot.gate.ts.
     concurrency: 8,
     key: RIOT_API_KEY,
     // 429s are handled by callRiot (riot.gate.ts), which honours Retry-After

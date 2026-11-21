@@ -1,4 +1,6 @@
-import type { SectionLabelProps } from './widget.types'
+interface SectionLabelProps {
+    children: React.ReactNode
+}
 
 export default function SectionLabel({ children }: SectionLabelProps) {
     return (

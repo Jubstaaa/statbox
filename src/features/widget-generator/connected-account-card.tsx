@@ -1,4 +1,3 @@
-import type { UseQueryResult } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 
 import Button from '@/components/button'
@@ -7,16 +6,25 @@ import PlayerSummary from '@/features/widget/player-summary'
 import { TIER_COLORS } from '@/features/widget/widget.constants'
 import type { RiotData } from '@/lib/riot/riot.types'
 
+import { describeSavedAccountError } from './widget-generator.messages'
+
 interface ConnectedAccountCardProps {
-    query: UseQueryResult<RiotData>
+    query: {
+        data: RiotData | undefined
+        error: unknown
+        isError: boolean
+        isLoading: boolean
+    }
     onChangeAccount: () => void
     onOpenBuilder: () => void
+    onRetry: () => void
 }
 
 export default function ConnectedAccountCard({
     query,
     onChangeAccount,
     onOpenBuilder,
+    onRetry,
 }: ConnectedAccountCardProps) {
     if (query.isLoading) {
         return (
@@ -38,21 +46,33 @@ export default function ConnectedAccountCard({
     }
 
     if (query.isError || !query.data) {
+        const { message, needsNewAccount } = describeSavedAccountError(
+            query.error
+        )
+
         return (
             <Card className="border-loss/25 bg-loss/8 space-y-4 rounded-4xl border p-5">
                 <div>
                     <p className="text-loss text-[11px] font-semibold tracking-[0.22em] uppercase">
                         Saved account unavailable
                     </p>
-                    <p className="text-text-muted mt-1 text-sm">
-                        The last connected account could not be restored. Pick
-                        another account to continue.
+                    <p className="text-text-muted mt-1 text-sm" role="alert">
+                        {message}
                     </p>
                 </div>
 
-                <Button fullWidth variant="secondary" onClick={onChangeAccount}>
-                    Change account
-                </Button>
+                {needsNewAccount ? (
+                    <Button
+                        fullWidth
+                        variant="secondary"
+                        onClick={onChangeAccount}>
+                        Change account
+                    </Button>
+                ) : (
+                    <Button fullWidth variant="secondary" onClick={onRetry}>
+                        Try again
+                    </Button>
+                )}
             </Card>
         )
     }

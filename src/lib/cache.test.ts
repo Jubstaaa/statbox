@@ -59,13 +59,6 @@ describe('getCache', () => {
         expect(await other.get('shared')).toBe('other-value')
     })
 
-    it('accepts tags without persisting them', async () => {
-        const cache = getCache({ namespace: 'test' })
-        await cache.set('tagged', 'value', { tags: ['puuid:x'], ttl: 60 })
-
-        expect(await cache.get('tagged')).toBe('value')
-    })
-
     // A cache must never fail a request: every Riot call has a live fallback, so
     // an unusable database has to degrade to a miss rather than throw. The spy is
     // what makes this meaningful — without asserting that the failure was actually

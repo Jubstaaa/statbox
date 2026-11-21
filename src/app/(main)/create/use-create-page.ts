@@ -1,33 +1,31 @@
 import type { ChangeEvent } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { skipToken, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 
-import { fetchSummonerByPuuid } from '@/features/widget-generator/widget-generator.api'
+import { summonerQueryOptions } from '@/features/widget-generator/widget-generator.api'
 import {
+    type BuilderSettings,
     buildSessionTimestampFromTime,
     buildWidgetUrls,
     getCurrentDateTimeInputValue,
     resolveSessionTimestamp,
+    type SessionMode,
 } from '@/features/widget-generator/widget-generator.payload'
 import {
-    clearStoredBuilderPuuid,
-    clearStoredBuilderSettings,
-    getStoredBuilderPuuid,
-    getStoredBuilderSettings,
-    setStoredBuilderSettings,
+    clearBuilderAccount,
+    updateBuilderSettings,
+    useBuilderAccount,
 } from '@/features/widget-generator/widget-generator.storage'
-import type {
-    SessionMode,
-    WidgetUrls,
-} from '@/features/widget-generator/widget-generator.types'
 import { TIER_COLORS } from '@/features/widget/widget.constants'
 import { useHydrationReady } from '@/hooks/use-hydration-ready'
 import type { RankedQueue, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
 interface CreatePageState {
     createStyleSelectHandler: (value: WidgetStyle) => () => void
+    // The failed lookup, so the error state can say why.
+    error: unknown
     handleAllDaySession: () => void
     handleChangeAccount: () => void
     handleFlexQueue: () => void
@@ -42,130 +40,114 @@ interface CreatePageState {
     queue: RankedQueue
     sessionMode: SessionMode
     sessionTime: string
+    // The browser refused the last change, so the widget URL still holds
+    // the previous settings.
+    settingsNotSaved: boolean
     storageReady: boolean
     style: WidgetStyle
     summonerData: RiotData | null
     tierColor: string
-    urls: WidgetUrls | null
+    urls: null | ReturnType<typeof buildWidgetUrls>
 }
 
+// The saved account is the single source of truth: every change is written
+// to it and read back through the store, so another tab connecting or
+// disconnecting an account shows up here too.
 export function useCreatePage(): CreatePageState {
     const router = useRouter()
-
-    const [maxSessionTime] = useState(() => getCurrentDateTimeInputValue())
-    const [puuid] = useState<string | null>(() => getStoredBuilderPuuid())
-    const [style, setStyle] = useState<WidgetStyle>(
-        () => getStoredBuilderSettings()?.style ?? 'classic'
-    )
-    const [queue, setQueue] = useState<RankedQueue>(
-        () => getStoredBuilderSettings()?.queue ?? 'solo'
-    )
-    const [region] = useState(() => getStoredBuilderSettings()?.region ?? 'EUW')
-    const [sessionMode, setSessionMode] = useState<SessionMode>(
-        () => getStoredBuilderSettings()?.sessionMode ?? 'all-day'
-    )
-    const [sessionTime, setSessionTime] = useState<string>(
-        () =>
-            getStoredBuilderSettings()?.sessionTime ??
-            getCurrentDateTimeInputValue()
-    )
     const storageReady = useHydrationReady()
+    const account = useBuilderAccount()
+    const [maxSessionTime] = useState(getCurrentDateTimeInputValue)
+    const [settingsNotSaved, setSettingsNotSaved] = useState(false)
+
+    const puuid = account?.puuid ?? null
+    const settings = account?.settings ?? null
+    // What the start-time input shows while a session has no start yet.
+    const sessionTime = settings?.sessionTime ?? maxSessionTime
 
     useEffect(() => {
-        if (!storageReady) return
+        if (storageReady && !account) router.replace('/')
+    }, [account, router, storageReady])
 
-        setStoredBuilderSettings({
-            queue,
-            region,
-            sessionMode,
-            sessionTime,
-            style,
-        })
-    }, [queue, region, sessionMode, sessionTime, storageReady, style])
+    const update = useCallback(
+        (change: Partial<BuilderSettings>) => {
+            if (!account) return
 
-    useEffect(() => {
-        if (storageReady && !puuid) router.replace('/')
-    }, [puuid, router, storageReady])
+            const saved = updateBuilderSettings(account.puuid, {
+                ...account.settings,
+                ...change,
+            })
+            setSettingsNotSaved(!saved)
+        },
+        [account]
+    )
 
     const summonerQuery = useQuery({
+        ...summonerQueryOptions(
+            account && { puuid: account.puuid, ...account.settings }
+        ),
         placeholderData: previousData => previousData,
-        queryFn: puuid
-            ? () => fetchSummonerByPuuid({ puuid, queue, region })
-            : skipToken,
-        queryKey: ['summoner', puuid, region, queue],
     })
 
-    const urls = useMemo(() => {
-        if (!puuid) return null
-
-        return buildWidgetUrls({
-            puuid,
-            queue,
-            region,
-            sessionMode,
-            sessionTime,
-            style,
-        })
-    }, [puuid, queue, region, sessionMode, sessionTime, style])
-
-    const previewSession = useMemo(
-        () => resolveSessionTimestamp({ sessionMode, sessionTime }),
-        [sessionMode, sessionTime]
-    )
-
-    const tierColor = useMemo(
+    const urls = useMemo(
         () =>
-            summonerQuery.data
-                ? (TIER_COLORS[summonerQuery.data.tier] ?? TIER_COLORS.UNRANKED)
-                : TIER_COLORS.UNRANKED,
-        [summonerQuery.data]
+            account
+                ? buildWidgetUrls({ puuid: account.puuid, ...account.settings })
+                : null,
+        [account]
     )
+
+    const previewSession = settings ? resolveSessionTimestamp(settings) : null
+
+    const tierColor = summonerQuery.data
+        ? (TIER_COLORS[summonerQuery.data.tier] ?? TIER_COLORS.UNRANKED)
+        : TIER_COLORS.UNRANKED
 
     const handleAllDaySession = useCallback(() => {
-        setSessionMode('all-day')
-    }, [])
+        update({ sessionMode: 'all-day' })
+    }, [update])
 
     const handleFromTimeSession = useCallback(() => {
-        setSessionMode('from-time')
-        setSessionTime(currentValue =>
-            buildSessionTimestampFromTime(currentValue) === null
-                ? getCurrentDateTimeInputValue()
-                : currentValue
-        )
-    }, [])
+        update({
+            sessionMode: 'from-time',
+            sessionTime:
+                buildSessionTimestampFromTime(sessionTime) === null
+                    ? getCurrentDateTimeInputValue()
+                    : sessionTime,
+        })
+    }, [sessionTime, update])
 
     const handleSessionTimeChange = useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
             if (buildSessionTimestampFromTime(event.target.value) === null)
                 return
 
-            setSessionTime(event.target.value)
+            update({ sessionTime: event.target.value })
         },
-        []
+        [update]
     )
 
     const handleChangeAccount = useCallback(() => {
-        clearStoredBuilderPuuid()
-        clearStoredBuilderSettings()
-        router.push('/')
-    }, [router])
+        clearBuilderAccount()
+    }, [])
 
     const createStyleSelectHandler = useCallback(
         (value: WidgetStyle) => () => {
-            setStyle(value)
+            update({ style: value })
         },
-        []
+        [update]
     )
 
     const handleSoloQueue = useCallback(() => {
-        setQueue('solo')
-    }, [])
+        update({ queue: 'solo' })
+    }, [update])
     const handleFlexQueue = useCallback(() => {
-        setQueue('flex')
-    }, [])
+        update({ queue: 'flex' })
+    }, [update])
 
     return {
         createStyleSelectHandler,
+        error: summonerQuery.error,
         handleAllDaySession,
         handleChangeAccount,
         handleFlexQueue,
@@ -177,11 +159,12 @@ export function useCreatePage(): CreatePageState {
         maxSessionTime,
         previewSession,
         puuid,
-        queue,
-        sessionMode,
+        queue: settings?.queue ?? 'solo',
+        sessionMode: settings?.sessionMode ?? 'all-day',
         sessionTime,
+        settingsNotSaved,
         storageReady,
-        style,
+        style: settings?.style ?? 'classic',
         summonerData: summonerQuery.data ?? null,
         tierColor,
         urls,

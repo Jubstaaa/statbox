@@ -84,7 +84,33 @@ bun run depcruise     # dependency rules (cycles, orphans, layering)
 - Riot API requests run server-side only
 - `/create` and `/widget` are excluded from indexing
 - The app stores builder preferences in browser local storage
-- A Riot production key is required for public production usage
+- The deployed key is a personal key; a production key is optional (see below)
+
+## Riot API key and rate budget
+
+The deployed instance runs on a Riot **personal** API key. Its limits are
+counted per routing value (`euw1`, `europe`, `americas`, …):
+
+- 20 calls per 1 second
+- 100 calls per 2 minutes
+
+`src/lib/riot/riot.gate.ts` keeps every routing value inside both windows
+(sliding, so they cannot line up with Riot's to double a burst). What that
+means for widgets:
+
+- A **cold** widget (nothing cached yet) costs about 25 calls, 22 of them on
+  the shared regional value, so about four new widgets per region fit in two
+  minutes.
+- A **warm** widget polls every 2 minutes against data cached for 5, which
+  costs about two calls per 5 minutes: roughly a hundred open widgets per
+  region once they are warm.
+- When the budget is spent, a call that cannot start within 10 s is answered
+  with `503` and `Retry-After: 30`; an open widget keeps its last data and
+  polls again.
+
+A Riot **production** key is optional. If the instance moves to one, raise
+`SHORT_WINDOW` and `LONG_WINDOW` in `riot.gate.ts` to the limits Riot grants
+it; nothing else changes.
 
 ## Legal
 
