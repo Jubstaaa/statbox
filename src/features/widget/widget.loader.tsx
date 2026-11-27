@@ -2,6 +2,7 @@ import Spinner from '@/components/spinner'
 import { cn } from '@/lib/cn'
 
 import type { WidgetFrameProps } from './widget.types'
+
 import { getWidgetHeight, getWidgetWidth } from './widget.utils'
 
 export default function WidgetLoader({ style }: WidgetFrameProps) {
@@ -10,13 +11,13 @@ export default function WidgetLoader({ style }: WidgetFrameProps) {
 
     return (
         <div
-            style={{ height, width }}
             className={cn(
                 'border-hover border bg-[linear-gradient(180deg,rgba(16,32,51,0.95)_0%,rgba(7,17,31,0.98)_100%)]',
                 style === 'topbar'
                     ? 'flex items-center justify-center gap-2 overflow-hidden rounded-xl border-white/10 px-3'
                     : 'flex flex-col items-center justify-center gap-2.5 rounded-[18px] p-3.5'
-            )}>
+            )}
+            style={{ height, width }}>
             <Spinner
                 className={cn(
                     'shrink-0',

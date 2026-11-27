@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 export interface BadgeProps {
     children: ReactNode
     className?: string
-    tone?: 'default' | 'accent' | 'success'
+    tone?: 'accent' | 'default' | 'success'
 }
 
 const tones = {

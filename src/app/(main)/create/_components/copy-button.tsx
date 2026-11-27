@@ -1,8 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-
 import { Check, Copy, X } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 
 import Button from '@/components/button'
 
@@ -16,8 +15,7 @@ const RESET_AFTER_MS = 2000
 
 const ANNOUNCEMENTS: Record<CopyState, string> = {
     copied: 'Copied',
-    // Clipboard access can be denied (permissions, insecure context); the URL
-    // is still on screen to copy by hand.
+
     failed: 'Copy failed, select the URL and copy it manually',
     idle: '',
 }
@@ -53,7 +51,7 @@ export default function CreateCopyButton({ text }: CopyButtonProps) {
 
     return (
         <>
-            <Button size="sm" variant="outline" onClick={handleCopy}>
+            <Button onClick={handleCopy} size="sm" variant="outline">
                 <Icon
                     aria-hidden="true"
                     className={

@@ -1,7 +1,6 @@
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import type { Cache } from './cache'
@@ -13,7 +12,7 @@ let checkCacheHealth: () => Promise<void>
 
 beforeAll(async () => {
     process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
-    // Imported after the env var is set: the client reads it on first use.
+
     ;({ checkCacheHealth, getCache } = await import('./cache'))
 })
 
@@ -60,10 +59,6 @@ describe('getCache', () => {
         expect(await other.get('shared')).toBe('other-value')
     })
 
-    // A cache must never fail a request: every Riot call has a live fallback, so
-    // an unusable database has to degrade to a miss rather than throw. The spy is
-    // what makes this meaningful — without asserting that the failure was actually
-    // reported, a module that quietly kept using the working database would pass.
     it('degrades to a miss and reports when the database cannot be opened', async () => {
         vi.resetModules()
         process.env.CACHE_DATABASE_URI = 'file:/nonexistent-dir/cache.db'
@@ -90,8 +85,6 @@ describe('checkCacheHealth', () => {
         await expect(checkCacheHealth()).resolves.toBeUndefined()
     })
 
-    // A bind mount pointing at an empty directory (wrong DATA_DIR, a rebuilt
-    // host) must fail the gate: the check reads, it never creates the table.
     it('rejects a database that has no cache table, and leaves it without one', async () => {
         vi.resetModules()
         const emptyPath = join(dir, 'empty.db')
@@ -105,8 +98,6 @@ describe('checkCacheHealth', () => {
         process.env.CACHE_DATABASE_URI = `file:${join(dir, 'cache.db')}`
     })
 
-    // Unlike reads and writes, the health check must fail loudly: it is what
-    // the deploy waits on before keeping a release.
     it('rejects when the database cannot be opened', async () => {
         vi.resetModules()
         process.env.CACHE_DATABASE_URI = 'file:/nonexistent-dir/cache.db'

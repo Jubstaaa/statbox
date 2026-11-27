@@ -1,10 +1,6 @@
 import { SummonerRequestError } from './widget-generator.api'
 import { BuilderStorageError } from './widget-generator.storage'
 
-function statusOf(error: unknown) {
-    return error instanceof SummonerRequestError ? error.status : null
-}
-
 export function describeLookupError(error: unknown) {
     if (error instanceof BuilderStorageError) {
         return 'Your browser would not let StatBox save the account. Allow site data for statbox.live and try again.'
@@ -22,8 +18,6 @@ export function describeLookupError(error: unknown) {
     }
 }
 
-// The saved account was not typed just now: a busy or unreachable Riot is
-// waited out, and only a missing or invalid account needs a new one.
 export function describeSavedAccountError(error: unknown) {
     switch (statusOf(error)) {
         case 400:
@@ -52,8 +46,6 @@ export function describeSavedAccountError(error: unknown) {
     }
 }
 
-// Shown inside a stream overlay, so it is short; the widget keeps polling
-// on its own, which is what "retrying" promises.
 export function describeWidgetError(error: unknown) {
     if (error === null) return 'Invalid widget link'
 
@@ -67,4 +59,8 @@ export function describeWidgetError(error: unknown) {
         default:
             return 'Riot unreachable, retrying…'
     }
+}
+
+function statusOf(error: unknown) {
+    return error instanceof SummonerRequestError ? error.status : null
 }

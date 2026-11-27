@@ -1,6 +1,15 @@
 import { Constants } from 'twisted'
 import { z } from 'zod'
 
+import type {
+    MatchEntry,
+    RankedQueue,
+    Region,
+    RiotData,
+    TwistedRegion,
+    TwistedRegionGroup,
+} from './riot.types'
+
 import { cachedLoader } from './riot.cache'
 import { lolApi, riotApi } from './riot.client'
 import {
@@ -12,14 +21,6 @@ import {
 import { isRiotNotFound } from './riot.errors'
 import { callRiot } from './riot.gate'
 import { riotDataSchema } from './riot.schemas'
-import type {
-    MatchEntry,
-    RankedQueue,
-    Region,
-    RiotData,
-    TwistedRegion,
-    TwistedRegionGroup,
-} from './riot.types'
 
 const { RegionGroups: RG, Regions: R } = Constants
 
@@ -158,45 +159,16 @@ const getMatchDetail = cachedLoader({
                 queueId: info.queueId,
             }
         } catch (error) {
-            // A match id from the list that Riot no longer serves is skipped;
-            // anything else (429, 5xx) must fail the widget, not shrink it.
             if (isRiotNotFound(error)) return null
             throw error
         }
     },
     schema: matchDetailSchema,
-    // A finished match never changes.
+
     ttlSeconds: detail => (detail ? 90 * DAY : DAY),
 })
 
 type MatchDetail = NonNullable<z.infer<typeof matchDetailSchema>>
-
-function toMatchEntry(
-    match: MatchDetail | null,
-    puuid: string,
-    queue: RankedQueue
-): MatchEntry[] {
-    if (match?.queueId !== QUEUE[queue].id) return []
-
-    const participant = match.participants.find(p => p.puuid === puuid)
-    if (!participant) return []
-
-    return [
-        {
-            assists: participant.assists,
-            champion: participant.championName,
-            championId: participant.championId,
-            deaths: participant.deaths,
-            isRemake:
-                participant.gameEndedInEarlySurrender ||
-                match.gameDuration < REMAKE_DURATION_THRESHOLD_SECONDS,
-            kills: participant.kills,
-            matchId: match.matchId,
-            timestamp: new Date(match.gameEndTimestamp).toISOString(),
-            win: participant.win,
-        },
-    ]
-}
 
 async function buildRiotData(
     puuid: string,
@@ -243,6 +215,33 @@ async function buildRiotData(
     }
 }
 
+function toMatchEntry(
+    match: MatchDetail | null,
+    puuid: string,
+    queue: RankedQueue
+): MatchEntry[] {
+    if (match?.queueId !== QUEUE[queue].id) return []
+
+    const participant = match.participants.find(p => p.puuid === puuid)
+    if (!participant) return []
+
+    return [
+        {
+            assists: participant.assists,
+            champion: participant.championName,
+            championId: participant.championId,
+            deaths: participant.deaths,
+            isRemake:
+                participant.gameEndedInEarlySurrender ||
+                match.gameDuration < REMAKE_DURATION_THRESHOLD_SECONDS,
+            kills: participant.kills,
+            matchId: match.matchId,
+            timestamp: new Date(match.gameEndTimestamp).toISOString(),
+            win: participant.win,
+        },
+    ]
+}
+
 export const fetchRiotDataByPuuid = cachedLoader({
     key: ([puuid, region, queue]) => `widget:${region}:${queue}:${puuid}`,
     load: buildRiotData,
@@ -253,7 +252,6 @@ export const fetchRiotDataByPuuid = cachedLoader({
 const resolvedRiotIdSchema = z.object({ puuid: z.string().nullable() })
 
 const resolveRiotId = cachedLoader({
-    // Riot IDs are case-insensitive, so every spelling shares one entry.
     key: ([name, tag, region]) =>
         `riot-id:${accountRoute(region)}:${name.toLowerCase()}#${tag.toLowerCase()}`,
     load: async (name: string, tag: string, region: Region) => {
@@ -271,8 +269,7 @@ const resolveRiotId = cachedLoader({
         }
     },
     schema: resolvedRiotIdSchema,
-    // Misses are remembered briefly so repeated typos or scans cost one call,
-    // but a freshly renamed account is found again within minutes.
+
     ttlSeconds: ({ puuid }) => (puuid ? DAY : 10 * MINUTE),
 })
 

@@ -1,7 +1,6 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
 const dir = mkdtempSync(join(tmpdir(), 'statbox-startup-'))
@@ -16,8 +15,6 @@ afterAll(() => {
     rmSync(dir, { force: true, recursive: true })
 })
 
-// Each test points the cache at its own file, then loads fresh modules: the
-// libsql client reads CACHE_DATABASE_URI once, on first use.
 async function startServerOn(file: string, runtime = 'nodejs') {
     vi.stubEnv('CACHE_DATABASE_URI', `file:${join(dir, file)}`)
     vi.stubEnv('NEXT_RUNTIME', runtime)
@@ -29,8 +26,6 @@ async function startServerOn(file: string, runtime = 'nodejs') {
 }
 
 describe('server startup', () => {
-    // A rebuilt host or a new data directory has no cache file yet; the first
-    // deploy must still pass the health check without any Riot traffic.
     it('creates the cache schema so an empty data directory is healthy', async () => {
         const checkCacheHealth = await startServerOn('fresh.db')
 

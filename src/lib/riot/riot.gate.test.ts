@@ -15,7 +15,6 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-    // Lets each test start with every region's gate closed.
     vi.advanceTimersByTime(24 * 60 * 60 * 1000)
     vi.useRealTimers()
 })
@@ -85,11 +84,6 @@ describe('callRiot', () => {
         await expect(callRiot('tr1', async () => 'ok')).resolves.toBe('ok')
     })
 
-    // Each test below uses routing values no other test touches, since the
-    // module keeps its windows for the life of the process.
-    //
-    // The deployed key is a personal one: 20 calls per second and 100 per
-    // two minutes, counted per routing value.
     describe('personal key budget', () => {
         function callMany(routing: string, count: number) {
             const request = vi.fn(async () => 'ok')
@@ -137,8 +131,6 @@ describe('callRiot', () => {
             expect(await late).toBeInstanceOf(RiotRateLimitedError)
         })
 
-        // Fixed windows would let 19 calls at 999 ms and 20 more at 1000 ms
-        // through, twice what Riot allows in its own unaligned second.
         it('never sends more than 20 calls inside any one-second span', async () => {
             const sentAt: number[] = []
             const request = vi.fn(async () => {
@@ -206,9 +198,6 @@ describe('callRiot', () => {
             expect((error as RiotRateLimitedError).retryAfterSeconds).toBe(30)
         })
 
-        // Ten cold widgets on one regional value ask for about 220 calls at
-        // once. Callers that give up must not leave slots reserved for later,
-        // or the region answers 503 for minutes while Riot's quota sits idle.
         it('serves a call as soon as the window has room after a burst', async () => {
             const { request, results } = callMany('vn2', 220)
             await vi.advanceTimersByTimeAsync(20_000)

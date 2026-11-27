@@ -20,14 +20,6 @@ const replace = vi.hoisted(() => vi.fn())
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace }) }))
 
-function wrapper({ children }: { children: ReactNode }) {
-    const client = new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-    })
-
-    return <QueryClientProvider client={client}>{children}</QueryClientProvider>
-}
-
 function saveKoreanAccount(puuid = PUUID) {
     saveBuilderAccount({
         puuid,
@@ -39,6 +31,14 @@ function saveKoreanAccount(puuid = PUUID) {
             style: 'topbar',
         },
     })
+}
+
+function wrapper({ children }: { children: ReactNode }) {
+    const client = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    })
+
+    return <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 
 afterEach(() => {
@@ -105,7 +105,6 @@ describe('useCreatePage', () => {
             expect(result.current.settingsNotSaved).toBe(true)
             expect(result.current.queue).toBe('flex')
         } finally {
-            // happy-dom's storage is not reset by restoreAllMocks.
             setItem.mockRestore()
         }
         act(() => {

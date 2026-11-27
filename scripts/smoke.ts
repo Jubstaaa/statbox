@@ -1,13 +1,9 @@
 import { buildOverlongValidSegment } from '../src/features/widget-generator/widget-generator.payload.fixtures'
 
-// Runs against a started production container (CI's image job) and fails the
-// job when a page, the health gate, a security header or the payload cap is
-// missing. No Riot call is made while the cap holds: the container has a
-// placeholder key.
 const base = process.env.SMOKE_BASE_URL ?? 'http://127.0.0.1:3003'
 
 interface Check {
-    expect: (response: Response, body: string) => string | null
+    expect: (response: Response, body: string) => null | string
     path: string
 }
 
@@ -39,16 +35,11 @@ const checks: Check[] = [
     { expect: () => null, path: '/widget/not-a-payload' },
 ]
 
-// A wedged candidate must fail the job, not hold it until its timeout.
 const REQUEST_TIMEOUT_MS = 10_000
 
 const get = (path: string) =>
     fetch(base + path, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) })
 
-// The unit tests' probe: a valid widget payload over the 512-character wire
-// cap that decompresses to under 1024. Only the wire cap refuses it; without
-// that cap it decodes to a real target and the route calls Riot (and answers
-// 502 with the placeholder key) instead of 400.
 const oversizedPayload = buildOverlongValidSegment('a'.repeat(78))
 const oversized = `/api/summoner/${oversizedPayload}`
 

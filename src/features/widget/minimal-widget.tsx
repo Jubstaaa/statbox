@@ -1,8 +1,9 @@
 import ProfileIcon from '@/features/widget/profile-icon'
 
+import type { ComputedData } from './widget.types'
+
 import StripStat from './strip-stat'
 import { GAME_COLORS } from './widget.constants'
-import type { ComputedData } from './widget.types'
 import { formatTierRank, getMatchResultColors } from './widget.utils'
 
 export default function MinimalWidget({
@@ -81,8 +82,8 @@ export default function MinimalWidget({
                         const resultColors = getMatchResultColors(match)
                         return (
                             <div
-                                key={match.matchId}
                                 className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-[9px] font-black"
+                                key={match.matchId}
                                 style={{
                                     background: resultColors.bg,
                                     borderColor: resultColors.border,

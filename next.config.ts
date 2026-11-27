@@ -2,10 +2,6 @@ import type { NextConfig } from 'next'
 
 const isDev = process.env.NODE_ENV === 'development'
 
-// No nonces: they would force every page to render per request, and the site is
-// static apart from the Riot routes. Cloudflare Web Analytics is injected at
-// the edge, hence its script and beacon origins. Champion and profile icons go
-// through /_next/image, so ddragon never loads in the browser directly.
 function contentSecurityPolicy({ framable }: { framable: boolean }) {
     return [
         "default-src 'self'",
@@ -37,8 +33,6 @@ const baseHeaders = [
 
 const nextConfig: NextConfig = {
     experimental: {
-        // Most visitors arrive once (from search or a streamer's link), so the
-        // ~7 kB of Tailwind is cheaper inline than as a render-blocking request.
         inlineCss: true,
     },
     headers() {
@@ -52,8 +46,7 @@ const nextConfig: NextConfig = {
                     },
                     { key: 'X-Frame-Options', value: 'DENY' },
                 ],
-                // Everything except the widget, which streamers may embed in
-                // overlay tools that load it in a frame.
+
                 source: '/((?!widget/).*)',
             },
             {
@@ -68,16 +61,11 @@ const nextConfig: NextConfig = {
         ])
     },
     images: {
-        // The only optimized images are the 48 px icons (src/features/widget),
-        // requested at 1x and 2x; every other width would be another cached
-        // variant. The logo is an SVG and bypasses the optimizer.
         deviceSizes: [96],
         imageSizes: [48],
-        // Without a cap Next takes half the free disk at startup, and the
-        // droplet's disk is shared with the other apps. Icons are a few kB each.
+
         maximumDiskCacheSize: 100_000_000,
-        // Only the two icon sets the widget renders, without a query string: the
-        // optimizer stores whatever it fetches on a host bind mount.
+
         remotePatterns: ['profileicon', 'champion'].map(set => ({
             hostname: 'ddragon.leagueoflegends.com',
             pathname: `/cdn/*/img/${set}/**`,
@@ -85,8 +73,7 @@ const nextConfig: NextConfig = {
             search: '',
         })),
     },
-    // Self-hosted on a DigitalOcean droplet: standalone emits a minimal server.js
-    // plus traced node_modules, which is what the runner image starts.
+
     output: 'standalone',
 }
 

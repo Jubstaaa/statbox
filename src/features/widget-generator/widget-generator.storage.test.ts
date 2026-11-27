@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { BuilderSettings } from './widget-generator.payload'
+
 import {
     BuilderStorageError,
     clearBuilderAccount,
@@ -11,8 +12,6 @@ import {
     updateBuilderSettings,
 } from './widget-generator.storage'
 
-// The keys are the on-disk contract with browsers that already saved an
-// account, so they are spelled out rather than imported.
 const ACCOUNT_KEY = 'statbox.builder.account'
 const LEGACY_PUUID_KEY = 'statbox.builder.puuid'
 const LEGACY_SETTINGS_KEY = 'statbox.builder.settings'
@@ -26,7 +25,6 @@ const SETTINGS: BuilderSettings = {
     style: 'classic',
 }
 
-// happy-dom's storage is not reset by restoreAllMocks, so its spies are.
 const storageSpies: { mockRestore: () => void }[] = []
 
 afterEach(() => {
@@ -68,9 +66,6 @@ describe('builder account store', () => {
         ).toEqual({ puuid: PUUID, settings: SETTINGS })
     })
 
-    // Two keys written one after the other could pair the old PUUID with the
-    // new region when the second write failed. Whatever write fails, the
-    // stored account must be the old one or the new one, never a mix.
     it('never pairs one account with the settings of another', () => {
         const next = {
             puuid: 'h'.repeat(78),
@@ -102,8 +97,6 @@ describe('builder account store', () => {
         )
     })
 
-    // useSyncExternalStore calls getBuilderAccount during render, which
-    // React requires to be a pure read.
     it('reads an account saved under the two old keys without writing', () => {
         window.localStorage.setItem(LEGACY_PUUID_KEY, PUUID)
         window.localStorage.setItem(
@@ -160,8 +153,6 @@ describe('builder account store', () => {
             return refusal
         }
 
-        // The module warns about blocked storage once per page, so each test
-        // loads a fresh copy to see its own warning.
         async function loadStore() {
             vi.resetModules()
             return import('./widget-generator.storage')

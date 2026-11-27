@@ -1,5 +1,4 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-
 import { describe, expect, it } from 'vitest'
 
 import ConnectedAccountCard from './connected-account-card'
@@ -12,10 +11,10 @@ function ignore() {
 function renderFailed(error: unknown) {
     return renderToStaticMarkup(
         <ConnectedAccountCard
-            query={{ data: undefined, error, isError: true, isLoading: false }}
             onChangeAccount={ignore}
             onOpenBuilder={ignore}
             onRetry={ignore}
+            query={{ data: undefined, error, isError: true, isLoading: false }}
         />
     )
 }

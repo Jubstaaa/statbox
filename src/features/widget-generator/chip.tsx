@@ -16,7 +16,6 @@ export default function Chip({
     return (
         <button
             aria-pressed={active}
-            type="button"
             className={cn(
                 'min-w-14 rounded-xl border px-3 py-2 text-xs font-semibold tracking-[0.08em] transition',
                 active
@@ -24,6 +23,7 @@ export default function Chip({
                     : 'border-border-secondary bg-bg-elevated text-text-muted hover:border-border-hover hover:text-text',
                 className
             )}
+            type="button"
             {...props}>
             {children}
         </button>

@@ -1,24 +1,24 @@
 import { z } from 'zod'
 
-// Data Dragon has no "latest" alias: every asset URL carries an explicit version,
-// and each version's asset set is frozen — a profile icon added after 14.24.1
-// shipped answers 403 on 14.24.1 forever. So the version is resolved on the server
-// once a day and handed down to the client, instead of being pinned in source.
 const DDRAGON_CDN = 'https://ddragon.leagueoflegends.com/cdn'
 const VERSIONS_URL = 'https://ddragon.leagueoflegends.com/api/versions.json'
 const VERSION_REVALIDATE_SECONDS = 86400
 const FALLBACK_DDRAGON_VERSION = '16.14.1'
 
-// Newest first. Only the head is checked strictly: it is interpolated into the
-// icon URLs, while the tail holds legacy entries such as lolpatch_7.20.
 const versionsSchema = z.tuple(
     [z.string().regex(/^\d+\.\d+\.\d+$/)],
     z.string()
 )
 
-// Keeps the newest version this process has actually seen, so a failed lookup
-// degrades to that rather than dropping back to a constant that ages into 403s.
 let lastResolvedVersion = FALLBACK_DDRAGON_VERSION
+
+export function buildChampionIconUrl(version: string, championName: string) {
+    return `${DDRAGON_CDN}/${version}/img/champion/${championName}.png`
+}
+
+export function buildProfileIconUrl(version: string, iconId: number) {
+    return `${DDRAGON_CDN}/${version}/img/profileicon/${iconId}.png`
+}
 
 export async function getDdragonVersion(): Promise<string> {
     try {
@@ -40,12 +40,4 @@ export async function getDdragonVersion(): Promise<string> {
 
         return lastResolvedVersion
     }
-}
-
-export function buildProfileIconUrl(version: string, iconId: number) {
-    return `${DDRAGON_CDN}/${version}/img/profileicon/${iconId}.png`
-}
-
-export function buildChampionIconUrl(version: string, championName: string) {
-    return `${DDRAGON_CDN}/${version}/img/champion/${championName}.png`
 }

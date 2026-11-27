@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server'
+
 import { z } from 'zod'
 
 import {
@@ -9,14 +10,8 @@ import {
 import { resolvePuuidByRiotId } from '@/lib/riot/riot'
 import { regionSchema } from '@/lib/riot/riot.schemas'
 
-// A Riot ID points at the same PUUID until the player renames, so the edge can
-// answer repeat lookups for a day.
 const CACHE_CONTROL = 'public, max-age=3600, s-maxage=86400'
 
-// Riot game names are at most 16 characters and tags at most 5. Characters that
-// carry URL structure are refused outright: twisted puts both into the request
-// path with encodeURI, which leaves them intact. A segment of only dots is
-// refused too, since URL normalisation turns it into a different Riot path.
 const noUrlSyntax = (value: string) =>
     !/[/?#%\\]/.test(value) && !/^\.+$/.test(value)
 

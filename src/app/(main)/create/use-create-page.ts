@@ -1,8 +1,10 @@
 import type { ChangeEvent } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
+import type { RankedQueue, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
 import { summonerQueryOptions } from '@/features/widget-generator/widget-generator.api'
 import {
@@ -20,11 +22,10 @@ import {
 } from '@/features/widget-generator/widget-generator.storage'
 import { TIER_COLORS } from '@/features/widget/widget.constants'
 import { useHydrationReady } from '@/hooks/use-hydration-ready'
-import type { RankedQueue, RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
 interface CreatePageState {
     createStyleSelectHandler: (value: WidgetStyle) => () => void
-    // The failed lookup, so the error state can say why.
+
     error: unknown
     handleAllDaySession: () => void
     handleChangeAccount: () => void
@@ -35,24 +36,20 @@ interface CreatePageState {
     isError: boolean
     isLoading: boolean
     maxSessionTime: string
-    previewSession: number | null
-    puuid: string | null
+    previewSession: null | number
+    puuid: null | string
     queue: RankedQueue
     sessionMode: SessionMode
     sessionTime: string
-    // The browser refused the last change, so the widget URL still holds
-    // the previous settings.
+
     settingsNotSaved: boolean
     storageReady: boolean
     style: WidgetStyle
-    summonerData: RiotData | null
+    summonerData: null | RiotData
     tierColor: string
     urls: null | ReturnType<typeof buildWidgetUrls>
 }
 
-// The saved account is the single source of truth: every change is written
-// to it and read back through the store, so another tab connecting or
-// disconnecting an account shows up here too.
 export function useCreatePage(): CreatePageState {
     const router = useRouter()
     const storageReady = useHydrationReady()
@@ -62,7 +59,7 @@ export function useCreatePage(): CreatePageState {
 
     const puuid = account?.puuid ?? null
     const settings = account?.settings ?? null
-    // What the start-time input shows while a session has no start yet.
+
     const sessionTime = settings?.sessionTime ?? maxSessionTime
 
     useEffect(() => {

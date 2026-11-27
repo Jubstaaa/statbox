@@ -1,12 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import type { ReactNode } from 'react'
 
 import { QueryClientProvider } from '@tanstack/react-query'
+import { useState } from 'react'
 
 import { createQueryClient } from '@/lib/query-client'
-
 import '@/lib/zod-config'
 
 interface QueryProviderProps {

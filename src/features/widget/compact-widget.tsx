@@ -1,12 +1,13 @@
 import ChampionIcon from '@/features/widget/champion-icon'
 import ProfileIcon from '@/features/widget/profile-icon'
 
+import type { ComputedData } from './widget.types'
+
 import FooterMark from './footer-mark'
 import MetricTile from './metric-tile'
 import ScoreBox from './score-box'
 import SectionLabel from './section-label'
 import { GAME_COLORS } from './widget.constants'
-import type { ComputedData } from './widget.types'
 import { formatTierRank } from './widget.utils'
 
 export default function CompactWidget({
@@ -114,8 +115,8 @@ export default function CompactWidget({
                     )}
                     {recent.map(match => (
                         <div
-                            key={match.matchId}
                             className="relative h-[38px] w-[38px] overflow-hidden rounded-xl border-2 bg-[#162b42]"
+                            key={match.matchId}
                             style={{
                                 borderColor: match.isRemake
                                     ? GAME_COLORS.remake

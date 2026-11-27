@@ -3,14 +3,7 @@ import {
     RiotRateLimitedError,
 } from '@/lib/riot/riot.errors'
 
-// Errors are never cached anywhere: a transient upstream failure must not be
-// pinned in a browser or at the edge, and Cloudflare's Browser Cache TTL only
-// leaves a response alone when it says no-store.
 const NO_STORE = { 'Cache-Control': 'no-store' }
-
-export function jsonResponse(body: unknown, cacheControl: string) {
-    return Response.json(body, { headers: { 'Cache-Control': cacheControl } })
-}
 
 export function errorResponse(
     status: number,
@@ -21,6 +14,10 @@ export function errorResponse(
         { error },
         { headers: { ...NO_STORE, ...headers }, status }
     )
+}
+
+export function jsonResponse(body: unknown, cacheControl: string) {
+    return Response.json(body, { headers: { 'Cache-Control': cacheControl } })
 }
 
 export function riotFailureResponse(route: string, error: unknown) {

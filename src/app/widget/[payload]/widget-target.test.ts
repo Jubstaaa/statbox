@@ -80,7 +80,7 @@ describe('resolveWidgetTarget', () => {
         ['a malformed percent escape', '%E0%A4%A', '?region=EUW'],
         ['a legacy segment that is not a PUUID', 'x/../../riot', '?region=EUW'],
         ['a legacy link without a region', PUUID, ''],
-        // The summoner API answers 400 for it, so the widget must not guess.
+
         [
             'a legacy link with an unknown queue',
             PUUID,

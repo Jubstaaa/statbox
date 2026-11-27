@@ -3,12 +3,13 @@ import { BarChart3, RefreshCw, Zap } from 'lucide-react'
 
 import type { FeatureCardItemProps } from '@/app/(main)/_components/feature-card'
 import type { StepCardProps } from '@/app/(main)/_components/step-card'
+import type { WidgetStyleDefinition } from '@/features/widget/widget.types'
+import type { RiotData } from '@/lib/riot/riot.types'
+
 import {
     POLL_INTERVAL,
     WIDGET_STYLE_OPTIONS,
 } from '@/features/widget/widget.constants'
-import type { WidgetStyleDefinition } from '@/features/widget/widget.types'
-import type { RiotData } from '@/lib/riot/riot.types'
 
 const POLL_MINUTES = POLL_INTERVAL / 60_000
 

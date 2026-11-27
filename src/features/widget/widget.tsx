@@ -6,11 +6,11 @@ import WidgetLoader from './widget.loader'
 import { computeWidgetData } from './widget.utils'
 
 interface WidgetProps {
-    data: RiotData | null
+    data: null | RiotData
     errorMessage?: string
     isError?: boolean
     isLoading?: boolean
-    session: number | null
+    session: null | number
     style: WidgetStyle
 }
 

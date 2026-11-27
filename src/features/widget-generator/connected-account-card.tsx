@@ -1,30 +1,31 @@
 import { RefreshCw } from 'lucide-react'
 
+import type { RiotData } from '@/lib/riot/riot.types'
+
 import Button from '@/components/button'
 import Card from '@/components/card'
 import PlayerSummary from '@/features/widget/player-summary'
 import { TIER_COLORS } from '@/features/widget/widget.constants'
-import type { RiotData } from '@/lib/riot/riot.types'
 
 import { describeSavedAccountError } from './widget-generator.messages'
 
 interface ConnectedAccountCardProps {
+    onChangeAccount: () => void
+    onOpenBuilder: () => void
+    onRetry: () => void
     query: {
         data: RiotData | undefined
         error: unknown
         isError: boolean
         isLoading: boolean
     }
-    onChangeAccount: () => void
-    onOpenBuilder: () => void
-    onRetry: () => void
 }
 
 export default function ConnectedAccountCard({
-    query,
     onChangeAccount,
     onOpenBuilder,
     onRetry,
+    query,
 }: ConnectedAccountCardProps) {
     if (query.isLoading) {
         return (
@@ -64,12 +65,12 @@ export default function ConnectedAccountCard({
                 {needsNewAccount ? (
                     <Button
                         fullWidth
-                        variant="secondary"
-                        onClick={onChangeAccount}>
+                        onClick={onChangeAccount}
+                        variant="secondary">
                         Change account
                     </Button>
                 ) : (
-                    <Button fullWidth variant="secondary" onClick={onRetry}>
+                    <Button fullWidth onClick={onRetry} variant="secondary">
                         Try again
                     </Button>
                 )}
@@ -95,7 +96,7 @@ export default function ConnectedAccountCard({
 
             <div className="flex flex-wrap gap-3">
                 <Button onClick={onOpenBuilder}>Open builder</Button>
-                <Button variant="secondary" onClick={onChangeAccount}>
+                <Button onClick={onChangeAccount} variant="secondary">
                     Change account
                 </Button>
             </div>

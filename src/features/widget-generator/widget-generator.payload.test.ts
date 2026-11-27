@@ -105,8 +105,6 @@ describe('widget route payload', () => {
     })
 })
 
-// The widget page and /api/summoner/[payload] read the same URLs through this
-// one parser, so a link either works on both or fails on both.
 describe('parseWidgetTarget', () => {
     function parse(segment: string, query = '') {
         const target = parseWidgetTarget(segment, new URLSearchParams(query))

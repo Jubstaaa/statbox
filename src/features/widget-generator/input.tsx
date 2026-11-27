@@ -2,15 +2,9 @@ import { type InputHTMLAttributes, useId } from 'react'
 
 import { cn } from '@/lib/cn'
 
-function getInputStateClasses(error?: string) {
-    return error
-        ? 'border-loss/50 focus:border-loss focus-visible:ring-loss/60'
-        : 'border-border-secondary focus:border-accent focus-visible:ring-accent/60'
-}
-
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-    description?: string
-    error?: string
+    description?: string | undefined
+    error?: string | undefined
     label: string
 }
 
@@ -53,4 +47,10 @@ export default function Input({
             ) : null}
         </label>
     )
+}
+
+function getInputStateClasses(error?: string) {
+    return error
+        ? 'border-loss/50 focus:border-loss focus-visible:ring-loss/60'
+        : 'border-border-secondary focus:border-accent focus-visible:ring-accent/60'
 }
