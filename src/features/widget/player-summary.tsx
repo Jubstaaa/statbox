@@ -1,12 +1,13 @@
+import type { RiotData } from '@/lib/riot/riot.types'
+
 import ProfileIcon from '@/features/widget/profile-icon'
 import { cn } from '@/lib/cn'
-import type { RiotData } from '@/lib/riot/riot.types'
 
 import { formatTierRank } from './widget.utils'
 
 interface PlayerSummaryProps {
     data: RiotData
-    size?: 'sm' | 'md'
+    size?: 'md' | 'sm'
     tierColor: string
 }
 
@@ -22,13 +23,13 @@ export default function PlayerSummary({
             <div className="relative shrink-0">
                 <ProfileIcon
                     borderColor={`${tierColor}${compact ? '70' : '80'}`}
-                    iconId={data.profileIconId}
-                    ringClassName={compact ? 'border' : 'border-[1.5px]'}
                     className={cn(
                         compact
                             ? 'h-7 w-7 rounded-[9px]'
                             : 'h-11.5 w-11.5 rounded-xl'
                     )}
+                    iconId={data.profileIconId}
+                    ringClassName={compact ? 'border' : 'border-[1.5px]'}
                 />
                 {!compact && (
                     <div

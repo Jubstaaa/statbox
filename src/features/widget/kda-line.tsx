@@ -1,10 +1,10 @@
 import { GAME_COLORS } from './widget.constants'
 
 interface KdaLineProps {
-    assists: string | number
-    deaths: string | number
-    kdaRatio?: string | null
-    kills: string | number
+    assists: number | string
+    deaths: number | string
+    kdaRatio?: null | string
+    kills: number | string
 }
 
 export default function KdaLine({

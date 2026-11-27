@@ -1,12 +1,13 @@
 import ChampionIcon from '@/features/widget/champion-icon'
 import { cn } from '@/lib/cn'
 
+import type { ComputedData } from './widget.types'
+
 import FooterMark from './footer-mark'
 import KdaLine from './kda-line'
 import MetricTile from './metric-tile'
 import PlayerSummary from './player-summary'
 import SectionLabel from './section-label'
-import type { ComputedData } from './widget.types'
 import { getMatchResultColors } from './widget.utils'
 
 export default function ClassicWidget({
@@ -89,8 +90,8 @@ export default function ClassicWidget({
                         const resultColors = getMatchResultColors(match)
                         return (
                             <div
-                                key={match.matchId}
                                 className="rounded-2.5 grid grid-cols-[24px_1fr_auto_auto] items-center gap-2 border px-2 py-1.75"
+                                key={match.matchId}
                                 style={{
                                     background: resultColors.bg,
                                     borderColor: resultColors.border,

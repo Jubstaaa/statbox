@@ -46,8 +46,7 @@ describe('fetchSummonerByPuuid', () => {
 
         expect(fetchMock).toHaveBeenCalledWith(
             `/api/summoner/${PUUID}?queue=flex&region=KR`,
-            // Revalidating keeps a long browser TTL injected by the CDN from
-            // freezing a stream overlay on old numbers.
+
             { cache: 'no-cache' }
         )
     })

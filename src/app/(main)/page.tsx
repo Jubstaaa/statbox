@@ -1,5 +1,6 @@
-import { AlertTriangle, Tv } from 'lucide-react'
 import type { Metadata } from 'next'
+
+import { AlertTriangle, Tv } from 'lucide-react'
 
 import Badge from '@/app/(main)/_components/badge'
 import FeatureCard from '@/app/(main)/_components/feature-card'
@@ -19,8 +20,6 @@ import {
     WIDGET_LAYOUTS,
 } from './landing.constants'
 
-// Set per page: a canonical in the shared layout would point /privacy and
-// /terms at the home page.
 export const metadata: Metadata = {
     alternates: { canonical: '/' },
 }
@@ -108,7 +107,7 @@ export default function LandingPage() {
                 </SectionHeading>
                 <div className="grid gap-4 sm:grid-cols-3">
                     {FEATURE_ITEMS.map(item => (
-                        <FeatureCard key={item.title} item={item} />
+                        <FeatureCard item={item} key={item.title} />
                     ))}
                 </div>
             </section>
@@ -124,8 +123,8 @@ export default function LandingPage() {
                     <div className="grid items-start gap-5 md:grid-cols-2">
                         {WIDGET_LAYOUTS.map(layout => (
                             <WidgetShowcaseCard
-                                key={layout.label}
                                 description={layout.description}
+                                key={layout.label}
                                 name={layout.label}>
                                 <Widget
                                     data={EXAMPLE_SUMMONER}

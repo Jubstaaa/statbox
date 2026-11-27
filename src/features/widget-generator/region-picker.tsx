@@ -1,16 +1,17 @@
 import { useId } from 'react'
 
-import Chip from '@/features/widget-generator/chip'
 import type { Region } from '@/lib/riot/riot.types'
+
+import Chip from '@/features/widget-generator/chip'
 
 import { BUILDER_REGIONS } from './widget-generator.constants'
 
 interface RegionPickerProps {
-    value: Region
     onSelect: (region: Region) => () => void
+    value: Region
 }
 
-export default function RegionPicker({ value, onSelect }: RegionPickerProps) {
+export default function RegionPicker({ onSelect, value }: RegionPickerProps) {
     const labelId = useId()
 
     return (
@@ -26,9 +27,9 @@ export default function RegionPicker({ value, onSelect }: RegionPickerProps) {
                 role="group">
                 {BUILDER_REGIONS.map(region => (
                     <Chip
-                        key={region}
                         active={value === region}
                         className="flex-1 basis-[calc(25%-0.375rem)]"
+                        key={region}
                         onClick={onSelect(region)}>
                         {region}
                     </Chip>

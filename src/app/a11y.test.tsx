@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
 
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import CreateError from '@/app/(main)/create/_components/create-error'
@@ -22,8 +22,6 @@ const render = (element: ReactElement) => renderToStaticMarkup(element)
 const noop = () => undefined
 const selectRegion = () => noop
 
-// An <a> wrapping a <button> is two nested interactive controls: one tab stop
-// announces as a link, the other as a button, and they disagree on activation.
 const NESTED_CONTROL = /<a\b[^>]*>(?:(?!<\/a>)[\s\S])*<button/
 
 describe('accessible markup', () => {
@@ -95,7 +93,7 @@ describe('accessible markup', () => {
     })
 
     it('groups the region chips under a visible label', () => {
-        const html = render(<RegionPicker value="KR" onSelect={selectRegion} />)
+        const html = render(<RegionPicker onSelect={selectRegion} value="KR" />)
         const labelId = /<span[^>]*id="([^"]+)"[^>]*>Region<\/span>/.exec(
             html
         )?.[1]
@@ -139,7 +137,6 @@ describe('accessible markup', () => {
         const html = render(
             <DdragonProvider version="16.23.1">
                 <PlayerSummary
-                    tierColor="#fff"
                     data={{
                         gameName: 'Faker',
                         hotStreak: true,
@@ -154,6 +151,7 @@ describe('accessible markup', () => {
                         tier: 'GOLD',
                         wins: 1,
                     }}
+                    tierColor="#fff"
                 />
             </DdragonProvider>
         )

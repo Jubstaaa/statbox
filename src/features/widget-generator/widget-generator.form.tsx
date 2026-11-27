@@ -1,16 +1,17 @@
 'use client'
 
 import type { ChangeEvent, SubmitEvent } from 'react'
-import { useCallback, useState } from 'react'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useCallback, useState } from 'react'
 import { z } from 'zod'
+
+import type { Region } from '@/lib/riot/riot.types'
 
 import Button from '@/components/button'
 import Input from '@/features/widget-generator/input'
-import type { Region } from '@/lib/riot/riot.types'
 
 import ConnectedAccountCard from './connected-account-card'
 import RegionPicker from './region-picker'
@@ -47,11 +48,6 @@ export default function WidgetGeneratorForm() {
     )
 
     const resolveSummonerMutation = useMutation({
-        // The account is saved only once its data is in the query cache under
-        // the key the builder reads, so the connected card and /create never
-        // fetch it again, and a failed lookup leaves nothing behind. Saving
-        // happens here, not in onSuccess, so a refused write is a failed
-        // mutation with its own message.
         mutationFn: async (params: Parameters<typeof resolveSummoner>[0]) => {
             const { puuid, region: resolvedRegion } =
                 await resolveSummoner(params)
@@ -66,8 +62,6 @@ export default function WidgetGeneratorForm() {
             saveBuilderAccount({ puuid, settings })
         },
         onError: error => {
-            // API answers are expected outcomes; anything else (a body that
-            // failed validation, a storage error) is worth a trace.
             if (!(error instanceof SummonerRequestError)) {
                 console.error(
                     '[widget-generator] account lookup failed:',
@@ -139,8 +133,7 @@ export default function WidgetGeneratorForm() {
     }, [router])
 
     const { refetch: refetchConnectedAccount } = connectedAccountQuery
-    // refetch resolves with the failed result rather than rejecting, so the
-    // card's error state is what reports a retry that failed again.
+
     const handleRetryAccount = useCallback(() => {
         void refetchConnectedAccount()
     }, [refetchConnectedAccount])
@@ -153,10 +146,10 @@ export default function WidgetGeneratorForm() {
     if (account) {
         return (
             <ConnectedAccountCard
-                query={connectedAccountQuery}
                 onChangeAccount={handleChangeAccount}
                 onOpenBuilder={handleOpenBuilder}
                 onRetry={handleRetryAccount}
+                query={connectedAccountQuery}
             />
         )
     }
@@ -167,20 +160,20 @@ export default function WidgetGeneratorForm() {
                 <Input
                     error={formErrors.name}
                     label="Game Name"
+                    onChange={handleNameChange}
                     placeholder="Hide on bush"
                     value={name}
-                    onChange={handleNameChange}
                 />
                 <Input
                     error={formErrors.tag}
                     label="Tag"
+                    onChange={handleTagChange}
                     placeholder="EUW1"
                     value={tag}
-                    onChange={handleTagChange}
                 />
             </div>
 
-            <RegionPicker value={region} onSelect={createRegionSelectHandler} />
+            <RegionPicker onSelect={createRegionSelectHandler} value={region} />
 
             {submitError ? (
                 <p
@@ -191,8 +184,8 @@ export default function WidgetGeneratorForm() {
             ) : null}
 
             <Button
-                fullWidth
                 disabled={resolveSummonerMutation.isPending}
+                fullWidth
                 size="lg"
                 type="submit">
                 {resolveSummonerMutation.isPending ? (

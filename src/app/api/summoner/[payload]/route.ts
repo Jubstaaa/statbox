@@ -8,8 +8,6 @@ import {
 import { parseWidgetTarget } from '@/features/widget-generator/widget-generator.payload'
 import { fetchRiotDataByPuuid } from '@/lib/riot/riot'
 
-// The server keeps widget data for five minutes; the edge and the browser may
-// reuse a response for one more, well inside the widget's 120 s poll.
 const CACHE_CONTROL = 'public, max-age=60, s-maxage=60'
 
 export async function GET(

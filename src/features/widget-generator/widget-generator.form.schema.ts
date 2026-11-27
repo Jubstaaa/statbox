@@ -9,8 +9,8 @@ export const widgetGeneratorFormSchema = z.object({
         .pipe(z.string().min(1, 'Tag is required').max(5, 'Tag is too long')),
 })
 
-type WidgetGeneratorFormValues = z.output<typeof widgetGeneratorFormSchema>
-
 export type WidgetGeneratorFormErrors = Partial<
-    Record<keyof WidgetGeneratorFormValues, string>
+    Record<keyof WidgetGeneratorFormValues, string | undefined>
 >
+
+type WidgetGeneratorFormValues = z.output<typeof widgetGeneratorFormSchema>

@@ -11,7 +11,6 @@ export const GAME_COLORS = {
     win: '#5ef2a2',
 } as const
 
-// Riot may add a tier before this map does, so lookups fall back to UNRANKED.
 export const TIER_COLORS: Partial<Record<string, string>> & {
     UNRANKED: string
 } = {

@@ -1,5 +1,6 @@
-import { parseWidgetTarget } from '@/features/widget-generator/widget-generator.payload'
 import type { RankedQueue, Region, WidgetStyle } from '@/lib/riot/riot.types'
+
+import { parseWidgetTarget } from '@/features/widget-generator/widget-generator.payload'
 
 interface ResolvedWidget {
     getSession: () => null | number
@@ -13,16 +14,6 @@ const NO_TARGET: ResolvedWidget = {
     target: null,
 }
 
-// The segment comes straight from a URL anyone can type, so a bad escape must
-// render the widget's error state instead of throwing into the error boundary.
-function safeDecode(segment: string) {
-    try {
-        return decodeURIComponent(segment)
-    } catch {
-        return null
-    }
-}
-
 export function resolveWidgetTarget(
     segment: string,
     searchParams: URLSearchParams
@@ -34,4 +25,12 @@ export function resolveWidgetTarget(
     const { getSession, style, ...target } = parsed
 
     return { getSession, style, target }
+}
+
+function safeDecode(segment: string) {
+    try {
+        return decodeURIComponent(segment)
+    } catch {
+        return null
+    }
 }

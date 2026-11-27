@@ -13,7 +13,7 @@ const TONE_STYLES = {
 
 interface MetricTileProps {
     label: string
-    tone: 'win' | 'loss' | 'blue'
+    tone: 'blue' | 'loss' | 'win'
     value: string
 }
 

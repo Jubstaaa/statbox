@@ -24,10 +24,10 @@ export default function NotFound() {
                             Back home
                         </Link>
                         <Link
-                            href="/create"
                             className={buttonClassName({
                                 variant: 'secondary',
-                            })}>
+                            })}
+                            href="/create">
                             Open builder
                         </Link>
                     </div>

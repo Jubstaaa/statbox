@@ -95,8 +95,6 @@ describe('image optimizer allow-list', () => {
     })
 })
 
-// The optimizer writes every width, quality and format it is asked for to a
-// host bind mount, so both the key space and the total size are bounded.
 describe('image optimizer disk use', () => {
     it('caps the disk cache', () => {
         const cap = nextConfig.images?.maximumDiskCacheSize

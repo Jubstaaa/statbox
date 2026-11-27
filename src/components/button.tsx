@@ -20,32 +20,15 @@ const buttonSizes = {
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     children: ReactNode
-    fullWidth?: boolean
-    size?: 'sm' | 'md' | 'lg'
-    variant?: 'primary' | 'secondary' | 'ghost' | 'outline'
+    fullWidth?: boolean | undefined
+    size?: 'lg' | 'md' | 'sm' | undefined
+    variant?: 'ghost' | 'outline' | 'primary' | 'secondary' | undefined
 }
 
 type ButtonStyle = Pick<
     ButtonProps,
     'className' | 'fullWidth' | 'size' | 'variant'
 >
-
-// For links that look like buttons: styling the <a> itself avoids nesting a
-// <button> inside it, which leaves two interactive controls in one.
-export function buttonClassName({
-    className,
-    fullWidth,
-    size = 'md',
-    variant = 'primary',
-}: ButtonStyle = {}) {
-    return cn(
-        'inline-flex items-center justify-center gap-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
-        buttonVariants[variant],
-        buttonSizes[size],
-        fullWidth && 'w-full',
-        className
-    )
-}
 
 export default function Button({
     children,
@@ -61,5 +44,20 @@ export default function Button({
             {...props}>
             {children}
         </button>
+    )
+}
+
+export function buttonClassName({
+    className,
+    fullWidth,
+    size = 'md',
+    variant = 'primary',
+}: ButtonStyle = {}) {
+    return cn(
+        'inline-flex items-center justify-center gap-2 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60',
+        buttonVariants[variant],
+        buttonSizes[size],
+        fullWidth && 'w-full',
+        className
     )
 }

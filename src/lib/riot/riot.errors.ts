@@ -1,5 +1,3 @@
-// Thrown instead of calling Riot while a 429's Retry-After window is still open,
-// so callers can answer 503 with the remaining wait rather than spending quota.
 export class RiotRateLimitedError extends Error {
     override readonly name = 'RiotRateLimitedError'
 

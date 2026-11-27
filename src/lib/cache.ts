@@ -1,79 +1,23 @@
 import { type Client, createClient } from '@libsql/client'
 
-// Stands in for @vercel/functions' getCache, which only exists on Vercel. Backed
-// by a local libsql/SQLite file — the same driver the other apps on this droplet
-// already run under Alpine — bind-mounted so the cache survives redeploys.
-//
-// Persistence is the point, not an optimisation: match details are cached for 90
-// days and the Riot API is rate limited, so an empty cache after every deploy
-// costs quota, not just latency.
-
-interface CacheSetOptions {
-    ttl?: number
-}
-
 export interface Cache {
     get(key: string): Promise<unknown>
     set(key: string, value: unknown, options?: CacheSetOptions): Promise<void>
 }
 
+interface CacheSetOptions {
+    ttl?: number
+}
+
 const DEFAULT_TTL_SECONDS = 300
-// Expired rows are skipped on read, so pruning is only about disk. Doing it on a
-// small fraction of writes keeps it free of timers and cheap under load.
+
 const PRUNE_CHANCE = 0.02
 
 let client: Client | undefined
 let schema: Promise<void> | undefined
 
-function getClient(): Client {
-    client ??= createClient({
-        url: process.env.CACHE_DATABASE_URI ?? 'file:./statbox-cache.db',
-    })
-
-    return client
-}
-
-// The one definition of the cache schema. Server startup runs it
-// (src/instrumentation.ts); reads and writes run it too, so a startup that
-// could not open the database is retried on first use.
-export function initCacheSchema(): Promise<void> {
-    schema ??= (async () => {
-        const db = getClient()
-        await db.execute(
-            'CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at INTEGER NOT NULL)'
-        )
-        await db.execute(
-            'CREATE INDEX IF NOT EXISTS cache_expires_at ON cache (expires_at)'
-        )
-    })().catch((error: unknown) => {
-        // Never memoise a failure: a transient error would otherwise leave
-        // the cache dead for the lifetime of the process.
-        schema = undefined
-        throw error
-    })
-
-    return schema
-}
-
-// Unlike get/set this throws: a database that cannot be opened or read makes
-// /api/health answer 503. It only reads; the schema is created at startup, so
-// this fails on a file it cannot open, not on a data directory that is new.
 export async function checkCacheHealth(): Promise<void> {
     await getClient().execute('SELECT 1 FROM cache LIMIT 1')
-}
-
-async function prune(): Promise<void> {
-    await getClient().execute({
-        args: [Date.now()],
-        sql: 'DELETE FROM cache WHERE expires_at <= ?',
-    })
-}
-
-// A cache must not be able to fail a request: every Riot call has a live fallback
-// path, so a broken cache should mean a slower correct response, not a 500. It is
-// logged rather than swallowed so the failure is still discoverable.
-function report(operation: string, error: unknown): void {
-    console.error(`[cache] ${operation} failed:`, error)
 }
 
 export function getCache({ namespace }: { namespace: string }): Cache {
@@ -121,4 +65,40 @@ export function getCache({ namespace }: { namespace: string }): Cache {
             }
         },
     }
+}
+
+export function initCacheSchema(): Promise<void> {
+    schema ??= (async () => {
+        const db = getClient()
+        await db.execute(
+            'CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at INTEGER NOT NULL)'
+        )
+        await db.execute(
+            'CREATE INDEX IF NOT EXISTS cache_expires_at ON cache (expires_at)'
+        )
+    })().catch((error: unknown) => {
+        schema = undefined
+        throw error
+    })
+
+    return schema
+}
+
+function getClient(): Client {
+    client ??= createClient({
+        url: process.env.CACHE_DATABASE_URI ?? 'file:./statbox-cache.db',
+    })
+
+    return client
+}
+
+async function prune(): Promise<void> {
+    await getClient().execute({
+        args: [Date.now()],
+        sql: 'DELETE FROM cache WHERE expires_at <= ?',
+    })
+}
+
+function report(operation: string, error: unknown): void {
+    console.error(`[cache] ${operation} failed:`, error)
 }

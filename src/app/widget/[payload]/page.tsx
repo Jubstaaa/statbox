@@ -1,9 +1,8 @@
 'use client'
 
-import { useMemo } from 'react'
-
 import { useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'next/navigation'
+import { useMemo } from 'react'
 
 import { summonerQueryOptions } from '@/features/widget-generator/widget-generator.api'
 import { describeWidgetError } from '@/features/widget-generator/widget-generator.messages'
@@ -42,13 +41,13 @@ export default function WidgetPage() {
             <h1 className="sr-only">StatBox widget</h1>
             <Widget
                 data={summonerQuery.data ?? null}
+                errorMessage={describeWidgetError(
+                    target === null ? null : summonerQuery.error
+                )}
                 isError={isError}
                 isLoading={isLoading}
                 session={getSession()}
                 style={style}
-                errorMessage={describeWidgetError(
-                    target === null ? null : summonerQuery.error
-                )}
             />
         </main>
     )

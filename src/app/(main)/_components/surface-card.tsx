@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 
 import Card from '@/components/card'
 import { cn } from '@/lib/cn'

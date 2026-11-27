@@ -1,10 +1,11 @@
 import type { WidgetStyle } from '@/lib/riot/riot.types'
 
+import type { ComputedData } from './widget.types'
+
 import ClassicWidget from './classic-widget'
 import CompactWidget from './compact-widget'
 import MinimalWidget from './minimal-widget'
 import TopbarWidget from './topbar-widget'
-import type { ComputedData } from './widget.types'
 import { getWidgetHeight, getWidgetWidth } from './widget.utils'
 
 const widgetVariants = {

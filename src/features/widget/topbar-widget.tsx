@@ -2,6 +2,7 @@ import { cn } from '@/lib/cn'
 import { RECENT_MATCHES_DISPLAY_COUNT } from '@/lib/riot/riot.constants'
 
 import type { ComputedData } from './widget.types'
+
 import { formatTierRank } from './widget.utils'
 
 export default function TopbarWidget({
@@ -56,7 +57,6 @@ export default function TopbarWidget({
                         .slice(0, RECENT_MATCHES_DISPLAY_COUNT)
                         .map(match => (
                             <span
-                                key={match.matchId}
                                 className={cn(
                                     'inline-flex h-5 min-w-4.5 items-center justify-center rounded-md border px-1 text-[9px] font-black',
                                     match.isRemake
@@ -64,7 +64,8 @@ export default function TopbarWidget({
                                         : match.win
                                           ? 'border-win/45 bg-win/12 text-win'
                                           : 'border-loss/45 bg-loss/12 text-loss'
-                                )}>
+                                )}
+                                key={match.matchId}>
                                 {match.isRemake ? 'R' : match.win ? 'W' : 'L'}
                             </span>
                         ))}

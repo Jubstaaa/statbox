@@ -34,6 +34,18 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }))
 
 let requested: string[] = []
 
+function renderForm() {
+    const client = createQueryClient()
+
+    return render(
+        <QueryClientProvider client={client}>
+            <DdragonProvider version="16.23.1">
+                <WidgetGeneratorForm />
+            </DdragonProvider>
+        </QueryClientProvider>
+    )
+}
+
 function stubApi(resolveStatus = 200) {
     requested = []
     vi.stubGlobal(
@@ -55,18 +67,6 @@ function stubApi(resolveStatus = 200) {
     )
 }
 
-function renderForm() {
-    const client = createQueryClient()
-
-    return render(
-        <QueryClientProvider client={client}>
-            <DdragonProvider version="16.23.1">
-                <WidgetGeneratorForm />
-            </DdragonProvider>
-        </QueryClientProvider>
-    )
-}
-
 function submitRiotId() {
     fireEvent.change(screen.getByLabelText(/game name/i), {
         target: { value: 'Hide on bush' },
@@ -82,7 +82,6 @@ beforeEach(() => {
     stubApi()
 })
 
-// happy-dom's storage is not reset by restoreAllMocks, so its spies are.
 const storageSpies: { mockRestore: () => void }[] = []
 
 afterEach(() => {

@@ -48,14 +48,6 @@ vi.mock('./use-create-page', () => ({
 
 afterEach(cleanup)
 
-function renderPage() {
-    render(
-        <DdragonProvider version="16.23.1">
-            <CreateView />
-        </DdragonProvider>
-    )
-}
-
 function pressedIn(groupName: RegExp) {
     return within(screen.getByRole('group', { name: groupName }))
         .getAllByRole('button')
@@ -63,6 +55,14 @@ function pressedIn(groupName: RegExp) {
             button.textContent,
             button.getAttribute('aria-pressed'),
         ])
+}
+
+function renderPage() {
+    render(
+        <DdragonProvider version="16.23.1">
+            <CreateView />
+        </DdragonProvider>
+    )
 }
 
 describe('CreateView', () => {

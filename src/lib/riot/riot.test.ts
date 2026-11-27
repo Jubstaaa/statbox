@@ -39,14 +39,6 @@ vi.mock('./riot.client', () => ({
     },
 }))
 
-function notFound() {
-    return new GenericError({} as RateLimits, {
-        message: 'Not found',
-        name: 'HttpError',
-        response: { status: 404 },
-    })
-}
-
 function match(
     matchId: string,
     overrides: {
@@ -79,6 +71,14 @@ function match(
             metadata: { matchId },
         },
     }
+}
+
+function notFound() {
+    return new GenericError({} as RateLimits, {
+        message: 'Not found',
+        name: 'HttpError',
+        response: { status: 404 },
+    })
 }
 
 beforeEach(() => {

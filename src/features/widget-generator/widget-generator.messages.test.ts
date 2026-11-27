@@ -21,8 +21,6 @@ describe('describeLookupError', () => {
     })
 })
 
-// A saved account was not typed just now, so a busy or unreachable Riot is
-// worth waiting out; only a missing or invalid account needs a new one.
 describe('describeSavedAccountError', () => {
     it.each([
         [new SummonerRequestError(503, 'x'), /rate limit/i, false],

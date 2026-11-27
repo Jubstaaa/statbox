@@ -5,14 +5,14 @@ export interface ComputedData {
     avgDeaths: number
     avgKills: number
     data: RiotData
-    kdaRatio: string | null
+    kdaRatio: null | string
     recent: MatchEntry[]
-    session: number | null
+    session: null | number
     sessionGames: number
     sessionLosses: number
     sessionWins: number
     tierColor: string
-    winRate: number | null
+    winRate: null | number
 }
 
 export interface WidgetFrameProps {

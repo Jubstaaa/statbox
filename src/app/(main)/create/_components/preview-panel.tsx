@@ -1,10 +1,11 @@
+import type { RiotData, WidgetStyle } from '@/lib/riot/riot.types'
+
 import Card from '@/components/card'
 import Widget from '@/features/widget/widget'
-import type { RiotData, WidgetStyle } from '@/lib/riot/riot.types'
 
 interface WidgetPreviewPanelProps {
     initialData: RiotData
-    session: number | null
+    session: null | number
     style: WidgetStyle
 }
 

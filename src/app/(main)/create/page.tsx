@@ -59,7 +59,7 @@ export default function CreateView() {
                 <div className="min-w-0 flex-1">
                     <PlayerSummary data={summonerData} tierColor={tierColor} />
                 </div>
-                <Button size="sm" variant="ghost" onClick={handleChangeAccount}>
+                <Button onClick={handleChangeAccount} size="sm" variant="ghost">
                     Change account
                 </Button>
             </Card>
@@ -96,16 +96,16 @@ export default function CreateView() {
                         role="group">
                         {STYLES.map(item => (
                             <button
-                                key={item.id}
                                 aria-pressed={style === item.id}
-                                type="button"
                                 className={cn(
                                     'block w-full rounded-2xl border px-3.5 py-3 text-left transition',
                                     style === item.id
                                         ? 'border-accent bg-accent text-bg-base'
                                         : 'border-border-secondary bg-bg-elevated text-text hover:border-border-hover'
                                 )}
-                                onClick={createStyleSelectHandler(item.id)}>
+                                key={item.id}
+                                onClick={createStyleSelectHandler(item.id)}
+                                type="button">
                                 <span className="block text-xs font-semibold">
                                     {item.label}
                                 </span>
@@ -142,16 +142,20 @@ export default function CreateView() {
                         role="group">
                         <Button
                             aria-pressed={queue === 'solo'}
+                            onClick={handleSoloQueue}
                             size="sm"
-                            variant={queue === 'solo' ? 'primary' : 'secondary'}
-                            onClick={handleSoloQueue}>
+                            variant={
+                                queue === 'solo' ? 'primary' : 'secondary'
+                            }>
                             SoloQ
                         </Button>
                         <Button
                             aria-pressed={queue === 'flex'}
+                            onClick={handleFlexQueue}
                             size="sm"
-                            variant={queue === 'flex' ? 'primary' : 'secondary'}
-                            onClick={handleFlexQueue}>
+                            variant={
+                                queue === 'flex' ? 'primary' : 'secondary'
+                            }>
                             Flex
                         </Button>
                     </div>
@@ -176,24 +180,24 @@ export default function CreateView() {
                         role="group">
                         <Button
                             aria-pressed={sessionMode === 'all-day'}
+                            onClick={handleAllDaySession}
                             size="sm"
                             variant={
                                 sessionMode === 'all-day'
                                     ? 'primary'
                                     : 'secondary'
-                            }
-                            onClick={handleAllDaySession}>
+                            }>
                             All day
                         </Button>
                         <Button
                             aria-pressed={sessionMode === 'from-time'}
+                            onClick={handleFromTimeSession}
                             size="sm"
                             variant={
                                 sessionMode === 'from-time'
                                     ? 'primary'
                                     : 'secondary'
-                            }
-                            onClick={handleFromTimeSession}>
+                            }>
                             Start time
                         </Button>
                     </div>
@@ -209,9 +213,9 @@ export default function CreateView() {
                                 className="bg-bg-base text-text border-border-secondary focus:border-accent focus-visible:ring-accent/60 h-11 w-full rounded-2xl border px-4 text-sm outline-none focus-visible:ring-2"
                                 id={sessionTimeId}
                                 max={maxSessionTime}
+                                onChange={handleSessionTimeChange}
                                 type="datetime-local"
                                 value={sessionTime}
-                                onChange={handleSessionTimeChange}
                             />
                         </div>
                     ) : null}
