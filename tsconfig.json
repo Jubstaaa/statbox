@@ -1,5 +1,5 @@
 {
-    "extends": "@jubstaaa/config/tsconfig/next",
+    "extends": "@jubstaa/config/tsconfig/next",
     "compilerOptions": {
         "target": "ES2017",
         "jsx": "react-jsx",
@@ -8,6 +8,8 @@
         }
     },
     "include": [
+        "prettier.config.mts",
+        "eslint.config.mts",
         "next-env.d.ts",
         "**/*.ts",
         "**/*.tsx",
