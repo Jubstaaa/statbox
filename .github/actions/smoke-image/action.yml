@@ -14,8 +14,6 @@ runs:
           uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
           with:
               images: ${{ inputs.image }}
-              # `candidate` is what docker-compose.yml runs below (IMAGE_TAG);
-              # the full commit SHA is what deploy and rollback address.
               tags: |
                   type=raw,value=candidate
                   type=sha,format=long,prefix=
@@ -37,13 +35,9 @@ runs:
               DATA_DIR: ${{ runner.temp }}/data
               IMAGE_CACHE_DIR: ${{ runner.temp }}/image-cache
           run: |
-              # Empty on purpose, like a new droplet's: the app creates the
-              # cache schema at startup (src/instrumentation.ts).
               install -d -m 777 "$DATA_DIR" "$IMAGE_CACHE_DIR"
-              # Route modules validate the key on import; no Riot call is made.
               printf 'RIOT_API_KEY=ci-placeholder\n' > .env
               docker compose up -d --wait --wait-timeout 120 app
-        # Also installs lz-string, which the smoke test uses to build a payload.
         - uses: ./.github/actions/setup-bun
         - name: Smoke test
           shell: bash

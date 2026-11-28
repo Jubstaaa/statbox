@@ -4,7 +4,7 @@
 # Alpine end to end: bun resolves the musl builds of sharp and libsql
 # (@libsql/linux-x64-musl ships a prebuild, so no compiler is needed), and the
 # node:alpine runner loads those same binaries at request time. Base images are
-# pinned by digest (Dependabot moves them), so a rebuild of the same commit
+# pinned by digest (Renovate moves them), so a rebuild of the same commit
 # gets the same layers.
 FROM oven/bun:1.4.4-alpine@sha256:4cf82f5686b196504fe119db3fcd9185b191f82ece82c40680e597228ec6070a AS deps
 RUN apk add --no-cache libc6-compat

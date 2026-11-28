@@ -3,8 +3,6 @@ description: Install the Node range from engines.node, the Bun version pinned in
 runs:
     using: composite
     steps:
-        # next, vitest and tsc start through `#!/usr/bin/env node`, so without
-        # this they would run on whichever Node the runner image ships.
         - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
           with:
               node-version-file: package.json
