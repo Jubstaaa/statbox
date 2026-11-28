@@ -54,7 +54,7 @@
         "zod": "^4.6.7"
     },
     "devDependencies": {
-        "@jubstaa/config": "^1.6.0",
+        "@jubstaa/config": "^2.1.0",
         "@tailwindcss/postcss": "^4.3.5",
         "@testing-library/dom": "^10.4.2",
         "@testing-library/react": "^16.3.3",
