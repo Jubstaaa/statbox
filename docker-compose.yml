@@ -1,20 +1,10 @@
-# Runtime stack on the droplet (/opt/statbox). Published only on localhost:3003;
-# the shared Caddy in /opt/proxy terminates TLS and reverse-proxies to it, next to
-# the other apps. The image is pulled from GHCR by the deploy workflow.
 services:
     app:
-        # The deploy job sets IMAGE_TAG to the commit SHA it releases; :latest moves
-        # only after a healthy deploy, so the fallback is the last good release.
         image: ghcr.io/jubstaaa/statbox:${IMAGE_TAG:-latest}
         container_name: statbox
         restart: unless-stopped
-        # Measured 109MB idle for the standalone server; 256m leaves room for
-        # request spikes without letting it crowd the other apps.
         mem_limit: 256m
         pids_limit: 128
-        # The root filesystem stays writable on purpose: pages revalidate daily
-        # (the Data Dragon version), and Next writes regenerated pages under
-        # .next/server. Everything else follows the shared hardening.
         cap_drop:
             - ALL
         security_opt:
@@ -24,22 +14,8 @@ services:
             options:
                 max-size: 10m
                 max-file: '3'
-        # wget here is BusyBox: -T is the timeout, the GNU long options do not exist.
         #
-        # Docker does not restart an unhealthy container, and Beszel
-        # cannot alert per container, so this fills the Health column and nothing
-        # more: it surfaces "process alive but application wedged", which the
-        # restart policy alone never catches. Deploys also wait on it
-        # (`compose up --wait`) and roll back when it never passes.
         #
-        # A readiness check: /api/health reads the SQLite cache, so a release
-        # that cannot open or read its data is rolled back. The deploy action
-        # rolls back by starting the previous image under this file, so every
-        # image this file may roll back to must serve /api/health; images built
-        # before it was added (ci/image-gate-and-hardening) answer 404. Deploy
-        # this file only once such an image is live: the PR's rollback
-        # rehearsal starts :latest under it and fails until then. Older SHAs
-        # keep their own compose file, which the deploy checks out per tag.
         healthcheck:
             test:
                 [
@@ -50,43 +26,17 @@ services:
             timeout: 5s
             retries: 3
             start_period: 40s
-            # Probe quickly while starting so a deploy's `compose up --wait` returns as
-            # soon as the app answers instead of after the first 30s interval.
             start_interval: 2s
         env_file: .env
-        # No third party has Portainer access to this app. If that changes, set
-        # PORTAINER_TEAMS in .env beside this file and uncomment the two lines
-        # below: the permission is then reapplied on every recreate.
         #
-        # Doing it from the Portainer UI instead does NOT work — the permission
-        # is keyed to the container ID, and `docker compose up -d` replaces the
-        # container, so access silently disappears on the next deploy. Leaving
-        # the label out entirely means administrator-only, which is the default
-        # we want here.
         #
-        # labels:
-        #     io.portainer.accesscontrol.teams: ${PORTAINER_TEAMS}
         ports:
             - '127.0.0.1:3003:3000'
         environment:
             NODE_ENV: production
-            # Also set by the image; repeated here because a rollback starts the
-            # previous image under this file, and images built before that bind
-            # the container ID instead of loopback.
             HOSTNAME: 0.0.0.0
-            # Half the container limit for V8's old space: the other half is
-            # for what lives outside it (young generation, code, the libsql
-            # page cache and sharp/libvips decode buffers for /_next/image),
-            # so a heap near its cap still collects garbage before the cgroup
-            # OOM-kills the process. 160 left only ~96 MB for all of that.
             NODE_OPTIONS: --max-old-space-size=128
-            # Persisted deliberately: match details are cached for 90 days and the
-            # Riot API is rate limited, so an empty cache after a deploy costs quota.
             CACHE_DATABASE_URI: file:/app/data/statbox-cache.db
-        # The defaults are the droplet's paths; CI's image job points both at
-        # temporary directories to run this same file.
         volumes:
             - ${DATA_DIR:-/opt/statbox/data}:/app/data
-            # Next's optimized output for the remote ddragon icons — without this a
-            # deploy throws the whole set away and every icon is refetched.
             - ${IMAGE_CACHE_DIR:-/opt/statbox/cache/images}:/app/.next/cache/images

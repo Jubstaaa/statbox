@@ -2,7 +2,6 @@ name: CI
 
 on:
     pull_request:
-    # deploy.yml calls this on every push to main.
     workflow_call:
         inputs:
             run-check:
@@ -18,7 +17,6 @@ permissions:
 
 concurrency:
     group: ci-${{ github.workflow }}-${{ github.ref }}
-    # Only superseded PR runs are cancelled; a release gate on main always finishes.
     cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -33,7 +31,6 @@ jobs:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   persist-credentials: false
-            # Before install, so it scans the lockfile and Dockerfile, not node_modules.
             - name: Trivy (vulnerabilities, secrets, misconfiguration)
               uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
               env:
@@ -50,10 +47,8 @@ jobs:
             - run: bun run lint
             - run: bun run typecheck
             - run: bun run test
-            # The deploy only builds after merge; a broken build should fail the PR.
             - run: bun run build
               env:
-                  # Route modules validate it on import; no Riot call happens at build.
                   RIOT_API_KEY: build-time-placeholder
                   NEXT_TELEMETRY_DISABLED: '1'
             - run: bun run audit
@@ -66,10 +61,6 @@ jobs:
             - name: actionlint
               run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
 
-    # Runs on PRs beside check (protect-main does not list it as a required
-    # check yet): builds the production image, starts it with the production
-    # compose file and smoke tests it. Read-only, so a PR can never publish an
-    # image.
     image:
         if: ${{ github.event_name == 'pull_request' }}
         runs-on: ubuntu-latest
@@ -89,17 +80,11 @@ jobs:
                   registry: ghcr.io
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
-            # What the deploy does when this PR's release turns out unhealthy:
-            # start the image now in production (:latest) under this PR's
-            # compose file, on the data the candidate just used, and wait for
-            # its healthcheck and the deploy's health URL. A compose change
-            # the live image cannot satisfy fails here, not mid-rollback.
             - name: Rollback rehearsal
               env:
                   IMAGE_TAG: latest
                   DATA_DIR: ${{ runner.temp }}/data
                   IMAGE_CACHE_DIR: ${{ runner.temp }}/image-cache
-                  # deploy.yml's health-url.
                   HEALTH_URL: http://127.0.0.1:3003/
               run: |
                   docker pull --quiet "$IMAGE:$IMAGE_TAG"
@@ -111,9 +96,6 @@ jobs:
                   IMAGE_TAG: latest
               run: docker compose logs app
 
-    # The same gate on main, which then pushes exactly the image that passed
-    # as :<commit-sha>. A separate job because job permissions cannot depend
-    # on the event, and only this one may write packages.
     release-image:
         if: ${{ github.event_name != 'pull_request' }}
         runs-on: ubuntu-latest
@@ -133,6 +115,5 @@ jobs:
                   registry: ghcr.io
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
-            # By SHA only: :latest moves in deploy.yml after production reports healthy.
             - name: Push the SHA tag
               run: docker push "$IMAGE:$GITHUB_SHA"

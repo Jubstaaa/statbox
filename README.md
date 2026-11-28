@@ -222,3 +222,7 @@ See also:
 ## Repository
 
 [github.com/Jubstaaa/statbox](https://github.com/Jubstaaa/statbox)
+
+## License
+
+MIT

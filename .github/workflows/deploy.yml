@@ -23,9 +23,6 @@ env:
     IMAGE: ghcr.io/jubstaaa/statbox
 
 jobs:
-    # Builds, smoke tests and pushes the image. The check job is not re-run: the
-    # ruleset requires up-to-date branches, so this tree already passed it on
-    # the PR. A rollback skips both: that SHA passed them when it was built.
     ci:
         if: ${{ !inputs.image_tag }}
         uses: ./.github/workflows/ci.yml
@@ -36,14 +33,11 @@ jobs:
             packages: write
 
     deploy:
-        # Deploy secrets live in this environment, which only accepts main,
-        # so a workflow on another branch cannot read them.
         environment: Production
         needs: ci
         if: ${{ !cancelled() && (inputs.image_tag || needs.ci.result == 'success') }}
         runs-on: ubuntu-latest
         timeout-minutes: 10
-        # Never cancel a deploy halfway through `compose up`.
         concurrency:
             group: production-deploy
             cancel-in-progress: false
@@ -58,17 +52,12 @@ jobs:
             - name: Refuse a snapshot restore without a rollback tag
               if: ${{ inputs.restore_snapshot && !inputs.image_tag }}
               run: '{ echo "::error::restore_snapshot needs image_tag: it restores the snapshot taken while that tag was running"; exit 1; }'
-            # The compose file comes from the commit being released, not from
-            # this workflow's ref: the image job tested that image with that
-            # file, and a rollback to an older SHA must run under the compose
-            # file (and healthcheck) it shipped with, not main's.
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   ref: ${{ env.IMAGE_TAG }}
                   persist-credentials: false
                   sparse-checkout: docker-compose.yml
                   sparse-checkout-cone-mode: false
-            # For promoting :latest once the release is healthy.
             - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
               with:
                   registry: ghcr.io
@@ -82,29 +71,17 @@ jobs:
                   user: ${{ secrets.DO_USER }}
                   key: ${{ secrets.DO_SSH_KEY }}
                   known-hosts: ${{ secrets.DO_KNOWN_HOSTS }}
-            # Snapshots the SQLite cache before the new tag starts and puts it back
-            # if the release is rolled back.
             - uses: Jubstaaa/deploy-actions/compose@233419e4b4936a17bf710cb7038f7dbc23a8a5f5 # v1.4.0
               with:
                   app-dir: /opt/statbox
                   container: statbox
                   image: ${{ env.IMAGE }}
                   tag: ${{ env.IMAGE_TAG }}
-                  # Lives in this workflow, not in the released commit, so it
-                  # must be a path every image answers: the action probes it
-                  # after starting the new tag and again after an automatic
-                  # rollback to the previous one. The cache check is the
-                  # compose healthcheck's job, which travels with each SHA.
                   health-url: http://127.0.0.1:3003/
                   sqlite-snapshot: /opt/statbox/data/statbox-cache.db
-                  # The cache is about 120 MB and rebuildable; three is enough to
-                  # step back across a bad release or two.
                   keep-snapshots: '3'
-                  # Push deploys never restore; a manual rollback may ask to.
                   restore-snapshot: ${{ inputs.restore_snapshot && 'true' || 'false' }}
 
-    # GitHub emails only the actor, and Dependabot's dispatched deploys run as
-    # github-actions[bot], so a failed or rolled-back release would go unseen.
     alert:
         needs: [ci, deploy]
         if: ${{ failure() && github.ref == 'refs/heads/main' }}
@@ -121,9 +98,6 @@ jobs:
                   TITLE: Production deploy failed
               run: |
                   body="Run: $RUN_URL (commit $GITHUB_SHA). Production may be on the previous release or down; check the deploy log."
-                  # Anyone can open an issue on this public repository, so only
-                  # an issue this workflow created counts; gh reports the bot's
-                  # login as app/github-actions.
                   gh label create deploy-failure --force --color B60205 \
                       --description 'Opened by the deploy workflow'
                   existing=$(gh issue list --state open --author app/github-actions \
