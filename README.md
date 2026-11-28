@@ -14,7 +14,7 @@ recent games, and session-based performance for League of Legends streams.
 - Riot account resolution based on Riot ID
 - Open source and lightweight setup
 
-## Setup
+## Getting started
 
 Prerequisites: [Bun](https://bun.sh) 1.4.4 (the `packageManager` version) and
 Node.js 26 (`engines.node`). Bun installs the dependencies; `bun run` then
@@ -45,7 +45,19 @@ cp .env.example .env.local
 bun run dev
 ```
 
-## Scripts
+### Environment
+
+`.env.example` lists every variable the app reads:
+
+| Variable             | Required | Default                   | Purpose                          |
+| -------------------- | -------- | ------------------------- | -------------------------------- |
+| `RIOT_API_KEY`       | yes      | none                      | Riot API key, server-side only   |
+| `CACHE_DATABASE_URI` | no       | `file:./statbox-cache.db` | libsql URL of the response cache |
+
+`bun run smoke` reads `SMOKE_BASE_URL` (default `http://127.0.0.1:3003`, the
+port `docker-compose.yml` publishes); the app itself does not.
+
+## Development
 
 ```bash
 bun run dev           # next dev
@@ -64,18 +76,6 @@ bun run depcruise     # dependency rules (cycles, orphans, layering)
 bun run smoke         # smoke test a running server (SMOKE_BASE_URL)
 ```
 
-## Environment
-
-`.env.example` lists every variable the app reads:
-
-| Variable             | Required | Default                   | Purpose                          |
-| -------------------- | -------- | ------------------------- | -------------------------------- |
-| `RIOT_API_KEY`       | yes      | none                      | Riot API key, server-side only   |
-| `CACHE_DATABASE_URI` | no       | `file:./statbox-cache.db` | libsql URL of the response cache |
-
-`bun run smoke` reads `SMOKE_BASE_URL` (default `http://127.0.0.1:3003`, the
-port `docker-compose.yml` publishes); the app itself does not.
-
 ## Routes
 
 - `/` landing page and account entry
@@ -92,7 +92,33 @@ port `docker-compose.yml` publishes); the app itself does not.
 - The app stores builder preferences in browser local storage
 - The deployed key is a personal key; a production key is optional (see below)
 
-## Deploy and rollback
+## Riot API key and rate budget
+
+The deployed instance runs on a Riot **personal** API key. Its limits are
+counted per routing value (`euw1`, `europe`, `americas`, …):
+
+- 20 calls per 1 second
+- 100 calls per 2 minutes
+
+`src/lib/riot/riot.gate.ts` keeps every routing value inside both windows
+(sliding, so they cannot line up with Riot's to double a burst). What that
+means for widgets:
+
+- A **cold** widget (nothing cached yet) costs about 25 calls, 22 of them on
+  the shared regional value, so about four new widgets per region fit in two
+  minutes.
+- A **warm** widget polls every 2 minutes against data cached for 5, which
+  costs about two calls per 5 minutes: roughly a hundred open widgets per
+  region once they are warm.
+- When the budget is spent, a call that cannot start within 10 s is answered
+  with `503` and `Retry-After: 30`; an open widget keeps its last data and
+  polls again.
+
+A Riot **production** key is optional. If the instance moves to one, raise
+`SHORT_WINDOW` and `LONG_WINDOW` in `riot.gate.ts` to the limits Riot grants
+it; nothing else changes.
+
+## Deployment
 
 Production is one container on a DigitalOcean droplet in `/opt/statbox`,
 published on `127.0.0.1:3003` behind the droplet's shared Caddy, and released
@@ -179,32 +205,6 @@ user before the first deploy:
   `curl -s 127.0.0.1:3003/api/health` answers `{"status":"ok"}`. Its PR's
   rollback rehearsal enforces the same: it starts `:latest` under the new
   compose file and fails until the live image serves `/api/health`.
-
-## Riot API key and rate budget
-
-The deployed instance runs on a Riot **personal** API key. Its limits are
-counted per routing value (`euw1`, `europe`, `americas`, …):
-
-- 20 calls per 1 second
-- 100 calls per 2 minutes
-
-`src/lib/riot/riot.gate.ts` keeps every routing value inside both windows
-(sliding, so they cannot line up with Riot's to double a burst). What that
-means for widgets:
-
-- A **cold** widget (nothing cached yet) costs about 25 calls, 22 of them on
-  the shared regional value, so about four new widgets per region fit in two
-  minutes.
-- A **warm** widget polls every 2 minutes against data cached for 5, which
-  costs about two calls per 5 minutes: roughly a hundred open widgets per
-  region once they are warm.
-- When the budget is spent, a call that cannot start within 10 s is answered
-  with `503` and `Retry-After: 30`; an open widget keeps its last data and
-  polls again.
-
-A Riot **production** key is optional. If the instance moves to one, raise
-`SHORT_WINDOW` and `LONG_WINDOW` in `riot.gate.ts` to the limits Riot grants
-it; nothing else changes.
 
 ## Legal
 
