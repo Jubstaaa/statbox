@@ -65,13 +65,13 @@ jobs:
                   password: ${{ secrets.GITHUB_TOKEN }}
             - name: Confirm the image exists
               run: docker buildx imagetools inspect "$IMAGE:$IMAGE_TAG" > /dev/null
-            - uses: Jubstaaa/deploy-actions/ssh@233419e4b4936a17bf710cb7038f7dbc23a8a5f5 # v1.4.0
+            - uses: Jubstaaa/deploy-actions/ssh@fc838276e9a31bd2d7726ad0d2b1f6df8e62b1a8 # v2.4.0
               with:
                   host: ${{ secrets.DO_HOST }}
                   user: ${{ secrets.DO_USER }}
                   key: ${{ secrets.DO_SSH_KEY }}
                   known-hosts: ${{ secrets.DO_KNOWN_HOSTS }}
-            - uses: Jubstaaa/deploy-actions/compose@233419e4b4936a17bf710cb7038f7dbc23a8a5f5 # v1.4.0
+            - uses: Jubstaaa/deploy-actions/compose@fc838276e9a31bd2d7726ad0d2b1f6df8e62b1a8 # v2.4.0
               with:
                   app-dir: /opt/statbox
                   container: statbox
